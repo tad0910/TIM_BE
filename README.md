@@ -1,10 +1,10 @@
 # ALM-Team-Tim-BE
 
 #Yêu cầu hệ thống
-Java 21
-Maven
-Database: MariaDB
-IDE: IntelliJ IDEA / Eclipse / VS Code
+- Java 21
+- Maven
+- Database: MariaDB
+- IDE: IntelliJ IDEA / Eclipse / VS Code
 
 #Cài đặt
 1. Clone repo
