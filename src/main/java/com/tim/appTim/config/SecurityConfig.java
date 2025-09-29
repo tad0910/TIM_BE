@@ -12,6 +12,8 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import com.tim.appTim.service.UserService;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -22,19 +24,28 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/register", "/auth/login", "/auth/logout").permitAll()
-                .requestMatchers("/users/**").permitAll()
-                .anyRequest().authenticated()
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(authz -> authz
+            .requestMatchers("/auth/register", "/auth/login", "/auth/logout").permitAll()
+            .requestMatchers("/users/**").permitAll()
+            .anyRequest().authenticated()
+        )
+        .exceptionHandling(ex -> ex
+            .authenticationEntryPoint(
+                (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
             )
-            .formLogin().disable()
-            .logout().disable();
+            .accessDeniedHandler(
+                (request, response, accessDeniedException) -> response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden")
+            )
+        )
+        .formLogin(form -> form.disable())
+        .logout(logout -> logout.disable());
 
-        return http.build();
-    }
+    return http.build();
+}
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
