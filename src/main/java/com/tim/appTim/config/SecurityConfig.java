@@ -30,7 +30,7 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
         .authorizeHttpRequests(authz -> authz
             .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/forgot-password", "/auth/verify-otp", "/auth/reset-password").permitAll()
             .requestMatchers("/users/**").permitAll()
-            .requestMatchers("/profile/**").authenticated() // Yêu cầu xác thực cho endpoint profile
+            .requestMatchers("/profile/**").permitAll() // Yêu cầu xác thực cho endpoint profile
             .anyRequest().authenticated()
         )
         .exceptionHandling(ex -> ex

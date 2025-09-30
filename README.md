@@ -19,7 +19,14 @@ GET: http://localhost:8081/users/{id}
 
 PUT:http://localhost:8081/users/{id}
 {
-  "username": "updateduser4",
+    "username": "user5",
     "password": "123",
-    "email": "abc4@gmail.com"
+    "email": "abc6@gmail.com",
+    "phoneNumber": 123456789,
+    "profileImage": null,
+    "role": null,
+    "createdAt": "2025-09-29T17:08:15",
+    "passwordChangedAt": null
 }
+
+GET http://localhost:8081/profile/users/{id}
