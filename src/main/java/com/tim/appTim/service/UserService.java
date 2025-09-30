@@ -1,22 +1,56 @@
 package com.tim.appTim.service;
 
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.tim.appTim.dto.CommentDTO;
+import com.tim.appTim.dto.CourseDTO;
+import com.tim.appTim.dto.PostDTO;
+import com.tim.appTim.dto.ProfileResponse;
+import com.tim.appTim.dto.ReactionDTO;
+import com.tim.appTim.dto.ReplyCommentDTO;
+import com.tim.appTim.dto.UserImageDTO;
 import com.tim.appTim.entity.User;
+import com.tim.appTim.repository.ClassMemberRepository;
+import com.tim.appTim.repository.CommentRepository;
+import com.tim.appTim.repository.CourseRepository;
+import com.tim.appTim.repository.PostRepository;
+import com.tim.appTim.repository.ReactionRepository;
+import com.tim.appTim.repository.ReplyCommentRepository;
+import com.tim.appTim.repository.UserImageRepository;
 import com.tim.appTim.repository.UserRepository;
+import java.util.List;
 
 @Service
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final ReplyCommentRepository replyCommentRepository;
+    private final ReactionRepository reactionRepository;
+    private final UserImageRepository userImageRepository;
+    private final ClassMemberRepository classMemberRepository;
+    private final CourseRepository courseRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
+                       ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
+                       UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
+                       CourseRepository courseRepository, BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
+        this.replyCommentRepository = replyCommentRepository;
+        this.reactionRepository = reactionRepository;
+        this.userImageRepository = userImageRepository;
+        this.classMemberRepository = classMemberRepository;
+        this.courseRepository = courseRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -66,4 +100,51 @@ public class UserService implements UserDetailsService {
     public java.util.List<User> findAll() {
         return userRepository.findAll();
     }
+
+    public User findByUsernameOrEmail(String usernameOrEmail) {
+        return userRepository.findByUsername(usernameOrEmail)
+                .or(() -> userRepository.findByEmail(usernameOrEmail))
+                .orElseThrow(() -> new RuntimeException("User not found with username or email: " + usernameOrEmail));
+    }
+
+    public ProfileResponse getUserProfile(Long userId) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+    List<PostDTO> posts = postRepository.findByUserId(userId).stream().map(post -> {
+        List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
+            List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
+                    .map(reply -> new ReplyCommentDTO(reply.getId(), reply.getContent(), reply.getEmotion(), reply.getFileId(), reply.getCreatedAt()))
+                    .collect(Collectors.toList());
+            return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây
+                    comment.getContent(), comment.getEmotion() != null ? comment.getEmotion().name() : null,
+                    comment.getFileId(), comment.getCreatedAt(), replyComments);
+        }).collect(Collectors.toList());
+
+        List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
+                .map(reaction -> new ReactionDTO(reaction.getId(), reaction.getUserId(), reaction.getUser().getUsername(), // Sửa ở đây
+                        reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
+                        reaction.getCreatedAt()))
+                .collect(Collectors.toList());
+
+        return new PostDTO(post.getId(), post.getContent(), post.getPrivacy() != null ? post.getPrivacy().name() : null,
+                post.getCreatedAt(), post.getUpdatedAt(), comments, reactions);
+    }).collect(Collectors.toList());
+
+    List<UserImageDTO> images = userImageRepository.findByUserId(userId).stream()
+            .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
+            .collect(Collectors.toList());
+
+    List<CourseDTO> courses = classMemberRepository.findByUserId(userId).stream()
+            .map(classMember -> courseRepository.findById(classMember.getClassId())
+                    .map(course -> new CourseDTO(course.getId(), course.getCourseName(), course.getDescription(),
+                            course.getStartDate(), course.getTuitionFee()))
+                    .orElse(null))
+            .filter(course -> course != null)
+            .collect(Collectors.toList());
+
+    return new ProfileResponse(user, posts, images, courses);
+}
+    
+
 }

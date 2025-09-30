@@ -28,8 +28,9 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
     http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(authz -> authz
-            .requestMatchers("/auth/register", "/auth/login", "/auth/logout").permitAll()
+            .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/forgot-password", "/auth/verify-otp", "/auth/reset-password").permitAll()
             .requestMatchers("/users/**").permitAll()
+            .requestMatchers("/profile/**").authenticated() // Yêu cầu xác thực cho endpoint profile
             .anyRequest().authenticated()
         )
         .exceptionHandling(ex -> ex
@@ -45,7 +46,6 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
 
     return http.build();
 }
-
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
