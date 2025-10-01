@@ -1,5 +1,7 @@
 package com.tim.appTim.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +18,7 @@ import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.dto.UserImageDTO;
 import com.tim.appTim.entity.User;
+import com.tim.appTim.entity.UserImage;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.CourseRepository;
@@ -24,7 +27,6 @@ import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.repository.UserImageRepository;
 import com.tim.appTim.repository.UserRepository;
-import java.util.List;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -39,6 +41,8 @@ public class UserService implements UserDetailsService {
     private final CourseRepository courseRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
+    
+    
     public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
                        ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
                        UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
@@ -145,6 +149,68 @@ public class UserService implements UserDetailsService {
 
     return new ProfileResponse(user, posts, images, courses);
 }
-    
+
+    public List<UserImageDTO> getUserImages(Long userId) {
+    return userImageRepository.findByUserId(userId)
+        .stream()
+        .map(image -> new UserImageDTO(
+            image.getId(),
+            image.getImageUrl(),
+            image.getDescription(),
+            image.getCreatedAt()
+        ))
+        .collect(Collectors.toList());
+    }
+
+        public UserImageDTO createUserImage(Long userId, String imageUrl, String description) {
+        UserImage image = new UserImage();
+        image.setUser(userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found")));
+        image.setImageUrl(imageUrl);
+        image.setDescription(description);
+        image.setCreatedAt( LocalDateTime.now());
+        
+        UserImage saved = userImageRepository.save(image);
+        return convertToDTO(saved);
+    }
+
+        public UserImageDTO updateUserImage(Long userId, Long imageId, String imageUrl, String description) {
+        UserImage image = userImageRepository.findById(imageId)
+            .orElseThrow(() -> new RuntimeException("Image not found"));
+        
+        // Kiểm tra quyền: Chỉ update nếu thuộc userId
+        if (!image.getUser().getId().equals(userId)) {
+            throw new SecurityException("You can only update your own images");
+        }
+        
+        if (imageUrl != null) image.setImageUrl(imageUrl);
+        if (description != null) image.setDescription(description);
+        image.setCreatedAt( LocalDateTime.now());  // Optional: update timestamp
+        
+        UserImage saved = userImageRepository.save(image);
+        return convertToDTO(saved);
+    }
+
+
+        public void deleteUserImage(Long userId, Long imageId) {
+        UserImage image = userImageRepository.findById(imageId)
+            .orElseThrow(() -> new RuntimeException("Image not found"));
+        
+        // Kiểm tra quyền
+        if (!image.getUser().getId().equals(userId)) {
+            throw new SecurityException("You can only delete your own images");
+        }
+        
+        userImageRepository.delete(image);
+    }
+
+    private UserImageDTO convertToDTO(UserImage image) {
+        return new UserImageDTO(
+            image.getId(),
+            image.getImageUrl(),
+            image.getDescription(),
+            image.getCreatedAt()
+        );
+    }
 
 }

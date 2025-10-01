@@ -1,8 +1,9 @@
 package com.tim.appTim.dto;
 
-import com.tim.appTim.entity.User;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.tim.appTim.entity.User;
 
 public class ProfileResponse {
     private Long userId;
@@ -16,7 +17,6 @@ public class ProfileResponse {
     private List<UserImageDTO> images;
     private List<CourseDTO> courses;
 
-    // Constructor to match UserService.java
     public ProfileResponse(User user, List<PostDTO> posts, List<UserImageDTO> images, List<CourseDTO> courses) {
         this.userId = user.getId();
         this.username = user.getUsername();
@@ -30,17 +30,6 @@ public class ProfileResponse {
         this.courses = courses;
     }
 
-    // Optional: Keep the existing constructor if needed
-    public ProfileResponse(Long userId, String username, String email, String phoneNumber, String profileImage, String role) {
-        this.userId = userId;
-        this.username = username;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.profileImage = profileImage;
-        this.role = role;
-    }
-
-    // Default constructor
     public ProfileResponse() {}
 
     // Getters/Setters
@@ -64,5 +53,4 @@ public class ProfileResponse {
     public void setImages(List<UserImageDTO> images) { this.images = images; }
     public List<CourseDTO> getCourses() { return courses; }
     public void setCourses(List<CourseDTO> courses) { this.courses = courses; }
-    
 }
