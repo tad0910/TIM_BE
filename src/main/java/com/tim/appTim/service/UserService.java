@@ -139,7 +139,7 @@ public class UserService implements UserDetailsService {
             .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
             .collect(Collectors.toList());
 
-    List<CourseDTO> courses = classMemberRepository.findByUserId(userId).stream()
+    List<CourseDTO> courses = classMemberRepository.findByClassId(userId).stream()
             .map(classMember -> courseRepository.findById(classMember.getClassId())
                     .map(course -> new CourseDTO(course.getId(), course.getCourseName(), course.getDescription(),
                             course.getStartDate(), course.getTuitionFee()))
