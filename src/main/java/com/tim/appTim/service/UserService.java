@@ -102,10 +102,10 @@ public class UserService implements UserDetailsService {
     }
 
     public User findByUsernameOrEmail(String usernameOrEmail) {
-        return userRepository.findByUsername(usernameOrEmail)
-                .or(() -> userRepository.findByEmail(usernameOrEmail))
-                .orElseThrow(() -> new RuntimeException("User not found with username or email: " + usernameOrEmail));
-    }
+    return userRepository.findByUsername(usernameOrEmail)
+            .or(() -> userRepository.findByEmail(usernameOrEmail))
+            .orElse(null); // Trả về null thay vì ném ngoại lệ
+}
 
     public ProfileResponse getUserProfile(Long userId) {
     User user = userRepository.findById(userId)
