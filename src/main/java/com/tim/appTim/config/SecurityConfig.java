@@ -24,7 +24,7 @@ public class SecurityConfig {
     }
 
     @Bean
-public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(authz -> authz
@@ -32,7 +32,6 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/users/**").permitAll()
             .requestMatchers("/profile/**").permitAll()
             .requestMatchers("/classes/**").permitAll() 
-            .requestMatchers("/profile/{userId}/images/**").permitAll() 
             .anyRequest().authenticated()
         )
         .exceptionHandling(ex -> ex

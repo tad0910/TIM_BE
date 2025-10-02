@@ -1,14 +1,20 @@
 package com.tim.appTim.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.CourseDTO;
@@ -30,6 +36,9 @@ import com.tim.appTim.repository.UserRepository;
 
 @Service
 public class UserService implements UserDetailsService {
+
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     private final UserRepository userRepository;
     private final PostRepository postRepository;
@@ -88,14 +97,15 @@ public class UserService implements UserDetailsService {
     }
 
     public User update(Long id, User user) {
-        User existingUser = findById(id);
-        existingUser.setUsername(user.getUsername());
-        existingUser.setEmail(user.getEmail());
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
-        return userRepository.save(existingUser);
+    User existingUser = findById(id);
+    existingUser.setUsername(user.getUsername());
+    existingUser.setEmail(user.getEmail());
+    // Không encode lại password, chỉ gán giá trị đã encode từ resetPassword
+    if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+        existingUser.setPassword(user.getPassword()); // Gán trực tiếp
     }
+    return userRepository.save(existingUser);
+}
 
     public void delete(Long id) {
         userRepository.deleteById(id);
@@ -212,5 +222,8 @@ public class UserService implements UserDetailsService {
             image.getCreatedAt()
         );
     }
+
+
+    
 
 }

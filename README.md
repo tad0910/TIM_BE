@@ -17,6 +17,10 @@ GET: http://localhost:8081/users
 
 GET: http://localhost:8081/users/{id}
 
+<!-- GET: http://localhost:8081/users/{email} -->
+
+
+
 PUT:http://localhost:8081/users/{id}
 {
     "username": "user5",

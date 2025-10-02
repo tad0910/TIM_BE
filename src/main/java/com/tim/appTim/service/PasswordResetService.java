@@ -122,39 +122,33 @@ public class PasswordResetService {
     }
 
     public void resetPassword(String email, String resetToken, String newPassword) {
-        // Validate new password policy (e.g., length >=8, etc.) - TODO: Implement
-
-        User user = userService.findByUsernameOrEmail(email);
-        if (user == null) {
-            throw new IllegalArgumentException("Invalid request");
-        }
-
-        Optional<PasswordResetRequest> optRequest = resetRepo.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user);
-        if (optRequest.isEmpty() || optRequest.get().getTokenType() != TokenType.LINK) {
-            throw new IllegalArgumentException("No active reset token");
-        }
-
-        PasswordResetRequest request = optRequest.get();
-        if (request.getExpiresAt().isBefore(Instant.now()) || request.isUsed()) {
-            throw new IllegalArgumentException("Invalid or expired reset token");
-        }
-
-        if (!passwordEncoder.matches(resetToken, request.getOtpHash())) {  // Check hash match
-            throw new IllegalArgumentException("Invalid reset token");
-        }
-
-        // Reset password
-        user.setPassword(passwordEncoder.encode(newPassword));
-        user.setPasswordChangedAt(Instant.now());
-        userService.update(user.getId(), user);
-
-        // Mark used
-        request.setUsed(true);
-        resetRepo.save(request);
-
-        // Send confirmation email
-        sendConfirmationEmail(user.getEmail());
-        logger.info("Password reset for user: {}", user.getId());
+    // Validate new password policy (e.g., length >=8, etc.) - TODO: Implement
+    User user = userService.findByUsernameOrEmail(email);
+    if (user == null) {
+        throw new IllegalArgumentException("Invalid request");
+    }
+    Optional<PasswordResetRequest> optRequest = resetRepo.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user);
+    if (optRequest.isEmpty() || optRequest.get().getTokenType() != TokenType.LINK) {
+        throw new IllegalArgumentException("No active reset token");
+    }
+    PasswordResetRequest request = optRequest.get();
+    if (request.getExpiresAt().isBefore(Instant.now()) || request.isUsed()) {
+        throw new IllegalArgumentException("Invalid or expired reset token");
+    }
+    if (!passwordEncoder.matches(resetToken, request.getOtpHash())) {  // Check hash match
+        throw new IllegalArgumentException("Invalid reset token");
+    }
+    // Reset password - Encode chỉ một lần
+    String encodedPassword = passwordEncoder.encode(newPassword);
+    user.setPassword(encodedPassword);
+    user.setPasswordChangedAt(Instant.now());
+    userService.update(user.getId(), user); // Truyền user đã encode
+    // Mark used
+    request.setUsed(true);
+    resetRepo.save(request);
+    // Send confirmation email
+    sendConfirmationEmail(user.getEmail());
+    logger.info("Password reset for user: {}, encoded password starts with: {}", user.getId(), encodedPassword.substring(0, 10));
     }
 
     // Helper methods
