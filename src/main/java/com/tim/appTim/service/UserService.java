@@ -1,9 +1,5 @@
 package com.tim.appTim.service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.CourseDTO;
@@ -37,7 +32,7 @@ import com.tim.appTim.repository.UserRepository;
 @Service
 public class UserService implements UserDetailsService {
 
-    @Value("${file.upload-dir}")
+    @Value("${upload.folder}")
     private String uploadDir;
 
     private final UserRepository userRepository;
