@@ -48,6 +48,10 @@ public class User {
     @Column(name = "password_changed_at")
     private Instant passwordChangedAt;
 
+    @Column(name = "keycloak_id", unique = true)
+    private String keycloakId;
+
+
 
     // Getters/Setters
     public Long getId() { return id; }

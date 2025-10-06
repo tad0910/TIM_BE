@@ -99,6 +99,9 @@ public class UserService implements UserDetailsService {
     if (user.getPassword() != null && !user.getPassword().isEmpty()) {
         existingUser.setPassword(user.getPassword()); // Gán trực tiếp
     }
+    // if (user.getProfileImage() != null) { // Cập nhật anhDaiDien nếu có
+    //     existingUser.setProfileImage(user.getProfileImage());
+    // } 
     return userRepository.save(existingUser);
 }
 
