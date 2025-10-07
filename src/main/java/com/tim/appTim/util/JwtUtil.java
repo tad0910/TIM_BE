@@ -19,13 +19,22 @@ public class JwtUtil {
     @Autowired
     private UserService userService;
 
-    public String generateToken(String usernameOrEmail) {
+    public String generateAccessToken(String usernameOrEmail) {
         return Jwts.builder()
-            .setSubject(usernameOrEmail)
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-            .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
-            .compact();
+                .setSubject(usernameOrEmail)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
+                .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateRefreshToken(String usernameOrEmail) {
+        return Jwts.builder()
+                .setSubject(usernameOrEmail)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7)) // 7 ngày
+                .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
+                .compact();
     }
 
     public String extractUsernameOrEmail(String token) {

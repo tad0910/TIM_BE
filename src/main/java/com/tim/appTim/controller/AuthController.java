@@ -1,8 +1,11 @@
 package com.tim.appTim.controller;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +28,6 @@ import com.tim.appTim.util.JwtUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -35,49 +37,102 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final PasswordResetService passwordResetService;
 
+    public AuthController(UserService userService, JwtUtil jwtUtil,
+                          AuthenticationManager authenticationManager,
+                          PasswordResetService passwordResetService) {
+        this.userService = userService;
+        this.jwtUtil = jwtUtil;
+        this.authenticationManager = authenticationManager;
+        this.passwordResetService = passwordResetService;
+    }
 
-    public AuthController(UserService userService, JwtUtil jwtUtil, AuthenticationManager authenticationManager, PasswordResetService passwordResetService) {
-    this.userService = userService;
-    this.jwtUtil = jwtUtil;
-    this.authenticationManager = authenticationManager;
-    this.passwordResetService = passwordResetService;
-}
-    
-
+    // 🟢 REGISTER
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {
         userService.register(user);
         return ResponseEntity.ok("User registered successfully");
     }
 
+    // 🟢 LOGIN — trả về Access + Refresh token
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                    loginRequest.getUsernameOrEmail(), loginRequest.getPassword()
-                )
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getUsernameOrEmail(),
+                            loginRequest.getPassword()
+                    )
             );
 
             SecurityContextHolder.getContext().setAuthentication(auth);
 
-            String token = jwtUtil.generateToken(loginRequest.getUsernameOrEmail());
+            User user = userService.findByUsernameOrEmail(loginRequest.getUsernameOrEmail());
 
-            return ResponseEntity.ok(new LoginResponse(token));
+            String accessToken = jwtUtil.generateAccessToken(user.getUsername());
+            String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
+
+            user.setRefreshToken(refreshToken);
+            user.setRefreshTokenExpiry(Instant.now().plus(7, ChronoUnit.DAYS));
+           // userService.save(user); // thêm hàm này trong UserService để cập nhật user
+
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", accessToken,
+                    "refreshToken", refreshToken
+            ));
         } catch (AuthenticationException e) {
-            return ResponseEntity.status(401).body("Login failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Login failed: " + e.getMessage());
         }
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
-        // Với JWT stateless → logout chỉ cần client xóa token
-        return ResponseEntity.ok("Logout successful. Please remove token from client.");
+    // 🟠 REFRESH TOKEN — lấy access token mới khi hết hạn
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken == null || !jwtUtil.isTokenValid(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid or expired refresh token");
+        }
+
+        String username = jwtUtil.extractUsernameOrEmail(refreshToken);
+        User user = userService.findByUsernameOrEmail(username);
+
+        if (user == null || user.getRefreshToken() == null ||
+                !user.getRefreshToken().equals(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Refresh token mismatch");
+        }
+
+        if (user.getRefreshTokenExpiry().isBefore(Instant.now())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Refresh token expired");
+        }
+
+        String newAccessToken = jwtUtil.generateAccessToken(username);
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 
-    // Thêm endpoints
+    // 🔴 LOGOUT — xóa refresh token để vô hiệu hóa đăng nhập lại
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            String username = jwtUtil.extractUsernameOrEmail(token);
+            User user = userService.findByUsernameOrEmail(username);
+            if (user != null) {
+                user.setRefreshToken(null);
+                user.setRefreshTokenExpiry(null);
+                userService.save(user);
+            }
+        }
+        return ResponseEntity.ok("Logout successful");
+    }
+
+    // 🟢 PASSWORD RESET (vẫn giữ nguyên)
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> requestBody, HttpServletRequest request) {
+    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> requestBody,
+                                                 HttpServletRequest request) {
         String email = requestBody.get("email");
         String ip = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
@@ -110,6 +165,7 @@ public class AuthController {
         }
     }
 
+    // 🟢 CORS CONFIG
     @Configuration
     public class WebConfig implements WebMvcConfigurer {
         @Override
@@ -121,5 +177,4 @@ public class AuthController {
                     .allowCredentials(true);
         }
     }
-        
 }

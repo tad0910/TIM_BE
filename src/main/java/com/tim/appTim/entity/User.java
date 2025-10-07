@@ -25,6 +25,8 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    private Instant refreshTokenExpiry;
+
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -41,6 +43,10 @@ public class User {
     @Column(name = "ngay_tao")
     private LocalDateTime createdAt;
 
+    @Column(name = "refresh_token", length = 500)
+    private String refreshToken;
+
+
     public enum Role {
         sinh_vien, giao_vien, admin
     }
@@ -51,9 +57,7 @@ public class User {
     @Column(name = "keycloak_id", unique = true)
     private String keycloakId;
 
-
-
-    // Getters/Setters
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }
@@ -72,5 +76,22 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    
+    public String getKeycloakId() { return keycloakId; } // Sửa getter cho khớp với field keycloakId
+    public void setKeycloakId(String keycloakId) { this.keycloakId = keycloakId; } // Sửa setter
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
+    public Instant getRefreshTokenExpiry() {
+        return refreshTokenExpiry;
+    }
+
+    public void setRefreshTokenExpiry(Instant refreshTokenExpiry) {
+        this.refreshTokenExpiry = refreshTokenExpiry;
+    }
+
 }

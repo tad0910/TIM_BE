@@ -220,6 +220,9 @@ public class UserService implements UserDetailsService {
             image.getCreatedAt()
         );
     }
+    public User save(User user) {
+        return userRepository.save(user);
+    }
 
 
     
