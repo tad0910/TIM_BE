@@ -33,6 +33,7 @@ public class SecurityConfig {
             .requestMatchers("/profile/**").permitAll()
             .requestMatchers("/classes/**").permitAll() 
             .requestMatchers("/api/users/**").permitAll()
+                .requestMatchers("/api/v1/keycloak/**").permitAll()
             .anyRequest().authenticated()
         )
         .exceptionHandling(ex -> ex

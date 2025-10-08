@@ -1,13 +1,15 @@
 package com.tim.appTim.controller;
 
+import com.tim.appTim.dto.CreateUserDTO;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.KeycloakSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
 
-import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ClientErrorException;
 import java.util.List;
 
@@ -19,9 +21,9 @@ public class KeycloakController {
     private KeycloakSyncService keycloakSyncService;
 
     @PutMapping("/users/{userId}")
-    public ResponseEntity<?> updateUser(@PathVariable String userId, @RequestBody UpdateUserDTO updateUserDTO, HttpServletRequest request) {
+    public ResponseEntity<?> updateUser(@PathVariable String userId, @RequestBody UpdateUserDTO updateUserDTO) {
         try {
-            keycloakSyncService.updateUser(userId, updateUserDTO, request);
+            keycloakSyncService.updateUser(userId, updateUserDTO);
             return ResponseEntity.ok("User updated successfully");
         } catch (ClientErrorException e) {
             int status = e.getResponse().getStatus();
@@ -46,6 +48,29 @@ public class KeycloakController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Internal server error during user update: " + e.getMessage());
+        }
+    }
+    @PostMapping("/users")
+    public ResponseEntity<?> createUser(@RequestBody CreateUserDTO createUserDTO) {
+        try {
+            keycloakSyncService.createUserInDbAndKeycloak(
+                    createUserDTO.getUsername(),
+                    createUserDTO.getEmail(),
+                    createUserDTO.getFullName(),
+                    createUserDTO.getPassword(),
+                    createUserDTO.getStatus()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+        } catch (ClientErrorException e) {
+            String errorMessage = e.getResponse().readEntity(String.class);
+            // Xử lý lỗi cụ thể, ví dụ: 409 Conflict (user đã tồn tại)
+            if (e.getResponse().getStatus() == 409) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists: " + errorMessage);
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to create user in Keycloak: " + errorMessage);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Internal server error: " + e.getMessage());
         }
     }
 

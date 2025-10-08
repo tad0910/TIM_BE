@@ -17,12 +17,13 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tim.appTim.controller.KeycloakController.UpdateUserDTO;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.UserRepository;
 
-import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletRequest;
 
 @Service
 public class KeycloakSyncService {
@@ -158,8 +159,8 @@ public class KeycloakSyncService {
             }
         }
     }
-
-    public void updateUser(String userId, UpdateUserDTO updateUserDTO, HttpServletRequest request) {
+    @Transactional
+    public void updateUser(String userId, UpdateUserDTO updateUserDTO) {
         Keycloak keycloak = null;
         try {
             // Chỉ sử dụng getKeycloakClient, bỏ logic token từ header
@@ -198,6 +199,12 @@ public class KeycloakSyncService {
             }
             if (updateUserDTO.getEmail() != null && !updateUserDTO.getEmail().isEmpty()) {
                 dbUser.setEmail(updateUserDTO.getEmail());
+            }
+            if (updateUserDTO.getFirstName() != null && !updateUserDTO.getFirstName().isEmpty()) {
+                dbUser.setFirstName(updateUserDTO.getFirstName());
+            }
+            if (updateUserDTO.getLastName() != null && !updateUserDTO.getLastName().isEmpty()) {
+                dbUser.setLastName(updateUserDTO.getLastName());
             }
             userRepository.save(dbUser);
             System.out.println("✅ Updated user in DB: " + userId);
