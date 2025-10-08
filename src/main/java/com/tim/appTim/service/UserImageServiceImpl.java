@@ -30,6 +30,11 @@ public class UserImageServiceImpl implements UserImageService {
     }
 
     @Override
+    public UserImage findById(Long id) {
+        return userImageRepository.findById(id).orElse(null);
+    }
+
+    @Override
     public UserImage findLatestByUserId(Long userId) {
         List<UserImage> userImages = userImageRepository.findByUserId(userId);
         if (userImages == null || userImages.isEmpty()) {

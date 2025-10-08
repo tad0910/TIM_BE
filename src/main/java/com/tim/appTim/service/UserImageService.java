@@ -6,6 +6,7 @@ import com.tim.appTim.entity.UserImage;
 
 public interface UserImageService {
     UserImage save(UserImage userImage);
+    UserImage findById(Long id);
     UserImage findLatestByUserId(Long userId);
     void delete(Long id);
     List<UserImage> findAllByUserId(Long userId);

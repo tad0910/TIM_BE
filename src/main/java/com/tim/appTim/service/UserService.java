@@ -67,6 +67,7 @@ public class UserService implements UserDetailsService {
             throw new IllegalArgumentException("Email is required");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
         userRepository.save(user);
     }
 
@@ -92,18 +93,18 @@ public class UserService implements UserDetailsService {
     }
 
     public User update(Long id, User user) {
-    User existingUser = findById(id);
-    existingUser.setUsername(user.getUsername());
-    existingUser.setEmail(user.getEmail());
-    // Không encode lại password, chỉ gán giá trị đã encode từ resetPassword
-    if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-        existingUser.setPassword(user.getPassword()); // Gán trực tiếp
+        User existingUser = findById(id);
+        existingUser.setUsername(user.getUsername());
+        existingUser.setEmail(user.getEmail());
+        existingUser.setFirstName(user.getFirstName());
+        existingUser.setLastName(user.getLastName());
+        existingUser.setPhoneNumber(user.getPhoneNumber());
+        // Không encode lại password, chỉ gán giá trị đã encode từ resetPassword
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            existingUser.setPassword(user.getPassword()); // Gán trực tiếp
+        }
+        return userRepository.save(existingUser);
     }
-    // if (user.getProfileImage() != null) { // Cập nhật anhDaiDien nếu có
-    //     existingUser.setProfileImage(user.getProfileImage());
-    // } 
-    return userRepository.save(existingUser);
-}
 
     public void delete(Long id) {
         userRepository.deleteById(id);
@@ -241,6 +242,23 @@ public class UserService implements UserDetailsService {
         user.setProfileImage(imageUrl);
         return userRepository.save(user);
     }
+    /**
+     * Cập nhật coverImage cho User
+     * @param userId ID của user
+     * @param imageUrl URL của ảnh bìa
+     * @return User đã được cập nhật
+     */
+    public User updateCoverImage(Long userId, String imageUrl) {
+        User user = findById(userId);
+
+        // Nếu user đã có ảnh bìa, xóa ảnh cũ khỏi UserImage
+        if (user.getCoverImage() != null && !user.getCoverImage().trim().isEmpty()) {
+            deleteOldCoverImage(userId, user.getCoverImage());
+        }
+
+        user.setCoverImage(imageUrl);
+        return userRepository.save(user);
+    }
 
     /**
      * Xóa ảnh cũ khỏi UserImage và filesystem
@@ -271,11 +289,39 @@ public class UserService implements UserDetailsService {
             System.err.println("Error deleting old profile image: " + e.getMessage());
         }
     }
+    /**
+     * Xóa ảnh bìa cũ khỏi UserImage và filesystem
+     * @param userId ID của user
+     * @param oldImageUrl URL của ảnh bìa cũ
+     */
+    private void deleteOldCoverImage(Long userId, String oldImageUrl) {
+        try {
+            // Tìm và xóa UserImage record
+            List<UserImage> oldImages = userImageRepository.findByUserId(userId);
+            for (UserImage image : oldImages) {
+                if (oldImageUrl.equals(image.getImageUrl())) {
+                    userImageRepository.delete(image);
+                    break;
+                }
+            }
+
+            // Xóa file vật lý từ filesystem
+            if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
+                String filename = oldImageUrl.substring("/uploads/".length());
+                java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
+                if (file.exists()) {
+                    file.delete();
+                }
+            }
+        } catch (Exception e) {
+            // Log error nhưng không throw để không làm gián đoạn việc upload ảnh mới
+            System.err.println("Error deleting old cover image: " + e.getMessage());
+        }
+    }
+
     public User save(User user) {
         return userRepository.save(user);
     }
 
-
-    
 
 }

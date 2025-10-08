@@ -56,10 +56,10 @@ POST http://localhost:8081/auth//reset-password
 "newPassword": "123456"
 }
 
-1. Upload Avatar (POST /api/users/{userId}/avatar)
+1. Upload image (POST /api/users/{userId}/image)
 
 Method: POST
-URL: http://localhost:8080/api/users/1/avatar (thay 1 bằng userId hợp lệ).
+URL: http://localhost:8081/api/users/1/image (thay 1 bằng userId hợp lệ).
 Headers:
 
 Content-Type: multipart/form-data
@@ -67,30 +67,30 @@ Content-Type: multipart/form-data
 Body:
 
 Chọn form-data.
-Key: file, Type: File, Value: Chọn file ảnh (ví dụ: avatar.jpg).
+Key: file, Type: File, Value: Chọn file ảnh (ví dụ: image.jpg).
 
 Kỳ vọng:
 
 Status: 200 OK
-Response: "Avatar uploaded successfully: <uniqueFilename>"
+Response: "Image uploaded successfully: <uniqueFilename>"
 
-Lưu ý: Nếu user không tồn tại, file sẽ bị xóa và trả về 404.
+Lưu ý: Nếu user không tồn tại, file sẽ bị xóa và trả về 404. Image chỉ được lưu vào database, không tự động cập nhật profile image.
 
-2. Lấy Avatar (GET /api/users/{userId}/avatar)
+2. Lấy Image (GET /api/users/{userId}/image)
 
 Method: GET
-URL: http://localhost:8080/api/users/1/avatar
+URL: http://localhost:8081/api/users/1/image
 Headers: Không cần (trừ auth).
 Kỳ vọng:
 
 Status: 200 OK
 Response: "/uploads/<uniqueFilename>"
-Status: 404 nếu không có avatar.
+Status: 404 nếu không có image.
 
-3. Lấy Danh sách Ảnh (GET /api/users/{userId}/images)
+3. Lấy Danh sách Ảnh (GET /api/users/{userId}/images) - COMMENTED OUT
 
 Method: GET
-URL: http://localhost:8080/api/users/1/images
+URL: http://localhost:8081/api/users/1/images
 Headers: Không cần (trừ auth).
 Kỳ vọng:
 
@@ -98,24 +98,18 @@ Status: 200 OK
 Response: JSON array (ví dụ: [{"id": 1, "userId": 1, "imageUrl": "/uploads/xxx.jpg", "createdAt": "2025-10-02T15:00:00"}])
 Status: 404 nếu không có ảnh.
 
-4. Xóa Avatar (DELETE /api/users/{userId}/avatar)
+Lưu ý: API này hiện tại đã được comment out trong code.
+
+4. Xóa Image (DELETE /api/users/{userId}/image)
 
 Method: DELETE
-URL: http://localhost:8080/api/users/1/avatar
+URL: http://localhost:8081/api/users/1/image
 Headers: Thêm Authorization nếu yêu cầu auth.
 Kỳ vọng:
 
 Status: 200 OK
-Response: "Avatar deleted successfully"
-Status: 404 nếu không có avatar.
+Response: "Image deleted successfully"
+Status: 404 nếu không có image.
 
-5. Xóa Tất cả Ảnh (DELETE /api/users/{userId}/images)
 
-Method: DELETE
-URL: http://localhost:8080/api/users/1/images
-Headers: Thêm Authorization nếu yêu cầu auth.
-Kỳ vọng:
 
-Status: 200 OK
-Response: "All images deleted successfully"
-Status: 404 nếu không có ảnh.
