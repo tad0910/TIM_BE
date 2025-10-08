@@ -96,14 +96,14 @@ public class ImageController {
         return ResponseEntity.ok(userImage.getImageUrl());
     }
 
-    @GetMapping("/{userId}/images")
-    public ResponseEntity<List<UserImage>> getAllImages(@PathVariable Long userId) {
-        List<UserImage> userImages = userImageService.findAllByUserId(userId);
-        if (userImages == null || userImages.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(userImages);
-    }
+//    @GetMapping("/{userId}/images")
+//    public ResponseEntity<List<UserImage>> getAllImages(@PathVariable Long userId) {
+//        List<UserImage> userImages = userImageService.findAllByUserId(userId);
+//        if (userImages == null || userImages.isEmpty()) {
+//            return ResponseEntity.notFound().build();
+//        }
+//        return ResponseEntity.ok(userImages);
+//    }
 
     @DeleteMapping("/{userId}/avatar")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
@@ -118,16 +118,16 @@ public class ImageController {
         return ResponseEntity.ok("Avatar deleted successfully");
     }
 
-    @DeleteMapping("/{userId}/images")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<String> deleteAllImages(@PathVariable Long userId) {
-        List<UserImage> userImages = userImageService.findAllByUserId(userId);
-        if (userImages == null || userImages.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        userImageService.deleteAllByUserId(userId);
-        logger.info("All images deleted for userId: {}", userId);
-        return ResponseEntity.ok("All images deleted successfully");
-    }
+//    @DeleteMapping("/{userId}/images")
+//    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+//    public ResponseEntity<String> deleteAllImages(@PathVariable Long userId) {
+//        List<UserImage> userImages = userImageService.findAllByUserId(userId);
+//        if (userImages == null || userImages.isEmpty()) {
+//            return ResponseEntity.notFound().build();
+//        }
+//
+//        userImageService.deleteAllByUserId(userId);
+//        logger.info("All images deleted for userId: {}", userId);
+//        return ResponseEntity.ok("All images deleted successfully");
+//    }
 }

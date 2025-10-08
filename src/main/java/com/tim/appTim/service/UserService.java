@@ -119,6 +119,10 @@ public class UserService implements UserDetailsService {
             .orElse(null); // Trả về null thay vì ném ngoại lệ
 }
 
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
     public ProfileResponse getUserProfile(Long userId) {
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -219,6 +223,53 @@ public class UserService implements UserDetailsService {
             image.getDescription(),
             image.getCreatedAt()
         );
+    }
+    /**
+     * Cập nhật profileImage cho User
+     * @param userId ID của user
+     * @param imageUrl URL của ảnh đại diện
+     * @return User đã được cập nhật
+     */
+    public User updateProfileImage(Long userId, String imageUrl) {
+        User user = findById(userId);
+
+        // Nếu user đã có ảnh đại diện, xóa ảnh cũ khỏi UserImage
+        if (user.getProfileImage() != null && !user.getProfileImage().trim().isEmpty()) {
+            deleteOldProfileImage(userId, user.getProfileImage());
+        }
+
+        user.setProfileImage(imageUrl);
+        return userRepository.save(user);
+    }
+
+    /**
+     * Xóa ảnh cũ khỏi UserImage và filesystem
+     * @param userId ID của user
+     * @param oldImageUrl URL của ảnh cũ
+     */
+    private void deleteOldProfileImage(Long userId, String oldImageUrl) {
+        try {
+            // Tìm và xóa UserImage record
+            List<UserImage> oldImages = userImageRepository.findByUserId(userId);
+            for (UserImage image : oldImages) {
+                if (oldImageUrl.equals(image.getImageUrl())) {
+                    userImageRepository.delete(image);
+                    break;
+                }
+            }
+
+            // Xóa file vật lý từ filesystem
+            if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
+                String filename = oldImageUrl.substring("/uploads/".length());
+                java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
+                if (file.exists()) {
+                    file.delete();
+                }
+            }
+        } catch (Exception e) {
+            // Log error nhưng không throw để không làm gián đoạn việc upload ảnh mới
+            System.err.println("Error deleting old profile image: " + e.getMessage());
+        }
     }
     public User save(User user) {
         return userRepository.save(user);
