@@ -1,6 +1,7 @@
 package com.tim.appTim.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList; // Import ArrayList
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,8 @@ import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.repository.UserImageRepository;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.repository.FileRepository;
+import com.tim.appTim.entity.File;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -44,13 +47,12 @@ public class UserService implements UserDetailsService {
     private final ClassMemberRepository classMemberRepository;
     private final CourseRepository courseRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final FileRepository fileRepository; // Giữ lại nếu cần ở nơi khác
 
-    
-    
     public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
                        ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
                        UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
-                       CourseRepository courseRepository, BCryptPasswordEncoder passwordEncoder) {
+                       CourseRepository courseRepository, BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
@@ -60,6 +62,7 @@ public class UserService implements UserDetailsService {
         this.classMemberRepository = classMemberRepository;
         this.courseRepository = courseRepository;
         this.passwordEncoder = passwordEncoder;
+        this.fileRepository = fileRepository;
     }
 
     public void register(User user) {
@@ -99,9 +102,8 @@ public class UserService implements UserDetailsService {
         existingUser.setFirstName(user.getFirstName());
         existingUser.setLastName(user.getLastName());
         existingUser.setPhoneNumber(user.getPhoneNumber());
-        // Không encode lại password, chỉ gán giá trị đã encode từ resetPassword
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            existingUser.setPassword(user.getPassword()); // Gán trực tiếp
+            existingUser.setPassword(user.getPassword());
         }
         return userRepository.save(existingUser);
     }
@@ -115,126 +117,129 @@ public class UserService implements UserDetailsService {
     }
 
     public User findByUsernameOrEmail(String usernameOrEmail) {
-    return userRepository.findByUsername(usernameOrEmail)
-            .or(() -> userRepository.findByEmail(usernameOrEmail))
-            .orElse(null); // Trả về null thay vì ném ngoại lệ
-}
+        return userRepository.findByUsername(usernameOrEmail)
+                .or(() -> userRepository.findByEmail(usernameOrEmail))
+                .orElse(null);
+    }
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
     }
 
     public ProfileResponse getUserProfile(Long userId) {
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-    List<PostDTO> posts = postRepository.findByUserId(userId).stream().map(post -> {
-        List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
-            List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
-                    .map(reply -> new ReplyCommentDTO(reply.getId(), reply.getContent(), reply.getEmotion(), reply.getFileId(), reply.getCreatedAt()))
+        List<PostDTO> posts = postRepository.findByUserId(userId).stream().map(post -> {
+            // Lấy comments cho bài post hiện tại
+            List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
+                List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
+                        .map(reply -> new ReplyCommentDTO(reply.getId(), reply.getContent(), reply.getEmotion(), reply.getFileId(), reply.getCreatedAt()))
+                        .collect(Collectors.toList());
+                return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(),
+                        comment.getContent(), comment.getEmotion() != null ? comment.getEmotion().name() : null,
+                        comment.getFileId(), comment.getCreatedAt(), replyComments);
+            }).collect(Collectors.toList());
+
+            List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
+                    .map(reaction -> new ReactionDTO(reaction.getId(), reaction.getUserId(), reaction.getUser().getUsername(),
+                            reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
+                            reaction.getCreatedAt()))
                     .collect(Collectors.toList());
-            return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây
-                    comment.getContent(), comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                    comment.getFileId(), comment.getCreatedAt(), replyComments);
-        }).collect(Collectors.toList());
 
-        List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
-                .map(reaction -> new ReactionDTO(reaction.getId(), reaction.getUserId(), reaction.getUser().getUsername(), // Sửa ở đây
-                        reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
-                        reaction.getCreatedAt()))
+            // ⭐ SỬA LỖI Ở ĐÂY:
+            return new PostDTO(
+                    post.getId(),
+                    post.getUser().getId(), // 1. Thêm userId
+                    post.getContent(),
+                    post.getPrivacy() != null ? post.getPrivacy().name() : null,
+                    post.getCreatedAt(),
+                    post.getUpdatedAt(),
+                    comments,
+                    reactions,
+                    post.getFiles() // 3. Lấy file trực tiếp từ Post, không cần query repository
+            );
+        }).collect(Collectors.toList()); // 2. Sửa .collect()
+
+
+        List<UserImageDTO> images = userImageRepository.findByUserId(userId).stream()
+                .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
                 .collect(Collectors.toList());
 
-        return new PostDTO(post.getId(), post.getContent(), post.getPrivacy() != null ? post.getPrivacy().name() : null,
-                post.getCreatedAt(), post.getUpdatedAt(), comments, reactions);
-    }).collect(Collectors.toList());
+        List<CourseDTO> courses = classMemberRepository.findByClassId(userId).stream()
+                .map(classMember -> courseRepository.findById(classMember.getClassId())
+                        .map(course -> new CourseDTO(course.getId(), course.getCourseName(), course.getDescription(),
+                                course.getStartDate(), course.getTuitionFee()))
+                        .orElse(null))
+                .filter(course -> course != null)
+                .collect(Collectors.toList());
 
-    List<UserImageDTO> images = userImageRepository.findByUserId(userId).stream()
-            .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
-            .collect(Collectors.toList());
-
-    List<CourseDTO> courses = classMemberRepository.findByClassId(userId).stream()
-            .map(classMember -> courseRepository.findById(classMember.getClassId())
-                    .map(course -> new CourseDTO(course.getId(), course.getCourseName(), course.getDescription(),
-                            course.getStartDate(), course.getTuitionFee()))
-                    .orElse(null))
-            .filter(course -> course != null)
-            .collect(Collectors.toList());
-
-    return new ProfileResponse(user, posts, images, courses);
-}
-
-    public List<UserImageDTO> getUserImages(Long userId) {
-    return userImageRepository.findByUserId(userId)
-        .stream()
-        .map(image -> new UserImageDTO(
-            image.getId(),
-            image.getImageUrl(),
-            image.getDescription(),
-            image.getCreatedAt()
-        ))
-        .collect(Collectors.toList());
+        return new ProfileResponse(user, posts, images, courses);
     }
 
-        public UserImageDTO createUserImage(Long userId, String imageUrl, String description) {
+    public List<UserImageDTO> getUserImages(Long userId) {
+        return userImageRepository.findByUserId(userId)
+                .stream()
+                .map(image -> new UserImageDTO(
+                        image.getId(),
+                        image.getImageUrl(),
+                        image.getDescription(),
+                        image.getCreatedAt()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public UserImageDTO createUserImage(Long userId, String imageUrl, String description) {
         UserImage image = new UserImage();
         image.setUser(userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found")));
+                .orElseThrow(() -> new RuntimeException("User not found")));
         image.setImageUrl(imageUrl);
         image.setDescription(description);
-        image.setCreatedAt( LocalDateTime.now());
-        
+        image.setCreatedAt(LocalDateTime.now());
+
         UserImage saved = userImageRepository.save(image);
         return convertToDTO(saved);
     }
 
-        public UserImageDTO updateUserImage(Long userId, Long imageId, String imageUrl, String description) {
+    public UserImageDTO updateUserImage(Long userId, Long imageId, String imageUrl, String description) {
         UserImage image = userImageRepository.findById(imageId)
-            .orElseThrow(() -> new RuntimeException("Image not found"));
-        
-        // Kiểm tra quyền: Chỉ update nếu thuộc userId
+                .orElseThrow(() -> new RuntimeException("Image not found"));
+
         if (!image.getUser().getId().equals(userId)) {
             throw new SecurityException("You can only update your own images");
         }
-        
+
         if (imageUrl != null) image.setImageUrl(imageUrl);
         if (description != null) image.setDescription(description);
-        image.setCreatedAt( LocalDateTime.now());  // Optional: update timestamp
-        
+        image.setCreatedAt(LocalDateTime.now());
+
         UserImage saved = userImageRepository.save(image);
         return convertToDTO(saved);
     }
 
-
-        public void deleteUserImage(Long userId, Long imageId) {
+    public void deleteUserImage(Long userId, Long imageId) {
         UserImage image = userImageRepository.findById(imageId)
-            .orElseThrow(() -> new RuntimeException("Image not found"));
-        
-        // Kiểm tra quyền
+                .orElseThrow(() -> new RuntimeException("Image not found"));
+
         if (!image.getUser().getId().equals(userId)) {
             throw new SecurityException("You can only delete your own images");
         }
-        
+
         userImageRepository.delete(image);
     }
 
     private UserImageDTO convertToDTO(UserImage image) {
         return new UserImageDTO(
-            image.getId(),
-            image.getImageUrl(),
-            image.getDescription(),
-            image.getCreatedAt()
+                image.getId(),
+                image.getImageUrl(),
+                image.getDescription(),
+                image.getCreatedAt()
         );
     }
-    /**
-     * Cập nhật profileImage cho User
-     * @param userId ID của user
-     * @param imageUrl URL của ảnh đại diện
-     * @return User đã được cập nhật
-     */
+
     public User updateProfileImage(Long userId, String imageUrl) {
         User user = findById(userId);
 
-        // Nếu user đã có ảnh đại diện, xóa ảnh cũ khỏi UserImage
         if (user.getProfileImage() != null && !user.getProfileImage().trim().isEmpty()) {
             deleteOldProfileImage(userId, user.getProfileImage());
         }
@@ -242,16 +247,10 @@ public class UserService implements UserDetailsService {
         user.setProfileImage(imageUrl);
         return userRepository.save(user);
     }
-    /**
-     * Cập nhật coverImage cho User
-     * @param userId ID của user
-     * @param imageUrl URL của ảnh bìa
-     * @return User đã được cập nhật
-     */
+
     public User updateCoverImage(Long userId, String imageUrl) {
         User user = findById(userId);
 
-        // Nếu user đã có ảnh bìa, xóa ảnh cũ khỏi UserImage
         if (user.getCoverImage() != null && !user.getCoverImage().trim().isEmpty()) {
             deleteOldCoverImage(userId, user.getCoverImage());
         }
@@ -260,14 +259,8 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
-    /**
-     * Xóa ảnh cũ khỏi UserImage và filesystem
-     * @param userId ID của user
-     * @param oldImageUrl URL của ảnh cũ
-     */
     private void deleteOldProfileImage(Long userId, String oldImageUrl) {
         try {
-            // Tìm và xóa UserImage record
             List<UserImage> oldImages = userImageRepository.findByUserId(userId);
             for (UserImage image : oldImages) {
                 if (oldImageUrl.equals(image.getImageUrl())) {
@@ -276,7 +269,6 @@ public class UserService implements UserDetailsService {
                 }
             }
 
-            // Xóa file vật lý từ filesystem
             if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
                 String filename = oldImageUrl.substring("/uploads/".length());
                 java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
@@ -285,18 +277,12 @@ public class UserService implements UserDetailsService {
                 }
             }
         } catch (Exception e) {
-            // Log error nhưng không throw để không làm gián đoạn việc upload ảnh mới
             System.err.println("Error deleting old profile image: " + e.getMessage());
         }
     }
-    /**
-     * Xóa ảnh bìa cũ khỏi UserImage và filesystem
-     * @param userId ID của user
-     * @param oldImageUrl URL của ảnh bìa cũ
-     */
+
     private void deleteOldCoverImage(Long userId, String oldImageUrl) {
         try {
-            // Tìm và xóa UserImage record
             List<UserImage> oldImages = userImageRepository.findByUserId(userId);
             for (UserImage image : oldImages) {
                 if (oldImageUrl.equals(image.getImageUrl())) {
@@ -305,7 +291,6 @@ public class UserService implements UserDetailsService {
                 }
             }
 
-            // Xóa file vật lý từ filesystem
             if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
                 String filename = oldImageUrl.substring("/uploads/".length());
                 java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
@@ -314,7 +299,6 @@ public class UserService implements UserDetailsService {
                 }
             }
         } catch (Exception e) {
-            // Log error nhưng không throw để không làm gián đoạn việc upload ảnh mới
             System.err.println("Error deleting old cover image: " + e.getMessage());
         }
     }
@@ -322,6 +306,4 @@ public class UserService implements UserDetailsService {
     public User save(User user) {
         return userRepository.save(user);
     }
-
-
 }

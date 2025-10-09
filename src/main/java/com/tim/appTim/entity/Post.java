@@ -1,5 +1,8 @@
 package com.tim.appTim.entity;
 import java.time.LocalDateTime;
+import java.util.ArrayList; // Import
+import java.util.List; // Import
+
 import jakarta.persistence.*;
 
 @Entity
@@ -9,15 +12,15 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "nguoi_dung_id", nullable = false)
-    private Long userId;
+//    @Column(name = "nguoi_dung_id", nullable = false)
+//    private Long userId;
 
     @Column(name = "noi_dung")
     private String content;
 
     @Column(name = "quyen_rieng_tu")
     @Enumerated(EnumType.STRING)
-    private Privacy privacy = Privacy.public_;
+    private Privacy privacy;
 
     @Column(name = "thoi_gian_tao")
     private LocalDateTime createdAt;
@@ -25,19 +28,33 @@ public class Post {
     @Column(name = "thoi_gian_cap_nhat")
     private LocalDateTime updatedAt;
 
-    @ManyToOne
-    @JoinColumn(name = "nguoi_dung_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nguoi_dung_id", referencedColumnName = "id", nullable = false)
     private User user;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<File> files = new ArrayList<>();
+
     public enum Privacy {
-        public_, friends, private_
+        open, friends, only_me
+    }
+
+    // ----- Thêm 2 phương thức tiện ích này -----
+    public void addFile(File file) {
+        files.add(file);
+        file.setPost(this);
+    }
+
+    public void removeFile(File file) {
+        files.remove(file);
+        file.setPost(null);
     }
 
     // Getters/Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+//    public Long getUserId() { return userId; }
+//    public void setUserId(Long userId) { this.userId = userId; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
     public Privacy getPrivacy() { return privacy; }
@@ -48,4 +65,6 @@ public class Post {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+    public List<File> getFiles() { return files; }
+    public void setFiles(List<File> files) { this.files = files; }
 }
