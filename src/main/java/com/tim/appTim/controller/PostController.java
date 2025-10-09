@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.File;
@@ -81,5 +85,40 @@ public class PostController {
             e.printStackTrace(); // Có thể giữ lại để debug chi tiết
             return ResponseEntity.internalServerError().build();
         }
+    }
+    @GetMapping
+    public ResponseEntity<Page<PostDTO>> getAllPosts(Pageable pageable) {
+        Page<PostDTO> posts = postService.getAllPosts(pageable);
+        return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<PostDTO>> getPostsByUserId(@PathVariable Long userId) {
+        List<PostDTO> posts = postService.getPostsByUserId(userId);
+        return ResponseEntity.ok(posts);
+    }
+
+    @PutMapping("/{postId}")
+    public ResponseEntity<PostDTO> updatePost(
+            @PathVariable Long postId,
+            @RequestParam("userId") Long userId, // Dùng để xác thực chủ sở hữu
+            @RequestParam("content") String content,
+            @RequestParam("privacy") String privacy) {
+        try {
+            Post.Privacy privacyEnum = Post.Privacy.valueOf(privacy.toLowerCase());
+            PostDTO updatedPost = postService.updatePost(userId, postId, content, privacyEnum);
+            return ResponseEntity.ok(updatedPost);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid privacy value: {}", privacy);
+            return ResponseEntity.badRequest().build();
+        }
+        // Các exception ResourceNotFoundException và UnauthorizedException sẽ tự được Spring xử lý
+    }
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<String> deletePost(
+            @PathVariable Long postId,
+            @RequestParam("userId") Long userId) { // Dùng để xác thực
+        postService.deletePost(userId, postId);
+        return ResponseEntity.ok("Post with id " + postId + " deleted successfully.");
     }
 }

@@ -2,6 +2,12 @@
 
 package com.tim.appTim.service;
 
+
+import com.tim.appTim.dto.CommentDTO;
+import com.tim.appTim.dto.ReactionDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import com.tim.appTim.exception.*;
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Post;
@@ -63,6 +69,75 @@ public class PostService {
                 new ArrayList<>(), // comments
                 new ArrayList<>(), // reactions
                 savedPost.getFiles() // Lấy danh sách file đã được lưu
+        );
+    }
+    public Page<PostDTO> getAllPosts(Pageable pageable) {
+        Page<Post> postPage = postRepository.findAll(pageable);
+        return postPage.map(this::convertToDto); // Sử dụng hàm chuyển đổi chung
+    }
+
+    public List<PostDTO> getPostsByUserId(Long userId) {
+        // Kiểm tra xem user có tồn tại không
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId); // Sắp xếp theo tgian mới nhất
+        return posts.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public PostDTO updatePost(Long userId, Long postId, String content, Post.Privacy privacy) {
+        // 1. Tìm bài viết theo ID
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
+        // 2. ⭐ KIỂM TRA QUYỀN: Chỉ chủ nhân bài viết mới được sửa
+        if (!post.getUser().getId().equals(userId)) {
+            throw new UnauthorizedException("User does not have permission to update this post");
+        }
+
+        // 3. Cập nhật thông tin
+        post.setContent(content);
+        post.setPrivacy(privacy);
+        post.setUpdatedAt(LocalDateTime.now());
+
+        // 4. Lưu lại và trả về DTO
+        Post updatedPost = postRepository.save(post);
+        return convertToDto(updatedPost);
+    }
+
+    @Transactional
+    public void deletePost(Long userId, Long postId) {
+        // 1. Tìm bài viết theo ID
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
+        // 2. ⭐ KIỂM TRA QUYỀN: Chỉ chủ nhân bài viết mới được xóa
+        if (!post.getUser().getId().equals(userId)) {
+            throw new UnauthorizedException("User does not have permission to delete this post");
+        }
+
+        // 3. Xóa bài viết
+        postRepository.delete(post);
+    }
+
+    private PostDTO convertToDto(Post post) {
+        // Tạm thời để rỗng, bạn có thể thêm logic lấy comment, reaction sau nếu cần
+        List<CommentDTO> comments = new ArrayList<>();
+        List<ReactionDTO> reactions = new ArrayList<>();
+
+        return new PostDTO(
+                post.getId(),
+                post.getUser().getId(),
+                post.getContent(),
+                post.getPrivacy().name(),
+                post.getCreatedAt(),
+                post.getUpdatedAt(),
+                comments,
+                reactions,
+                post.getFiles()
         );
     }
 }
