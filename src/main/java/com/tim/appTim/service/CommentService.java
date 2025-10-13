@@ -100,13 +100,17 @@ public class CommentService {
     }
 
     // Tạo reply comment
-    public ReplyCommentDTO createReplyComment(Long commentId, String content, ReplyComment.Emotion emotion, Long fileId) {
+    public ReplyCommentDTO createReplyComment(Long commentId, Long userId, String content, ReplyComment.Emotion emotion, Long fileId) {
         // Kiểm tra comment tồn tại
         commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
+        // Kiểm tra user tồn tại
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         ReplyComment replyComment = new ReplyComment();
         replyComment.setCommentId(commentId);
+        replyComment.setUserId(userId);
         replyComment.setContent(content);
         replyComment.setEmotion(emotion);
         replyComment.setFileId(fileId);
@@ -170,8 +174,11 @@ public class CommentService {
 
     // Convert ReplyComment entity to DTO
     private ReplyCommentDTO convertReplyToDTO(ReplyComment replyComment) {
+        String username = replyComment.getUser() != null ? replyComment.getUser().getUsername() : "Unknown";
         return new ReplyCommentDTO(
                 replyComment.getId(),
+                replyComment.getUserId(),
+                username,
                 replyComment.getContent(),
                 replyComment.getEmotion(),
                 replyComment.getFileId(),

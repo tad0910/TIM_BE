@@ -8,5 +8,10 @@
     "name": "app.pepper",
     "type": "java.lang.String",
     "description": "A description for 'app.pepper'"
+  },
+  {
+    "name": "upload.folder",
+    "type": "java.lang.String",
+    "description": "A description for 'upload.folder'"
   }
 ]}

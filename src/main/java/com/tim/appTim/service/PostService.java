@@ -51,6 +51,8 @@ public class PostService {
         post.setPrivacy(privacy);
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
+        post.setTotalComments(0);
+        post.setTotalReactions(0);
 
         // 3. Gán các file vào Post (sử dụng phương thức tiện ích đã tạo)
         if (filesFromController != null && !filesFromController.isEmpty()) {
@@ -66,14 +68,16 @@ public class PostService {
         // Lưu ý: nên có FileDTO để tránh lộ chi tiết của Entity
         return new PostDTO(
                 savedPost.getId(),
-                savedPost.getUser().getId(), // Lấy ID từ đối tượng User
+                savedPost.getUser().getId(),
                 savedPost.getContent(),
                 savedPost.getPrivacy().name(),
                 savedPost.getCreatedAt(),
                 savedPost.getUpdatedAt(),
-                new ArrayList<>(), // comments
-                new ArrayList<>(), // reactions
-                savedPost.getFiles() // Lấy danh sách file đã được lưu
+                savedPost.getTotalReactions(),
+                savedPost.getTotalComments(),
+                new ArrayList<>(),
+                new ArrayList<>(),
+                savedPost.getFiles()
         );
     }
     public Page<PostDTO> getAllPosts(Pageable pageable) {
@@ -140,6 +144,8 @@ public class PostService {
                 post.getPrivacy().name(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
+                reactions != null ? reactions.size() : 0,
+                comments != null ? comments.size() : 0,
                 comments,
                 reactions,
                 post.getFiles()

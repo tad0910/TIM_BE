@@ -42,7 +42,6 @@ public class ReactionController {
     }
 
     
-
     // Lấy tất cả reactions của một post
     @GetMapping("/posts/{postId}")
     public ResponseEntity<List<ReactionDTO>> getReactionsByPostId(@PathVariable Long postId) {
@@ -59,27 +58,18 @@ public class ReactionController {
         return ResponseEntity.ok("Reaction deleted successfully");
     }
 
-    // Kiểm tra user đã reaction chưa
-    @GetMapping("/posts/{postId}/users/{userId}/has-reacted")
-    public ResponseEntity<Boolean> hasUserReacted(
-            @PathVariable Long postId,
-            @PathVariable Long userId) {
-        boolean hasReacted = reactionService.hasUserReacted(postId, userId);
-        return ResponseEntity.ok(hasReacted);
-    }
-
-    // Lấy reaction của user cho một post
-    @GetMapping("/posts/{postId}/users/{userId}")
-    public ResponseEntity<ReactionDTO> getUserReaction(
-            @PathVariable Long postId,
-            @PathVariable Long userId) {
-        ReactionDTO reaction = reactionService.getUserReaction(postId, userId);
-        if (reaction != null) {
-            return ResponseEntity.ok(reaction);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
+    // // Lấy reaction của user cho một post
+    // @GetMapping("/posts/{postId}/users/{userId}")
+    // public ResponseEntity<ReactionDTO> getUserReaction(
+    //         @PathVariable Long postId,
+    //         @PathVariable Long userId) {
+    //     ReactionDTO reaction = reactionService.getUserReaction(postId, userId);
+    //     if (reaction != null) {
+    //         return ResponseEntity.ok(reaction);
+    //     } else {
+    //         return ResponseEntity.notFound().build();
+    //     }
+    // }
 
     // Đếm số lượng reaction theo loại
     @GetMapping("/posts/{postId}/count/{emotionType}")
@@ -96,4 +86,83 @@ public class ReactionController {
         long count = reactionService.countReactionsByType(postId, emotionTypeEnum);
         return ResponseEntity.ok(count);
     }
+    // Comment reactions
+    @PostMapping("/comments/{commentId}")
+    public ResponseEntity<?> createOrUpdateCommentReaction(
+            @PathVariable Long commentId,
+            @RequestParam Long userId,
+            @RequestParam String emotionType) {
+        try {
+            Reaction.EmotionType emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
+            ReactionDTO reaction = reactionService.createOrUpdateCommentReaction(commentId, userId, emotionTypeEnum);
+            return ResponseEntity.ok(reaction);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid emotion type: " + emotionType);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error while creating/updating reaction: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/comments/{commentId}")
+    public ResponseEntity<List<ReactionDTO>> getReactionsByCommentId(@PathVariable Long commentId) {
+        return ResponseEntity.ok(reactionService.getReactionsByCommentId(commentId));
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<String> deleteCommentReaction(@PathVariable Long commentId, @RequestParam Long userId) {
+        reactionService.deleteCommentReaction(commentId, userId);
+        return ResponseEntity.ok("Reaction deleted successfully");
+    }
+
+    @GetMapping("/comments/{commentId}/count/{emotionType}")
+    public ResponseEntity<Long> countCommentReactionsByType(@PathVariable Long commentId, @PathVariable String emotionType) {
+        Reaction.EmotionType emotionTypeEnum;
+        try {
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(reactionService.countCommentReactionsByType(commentId, emotionTypeEnum));
+    }
+
+    // Reply comment reactions
+    @PostMapping("/replies/{replyCommentId}")
+    public ResponseEntity<?> createOrUpdateReplyCommentReaction(
+            @PathVariable Long replyCommentId,
+            @RequestParam Long userId,
+            @RequestParam String emotionType) {
+        try {
+            Reaction.EmotionType emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
+            ReactionDTO reaction = reactionService.createOrUpdateReplyCommentReaction(replyCommentId, userId, emotionTypeEnum);
+            return ResponseEntity.ok(reaction);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid emotion type: " + emotionType);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error while creating/updating reaction: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/replies/{replyCommentId}")
+    public ResponseEntity<List<ReactionDTO>> getReactionsByReplyCommentId(@PathVariable Long replyCommentId) {
+        return ResponseEntity.ok(reactionService.getReactionsByReplyCommentId(replyCommentId));
+    }
+
+    @DeleteMapping("/replies/{replyCommentId}")
+    public ResponseEntity<String> deleteReplyCommentReaction(@PathVariable Long replyCommentId, @RequestParam Long userId) {
+        reactionService.deleteReplyCommentReaction(replyCommentId, userId);
+        return ResponseEntity.ok("Reaction deleted successfully");
+    }
+
+    @GetMapping("/replies/{replyCommentId}/count/{emotionType}")
+    public ResponseEntity<Long> countReplyCommentReactionsByType(@PathVariable Long replyCommentId, @PathVariable String emotionType) {
+        Reaction.EmotionType emotionTypeEnum;
+        try {
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(reactionService.countReplyCommentReactionsByType(replyCommentId, emotionTypeEnum));
+    }
 }
+
+    
