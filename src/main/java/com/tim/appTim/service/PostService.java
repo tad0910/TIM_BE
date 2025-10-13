@@ -26,11 +26,16 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final CommentService commentService;
+    private final ReactionService reactionService;
 
     // Không cần FileRepository ở đây nữa nếu dùng cascade
-    public PostService(PostRepository postRepository, UserRepository userRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, 
+                       CommentService commentService, ReactionService reactionService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.commentService = commentService;
+        this.reactionService = reactionService;
     }
 
     @Transactional
@@ -124,9 +129,9 @@ public class PostService {
     }
 
     private PostDTO convertToDto(Post post) {
-        // Tạm thời để rỗng, bạn có thể thêm logic lấy comment, reaction sau nếu cần
-        List<CommentDTO> comments = new ArrayList<>();
-        List<ReactionDTO> reactions = new ArrayList<>();
+        // Lấy comments và reactions cho post này
+        List<CommentDTO> comments = commentService.getCommentsByPostId(post.getId());
+        List<ReactionDTO> reactions = reactionService.getReactionsByPostId(post.getId());
 
         return new PostDTO(
                 post.getId(),

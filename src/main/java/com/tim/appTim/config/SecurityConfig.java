@@ -35,6 +35,8 @@ public class SecurityConfig {
             .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/v1/keycloak/**").permitAll()
                 .requestMatchers("/posts/**").permitAll()
+                .requestMatchers("/api/comments/**").permitAll()
+                .requestMatchers("/api/reactions/**").permitAll()
             .anyRequest().authenticated()
         )
         .exceptionHandling(ex -> ex
