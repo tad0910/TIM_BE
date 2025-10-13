@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,11 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.tim.appTim.dto.LoginRequest;
-import com.tim.appTim.dto.LoginResponse;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.PasswordResetService;
 import com.tim.appTim.service.UserService;
@@ -140,16 +136,28 @@ public class AuthController {
         }
 
 
-    // 🟢 PASSWORD RESET (vẫn giữ nguyên)
+    //  PASSWORD RESET 
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> requestBody,
-                                                 HttpServletRequest request) {
+    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> requestBody, HttpServletRequest request) {
         String email = requestBody.get("email");
+
+        if (email == null || email.trim().isEmpty()) {
+            System.out.println("Email không được để trống");
+            return ResponseEntity.status(401).body("Email không được để trống");
+        }
+
+        User user = userService.findByEmail(email);
+        if (user == null) {
+            System.out.println("Email không tồn tại trong hệ thống");
+            return ResponseEntity.status(401).body("Email không tồn tại trong hệ thống");
+        }
+
         String ip = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
         passwordResetService.requestReset(email, ip, userAgent);
         return ResponseEntity.ok("Nếu có tài khoản, chúng tôi đã gửi hướng dẫn đến email.");
     }
+
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> requestBody) {
@@ -176,16 +184,5 @@ public class AuthController {
         }
     }
 
-    // 🟢 CORS CONFIG
-    @Configuration
-    public class WebConfig implements WebMvcConfigurer {
-        @Override
-        public void addCorsMappings(CorsRegistry registry) {
-            registry.addMapping("/**")
-                    .allowedOrigins("http://localhost:5173")
-                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                    .allowedHeaders("*")
-                    .allowCredentials(true);
-        }
-    }
+    
 }

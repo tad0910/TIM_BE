@@ -10,17 +10,14 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.config.Customizer;
-
 import com.tim.appTim.service.UserService;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    // JwtAuthenticationFilter của bạn vẫn có thể được giữ lại nếu bạn muốn
+    // hỗ trợ cả luồng đăng nhập cũ, nhưng nó không cần thiết cho việc xác thực Keycloak.
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -34,26 +31,43 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/users/**", "/profile/**", "/classes/**", "/posts/**").permitAll()
-                .requestMatchers("/api/v1/keycloak/**").permitAll()
-            .anyRequest().permitAll()
-        )
+        http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(authz -> authz
+                        // 1. Endpoint để đăng nhập/đăng ký cục bộ (nếu có) và các trang public
+                        .requestMatchers("/auth/**").permitAll()
 
-            // 👇 BƯỚC 2: Bắt buộc session ở chế độ STATELESS (không lưu trạng thái)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // 👇 BƯỚC 3: Thêm filter JWT vào trước filter UsernamePasswordAuthenticationFilter
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        .formLogin(form -> form.disable())
-        .logout(logout -> logout.disable());
+                        // 2. Bảo vệ tất cả các API nghiệp vụ chính.
+                        // Chỉ những ai có token hợp lệ mới được truy cập.
+                        .requestMatchers(
+                                "/users/**",
+                                "/profile/**",
+                                "/classes/**",
+                                "/posts/**",
+                                "/comments/**",
+                                "/reactions/**"
+                        ).authenticated()
 
-    return http.build();
-}
-    
+                        // 3. Bảo vệ các API quản trị của Keycloak
+                        .requestMatchers("/api/v1/keycloak/**").authenticated()
 
+                        // Mọi request khác cũng cần xác thực
+                        .anyRequest().authenticated()
+                )
+                // 4. Kích hoạt cấu hình Resource Server để xác thực JWT từ Keycloak
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt())
+
+                // 5. Đặt chế độ session là STATELESS (quan trọng cho API)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        // Dòng addFilterBefore không còn cần thiết cho việc xác thực token của Keycloak
+        // vì .oauth2ResourceServer() đã xử lý việc đó một cách tự động và chuẩn hóa.
+
+        return http.build();
+    }
+
+    // Các bean này dành cho luồng xác thực username/password cục bộ.
+    // Bạn có thể giữ lại nếu muốn hỗ trợ cả hai luồng.
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
