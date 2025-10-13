@@ -39,7 +39,7 @@ public class CommentController {
         CommentDTO comment = commentService.createComment(postId, userId, content, emotionEnum, fileId);
         return ResponseEntity.ok(comment);
     }
-
+    
     // Lấy tất cả comments của một post
     @GetMapping("/posts/{postId}")
     public ResponseEntity<List<CommentDTO>> getCommentsByPostId(@PathVariable Long postId) {
@@ -81,6 +81,7 @@ public class CommentController {
     @PostMapping("/{commentId}/replies")
     public ResponseEntity<ReplyCommentDTO> createReplyComment(
             @PathVariable Long commentId,
+            @RequestParam Long userId,
             @RequestParam String content,
             @RequestParam(required = false) String emotion,
             @RequestParam(required = false) Long fileId) {
@@ -94,7 +95,7 @@ public class CommentController {
             }
         }
 
-        ReplyCommentDTO replyComment = commentService.createReplyComment(commentId, content, emotionEnum, fileId);
+        ReplyCommentDTO replyComment = commentService.createReplyComment(commentId, userId, content, emotionEnum, fileId);
         return ResponseEntity.ok(replyComment);
     }
 

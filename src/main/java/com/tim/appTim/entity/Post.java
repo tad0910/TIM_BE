@@ -35,6 +35,12 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<File> files = new ArrayList<>();
 
+    @Column(name = "tong_reactions")
+    private Integer totalReactions;
+
+    @Column(name = "tong_comments")
+    private Integer totalComments;
+
     public enum Privacy {
         open, friends, only_me
     }
@@ -67,4 +73,8 @@ public class Post {
     public void setUser(User user) { this.user = user; }
     public List<File> getFiles() { return files; }
     public void setFiles(List<File> files) { this.files = files; }
+    public Integer getTotalReactions() { return totalReactions; }
+    public void setTotalReactions(Integer totalReactions) { this.totalReactions = totalReactions; }
+    public Integer getTotalComments() { return totalComments; }
+    public void setTotalComments(Integer totalComments) { this.totalComments = totalComments; }
 }

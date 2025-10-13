@@ -13,6 +13,9 @@ public class ReplyComment {
     @Column(name = "comments_id", nullable = false)
     private Long commentId;
 
+    @Column(name = "nguoi_dung_id", nullable = false)
+    private Long userId;
+
     @Column(name = "noi_dung")
     private String content;
 
@@ -30,6 +33,10 @@ public class ReplyComment {
     @JoinColumn(name = "comments_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Comment comment;
 
+    @ManyToOne
+    @JoinColumn(name = "nguoi_dung_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private User user;
+
     public enum Emotion {
         like, love, haha, sad, angry
     }
@@ -39,6 +46,8 @@ public class ReplyComment {
     public void setId(Long id) { this.id = id; }
     public Long getCommentId() { return commentId; }
     public void setCommentId(Long commentId) { this.commentId = commentId; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
     public LocalDateTime getCreatedAt() { return createdAt; }
@@ -49,4 +58,6 @@ public class ReplyComment {
     public void setFileId(Long fileId) { this.fileId = fileId; }
     public Comment getComment() { return comment; }
     public void setComment(Comment comment) { this.comment = comment; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }

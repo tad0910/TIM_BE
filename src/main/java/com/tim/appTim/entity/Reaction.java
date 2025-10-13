@@ -13,6 +13,12 @@ public class Reaction {
     @Column(name = "bai_viet_id")
     private Long postId;
 
+    @Column(name = "comment_id")
+    private Long commentId;
+
+    @Column(name = "reply_comment_id")
+    private Long replyCommentId;
+
     @Column(name = "nguoi_dung_id")
     private Long userId;
 
@@ -26,6 +32,14 @@ public class Reaction {
     @ManyToOne
     @JoinColumn(name = "bai_viet_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Post post;
+
+    @ManyToOne
+    @JoinColumn(name = "comment_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Comment comment;
+
+    @ManyToOne
+    @JoinColumn(name = "reply_comment_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private ReplyComment replyComment;
 
     @ManyToOne
     @JoinColumn(name = "nguoi_dung_id", referencedColumnName = "id", insertable = false, updatable = false)
@@ -50,4 +64,12 @@ public class Reaction {
     public void setPost(Post post) { this.post = post; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+    public Long getCommentId() { return commentId; }
+    public void setCommentId(Long commentId) { this.commentId = commentId; }
+    public Long getReplyCommentId() { return replyCommentId; }
+    public void setReplyCommentId(Long replyCommentId) { this.replyCommentId = replyCommentId; }
+    public Comment getComment() { return comment; }
+    public void setComment(Comment comment) { this.comment = comment; }
+    public ReplyComment getReplyComment() { return replyComment; }
+    public void setReplyComment(ReplyComment replyComment) { this.replyComment = replyComment; }
 }

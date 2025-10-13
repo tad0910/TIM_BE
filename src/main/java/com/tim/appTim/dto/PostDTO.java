@@ -11,12 +11,15 @@ public class PostDTO {
     private String privacy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer totalReactions;
+    private Integer totalComments;
     private List<CommentDTO> comments;
     private List<ReactionDTO> reactions;
     private List<File> files;
 
 
     public PostDTO(Long id,Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
+                   Integer totalReactions, Integer totalComments,
                    List<CommentDTO> comments, List<ReactionDTO> reactions, List<File> files ) {
         this.id = id;
         this.userId = userId;
@@ -24,9 +27,20 @@ public class PostDTO {
         this.privacy = privacy;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.totalReactions = totalReactions;
+        this.totalComments = totalComments;
         this.comments = comments;
         this.reactions = reactions;
         this.files = files;
+    }
+
+    // Backward-compatible constructor (old signature)
+    public PostDTO(Long id, Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
+                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<File> files) {
+        this(id, userId, content, privacy, createdAt, updatedAt,
+                reactions != null ? reactions.size() : 0,
+                comments != null ? comments.size() : 0,
+                comments, reactions, files);
     }
     // Getters/Setters
     public Long getId() { return id; }
@@ -47,4 +61,8 @@ public class PostDTO {
     public void setReactions(List<ReactionDTO> reactions) { this.reactions = reactions; }
     public List<File> getFiles() { return files; }
     public void setFiles(List<File> files) { this.files = files; }
+    public Integer getTotalReactions() { return totalReactions; }
+    public void setTotalReactions(Integer totalReactions) { this.totalReactions = totalReactions; }
+    public Integer getTotalComments() { return totalComments; }
+    public void setTotalComments(Integer totalComments) { this.totalComments = totalComments; }
 }
