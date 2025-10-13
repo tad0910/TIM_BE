@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
 
 //import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ClientErrorException;
@@ -71,6 +72,26 @@ public class KeycloakController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Internal server error: " + e.getMessage());
+        }
+    }
+    @PostMapping("/users/{userId}/logout")
+    public ResponseEntity<?> logoutUser(@PathVariable String userId) {
+        try {
+            keycloakSyncService.logoutUserFromKeycloak(userId);
+            return ResponseEntity.ok("Đã vô hiệu hóa tất cả phiên làm việc của người dùng thành công.");
+        } catch (ClientErrorException e) {
+            // Lỗi phổ biến nhất là không tìm thấy user
+            if (e.getResponse().getStatus() == 404) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Không tìm thấy người dùng với ID: " + userId);
+            }
+            // Các lỗi khác từ Keycloak
+            String errorMessage = e.getResponse().readEntity(String.class);
+            return ResponseEntity.status(e.getResponse().getStatus())
+                    .body("Lỗi từ Keycloak khi đăng xuất: " + errorMessage);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi hệ thống: " + e.getMessage());
         }
     }
 

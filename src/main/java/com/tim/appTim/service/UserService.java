@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -52,7 +53,7 @@ public class UserService implements UserDetailsService {
     public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
                        ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
                        UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
-                       CourseRepository courseRepository, BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository) {
+                       CourseRepository courseRepository,@Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;

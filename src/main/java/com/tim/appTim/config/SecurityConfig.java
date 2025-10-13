@@ -7,8 +7,11 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.Customizer;
 
 import com.tim.appTim.service.UserService;
 
@@ -17,6 +20,12 @@ import jakarta.servlet.http.HttpServletResponse;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -28,23 +37,16 @@ public class SecurityConfig {
     http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(authz -> authz
-            .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/forgot-password", "/auth/verify-otp", "/auth/reset-password").permitAll()
-            .requestMatchers("/users/**").permitAll()
-            .requestMatchers("/profile/**").permitAll()
-            .requestMatchers("/classes/**").permitAll() 
-            .requestMatchers("/api/users/**").permitAll()
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/users/**", "/profile/**", "/classes/**", "/posts/**").permitAll()
                 .requestMatchers("/api/v1/keycloak/**").permitAll()
-                .requestMatchers("/posts/**").permitAll()
-            .anyRequest().authenticated()
+            .anyRequest().permitAll()
         )
-        .exceptionHandling(ex -> ex
-            .authenticationEntryPoint(
-                (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
-            )
-            .accessDeniedHandler(
-                (request, response, accessDeniedException) -> response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden")
-            )
-        )
+
+            // 👇 BƯỚC 2: Bắt buộc session ở chế độ STATELESS (không lưu trạng thái)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // 👇 BƯỚC 3: Thêm filter JWT vào trước filter UsernamePasswordAuthenticationFilter
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .formLogin(form -> form.disable())
         .logout(logout -> logout.disable());
 

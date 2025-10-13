@@ -25,6 +25,7 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.service.PasswordResetService;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.util.JwtUtil;
+import com.tim.appTim.service.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -36,14 +37,16 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final PasswordResetService passwordResetService;
+    private final AuthService authService;
 
     public AuthController(UserService userService, JwtUtil jwtUtil,
                           AuthenticationManager authenticationManager,
-                          PasswordResetService passwordResetService) {
+                          PasswordResetService passwordResetService, AuthService authService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
         this.passwordResetService = passwordResetService;
+        this.authService = authService;
     }
 
     // 🟢 REGISTER
@@ -115,19 +118,27 @@ public class AuthController {
     // 🔴 LOGOUT — xóa refresh token để vô hiệu hóa đăng nhập lại
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String username = jwtUtil.extractUsernameOrEmail(token);
-            User user = userService.findByUsernameOrEmail(username);
-            if (user != null) {
-                user.setRefreshToken(null);
-                user.setRefreshTokenExpiry(null);
-                userService.save(user);
+        try {
+            String authHeader = request.getHeader("Authorization");
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                String username = jwtUtil.extractUsernameOrEmail(token);
+                User user = userService.findByUsernameOrEmail(username);
+                if (user != null) {
+                    authService.logout(token);
+                    user.setRefreshToken(null);
+                    user.setRefreshTokenExpiry(null);
+                    userService.save(user);
+                }
+            }
+            return ResponseEntity.ok("Logout successful");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi đăng xuất: " + e.getMessage());
             }
         }
-        return ResponseEntity.ok("Logout successful");
-    }
+
 
     // 🟢 PASSWORD RESET (vẫn giữ nguyên)
     @PostMapping("/forgot-password")

@@ -42,6 +42,8 @@ public class KeycloakSyncService {
 
     private final UserRepository userRepository;
 
+
+
     public KeycloakSyncService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -215,6 +217,24 @@ public class KeycloakSyncService {
             System.err.println("❌ Failed to update user: " + e.getMessage());
             throw e;
         } finally {
+            if (keycloak != null) {
+                keycloak.close();
+            }
+        }
+    }
+    public void logoutUserFromKeycloak(String userId) {
+        Keycloak keycloak = null; // Khai báo và khởi tạo là null
+        try {
+            keycloak = getKeycloakClient(); // Khởi tạo đối tượng Keycloak
+            UserResource userResource = keycloak.realm(realm).users().get(userId);
+            userResource.logout();
+            System.out.println("✅ Successfully logged out user: " + userId);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to logout user " + userId + ": " + e.getMessage());
+            // Ném lại exception để lớp gọi nó có thể xử lý (ví dụ: trả về lỗi 500)
+            throw new RuntimeException("Failed to logout user " + userId, e);
+        } finally {
+            // Đảm bảo kết nối luôn được đóng
             if (keycloak != null) {
                 keycloak.close();
             }
