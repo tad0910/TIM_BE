@@ -11,11 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.tim.appTim.entity.User;
+import com.tim.appTim.service.UserService;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.tim.appTim.entity.User;
-import com.tim.appTim.service.UserService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,6 +46,7 @@ public class UserController {
         this.userImageService = userImageService;
     }
 
+    //PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<User>> getAll() {
         return ResponseEntity.ok(userService.findAll());

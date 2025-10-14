@@ -1,5 +1,6 @@
 package com.tim.appTim.config;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,6 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 import com.tim.appTim.service.UserService;
 
 @Configuration
@@ -37,6 +40,10 @@ public class SecurityConfig {
                         // 1. Endpoint để đăng nhập/đăng ký cục bộ (nếu có) và các trang public
                         .requestMatchers("/auth/**").permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/users").hasRole("admin")
+
+                        .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
+
                         // 2. Bảo vệ tất cả các API nghiệp vụ chính.
                         // Chỉ những ai có token hợp lệ mới được truy cập.
                         .requestMatchers(
@@ -46,19 +53,19 @@ public class SecurityConfig {
                                 "/posts/**",
                                 "/comments/**",
                                 "/reactions/**"
-                        ).permitAll()
+                        ).authenticated()
 
                         // 3. Bảo vệ các API quản trị của Keycloak
-                        .requestMatchers("/api/v1/keycloak/**").permitAll()
+                        .requestMatchers("/api/v1/keycloak/**").authenticated()
 
                         // Mọi request khác cũng cần xác thực
                         .anyRequest().authenticated()
                 )
-                // 4. Kích hoạt cấu hình Resource Server để xác thực JWT từ Keycloak
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt())
-
-                // 5. Đặt chế độ session là STATELESS (quan trọng cho API)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // ✅ Cho phép filter của bạn chạy trước OAuth2 resource server
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                // ✅ Giữ xác thực Keycloak
+               // .oauth2ResourceServer(oauth2 -> oauth2.jwt());
 
         // Dòng addFilterBefore không còn cần thiết cho việc xác thực token của Keycloak
         // vì .oauth2ResourceServer() đã xử lý việc đó một cách tự động và chuẩn hóa.
