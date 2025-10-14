@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.tim.appTim.dto.LoginRequest;
 import com.tim.appTim.entity.User;
@@ -35,8 +36,8 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final AuthService authService;
 
-    public AuthController(UserService userService, JwtUtil jwtUtil,
-                          AuthenticationManager authenticationManager,
+    public AuthController( UserService userService, JwtUtil jwtUtil,
+                           @Qualifier("loginManager") AuthenticationManager authenticationManager,
                           PasswordResetService passwordResetService, AuthService authService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;

@@ -1,6 +1,8 @@
 package com.tim.appTim.config;
 
-import org.springframework.http.HttpMethod;
+import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.service.UserService; // Cần import UserService
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,21 +12,29 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import com.tim.appTim.service.UserService;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // JwtAuthenticationFilter của bạn vẫn có thể được giữ lại nếu bạn muốn
-    // hỗ trợ cả luồng đăng nhập cũ, nhưng nó không cần thiết cho việc xác thực Keycloak.
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final UserRepository userRepository;
+    private final CustomJwtAuthenticationProvider customJwtAuthenticationProvider;
+    private final JwtDecoder jwtDecoder;
+    private final UserService userService;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    public SecurityConfig(UserRepository userRepository,
+                          CustomJwtAuthenticationProvider customJwtAuthenticationProvider,
+                          JwtDecoder jwtDecoder,
+                          UserService userService) {
+        this.userRepository = userRepository;
+        this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
+        this.jwtDecoder = jwtDecoder;
+        this.userService = userService;
     }
 
     @Bean
@@ -33,19 +43,41 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    @Qualifier("loginManager")
+    public AuthenticationManager loginAuthenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        // Bean này được inject vào AuthController để xử lý login
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public JwtAuthenticationProvider keycloakJwtAuthenticationProvider() {
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(jwtDecoder);
+        provider.setJwtAuthenticationConverter(new CustomJwtAuthenticationConverter(userRepository));
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager tokenAuthenticationManager(JwtAuthenticationProvider keycloakJwtAuthenticationProvider) {
+        // Bean này là "bộ não" phân loại token
+        return new DelegatingAuthenticationManager(keycloakJwtAuthenticationProvider, customJwtAuthenticationProvider);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager tokenAuthenticationManager) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(daoAuthenticationProvider()) // Đăng ký provider cho luồng login
                 .authorizeHttpRequests(authz -> authz
-                        // 1. Endpoint để đăng nhập/đăng ký cục bộ (nếu có) và các trang public
                         .requestMatchers("/auth/**").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/users").hasRole("admin")
-
-                        .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
-
-                        // 2. Bảo vệ tất cả các API nghiệp vụ chính.
-                        // Chỉ những ai có token hợp lệ mới được truy cập.
                         .requestMatchers(
                                 "/users/**",
                                 "/profile/**",
@@ -53,38 +85,14 @@ public class SecurityConfig {
                                 "/posts/**",
                                 "/comments/**",
                                 "/reactions/**"
-                        ).authenticated()
-
-                        // 3. Bảo vệ các API quản trị của Keycloak
-                        .requestMatchers("/api/v1/keycloak/**").authenticated()
-
-                        // Mọi request khác cũng cần xác thực
+                        ).hasRole("SINH_VIEN")
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // ✅ Cho phép filter của bạn chạy trước OAuth2 resource server
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-                // ✅ Giữ xác thực Keycloak
-               // .oauth2ResourceServer(oauth2 -> oauth2.jwt());
-
-        // Dòng addFilterBefore không còn cần thiết cho việc xác thực token của Keycloak
-        // vì .oauth2ResourceServer() đã xử lý việc đó một cách tự động và chuẩn hóa.
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.authenticationManager(tokenAuthenticationManager))
+                        .authenticationEntryPoint(new CustomAuthEntryPoint())
+                );
 
         return http.build();
-    }
-
-    // Các bean này dành cho luồng xác thực username/password cục bộ.
-    // Bạn có thể giữ lại nếu muốn hỗ trợ cả hai luồng.
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
-
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserService userService) {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
     }
 }
