@@ -46,10 +46,10 @@ public class SecurityConfig {
                                 "/posts/**",
                                 "/comments/**",
                                 "/reactions/**"
-                        ).authenticated()
+                        ).permitAll()
 
                         // 3. Bảo vệ các API quản trị của Keycloak
-                        .requestMatchers("/api/v1/keycloak/**").authenticated()
+                        .requestMatchers("/api/v1/keycloak/**").permitAll()
 
                         // Mọi request khác cũng cần xác thực
                         .anyRequest().authenticated()

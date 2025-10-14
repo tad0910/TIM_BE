@@ -66,7 +66,7 @@ public class ReactionController {
     //     ReactionDTO reaction = reactionService.getUserReaction(postId, userId);
     //     if (reaction != null) {
     //         return ResponseEntity.ok(reaction);
-    //     } else {
+    //     } els    e {
     //         return ResponseEntity.notFound().build();
     //     }
     // }
