@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.UserService;
+import com.tim.appTim.dto.ProfileResponse;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -58,10 +59,12 @@ public class UserController {
         return ResponseEntity.ok(userService.findById(id));
     }
 
-    @GetMapping("/{email}")
-    public ResponseEntity<User> getByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(userService.findByEmail(email));
+    @GetMapping("/profile/{email}")
+    public ResponseEntity<ProfileResponse> getUserProfileByEmail(@PathVariable String email) {
+        ProfileResponse profile = userService.getUserProfileByEmail(email);
+        return ResponseEntity.ok(profile);
     }
+
     @PostMapping
     public ResponseEntity<User> create(@RequestBody User user) {
         User created = userService.create(user);

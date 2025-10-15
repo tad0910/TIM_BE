@@ -83,6 +83,8 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
     }
 
+
+
     public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -127,6 +129,73 @@ public class UserService implements UserDetailsService {
     public User findByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
     }
+
+    public ProfileResponse getUserProfileByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        List<PostDTO> posts = postRepository.findByUserId(user.getId()).stream().map(post -> {
+            List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
+                List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
+                        .map(reply -> new ReplyCommentDTO(
+                                reply.getId(),
+                                reply.getUserId(),
+                                reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
+                                reply.getContent(),
+                                reply.getEmotion(),
+                                reply.getFileId(),
+                                reply.getCreatedAt()
+                        ))
+                        .collect(Collectors.toList());
+                return new CommentDTO(
+                        comment.getId(),
+                        comment.getUserId(),
+                        comment.getUser().getUsername(),
+                        comment.getContent(),
+                        comment.getEmotion() != null ? comment.getEmotion().name() : null,
+                        comment.getFileId(),
+                        comment.getCreatedAt(),
+                        replyComments
+                );
+            }).collect(Collectors.toList());
+
+            List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
+                    .map(reaction -> new ReactionDTO(
+                            reaction.getId(),
+                            reaction.getUserId(),
+                            reaction.getUser().getUsername(),
+                            reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
+                            reaction.getCreatedAt()))
+                    .collect(Collectors.toList());
+
+            return new PostDTO(
+                    post.getId(),
+                    post.getUser().getId(),
+                    post.getContent(),
+                    post.getPrivacy() != null ? post.getPrivacy().name() : null,
+                    post.getCreatedAt(),
+                    post.getUpdatedAt(),
+                    comments,
+                    reactions,
+                    post.getFiles()
+            );
+        }).collect(Collectors.toList());
+
+        List<UserImageDTO> images = userImageRepository.findByUserId(user.getId()).stream()
+                .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
+                .collect(Collectors.toList());
+
+        List<CourseDTO> courses = classMemberRepository.findByClassId(user.getId()).stream()
+                .map(classMember -> courseRepository.findById(classMember.getClassId())
+                        .map(course -> new CourseDTO(course.getId(), course.getCourseName(), course.getDescription(),
+                                course.getStartDate(), course.getTuitionFee()))
+                        .orElse(null))
+                .filter(course -> course != null)
+                .collect(Collectors.toList());
+
+        return new ProfileResponse(user, posts, images, courses);
+    }
+
 
     public ProfileResponse getUserProfile(Long userId) {
     User user = userRepository.findById(userId)
@@ -247,12 +316,6 @@ public class UserService implements UserDetailsService {
         );
     }
 
-    /**
-     * Cập nhật profileImage cho User
-     * @param userId ID của user
-     * @param imageUrl URL của ảnh đại diện
-     * @return User đã được cập nhật
-     */
     public User updateProfileImage(Long userId, String imageUrl) {
         User user = findById(userId);
         
@@ -265,12 +328,6 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
-    /**
-     * Cập nhật coverImage cho User
-     * @param userId ID của user
-     * @param imageUrl URL của ảnh bìa
-     * @return User đã được cập nhật
-     */
     public User updateCoverImage(Long userId, String imageUrl) {
         User user = findById(userId);
         
@@ -283,11 +340,6 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
-    /**
-     * Xóa ảnh cũ khỏi UserImage và filesystem
-     * @param userId ID của user
-     * @param oldImageUrl URL của ảnh cũ
-     */
     private void deleteOldProfileImage(Long userId, String oldImageUrl) {
         try {
             // Tìm và xóa UserImage record
@@ -313,11 +365,6 @@ public class UserService implements UserDetailsService {
         }
     }
 
-    /**
-     * Xóa ảnh bìa cũ khỏi UserImage và filesystem
-     * @param userId ID của user
-     * @param oldImageUrl URL của ảnh bìa cũ
-     */
     private void deleteOldCoverImage(Long userId, String oldImageUrl) {
         try {
             // Tìm và xóa UserImage record
