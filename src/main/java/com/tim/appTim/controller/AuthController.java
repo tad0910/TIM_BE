@@ -23,6 +23,10 @@ import com.tim.appTim.service.PasswordResetService;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.util.JwtUtil;
 import com.tim.appTim.service.AuthService;
+import com.tim.appTim.dto.LoginResponse;
+import com.tim.appTim.dto.UserResponse;
+
+import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -73,17 +77,19 @@ public class AuthController {
 
             user.setRefreshToken(refreshToken);
             user.setRefreshTokenExpiry(Instant.now().plus(7, ChronoUnit.DAYS));
-           // userService.save(user); // thêm hàm này trong UserService để cập nhật user
+            // userService.save(user); // bật nếu muốn lưu refresh token vào DB
 
-            return ResponseEntity.ok(Map.of(
-                    "accessToken", accessToken,
-                    "refreshToken", refreshToken
-            ));
+            UserResponse userResponse = new UserResponse(user);
+            LoginResponse loginResponse = new LoginResponse(accessToken, refreshToken, userResponse);
+
+            return ResponseEntity.ok(loginResponse);
+
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Login failed: " + e.getMessage());
+                    .body(Map.of("error", "Login failed", "message", e.getMessage()));
         }
     }
+
 
     // 🟠 REFRESH TOKEN — lấy access token mới khi hết hạn
     @PostMapping("/refresh-token")
