@@ -14,10 +14,10 @@ public class DelegatingAuthenticationManager implements AuthenticationManager {
     private final JwtAuthenticationProvider keycloakJwtAuthenticationProvider;
     private final CustomJwtAuthenticationProvider customJwtAuthenticationProvider;
 
-    // public DelegatingAuthenticationManager(JwtAuthenticationProvider keycloakJwtAuthenticationProvider, CustomJwtAuthenticationProvider customJwtAuthenticationProvider) {
-    //     this.keycloakJwtAuthenticationProvider = keycloakJwtAuthenticationProvider;
-    //     this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
-    // }
+     public DelegatingAuthenticationManager(JwtAuthenticationProvider keycloakJwtAuthenticationProvider, CustomJwtAuthenticationProvider customJwtAuthenticationProvider) {
+         this.keycloakJwtAuthenticationProvider = keycloakJwtAuthenticationProvider;
+         this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
+     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

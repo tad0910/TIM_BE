@@ -68,10 +68,28 @@ public class UserService implements UserDetailsService {
     }
 
     public void register(User user) {
+        if (user.getUsername() == null || user.getUsername().isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
             throw new IllegalArgumentException("Email is required");
         }
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        if (user.getRole() == null) {
+            user.setRole(User.Role.sinh_vien); // hoặc role mặc định của bạn
+        }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setCreatedAt(LocalDateTime.now());
         userRepository.save(user);
     }
 

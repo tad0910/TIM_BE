@@ -20,11 +20,11 @@ public class CustomJwtAuthenticationProvider implements AuthenticationProvider {
     private final UserDetailsService userDetailsService;
     private final InvalidatedTokenRepository invalidatedTokenRepository;
 
-    // public CustomJwtAuthenticationProvider(JwtUtil jwtUtil, UserDetailsService userDetailsService, InvalidatedTokenRepository invalidatedTokenRepository) {
-    //     this.jwtUtil = jwtUtil;
-    //     this.userDetailsService = userDetailsService;
-    //     this.invalidatedTokenRepository = invalidatedTokenRepository;
-    // }
+     public CustomJwtAuthenticationProvider(JwtUtil jwtUtil, UserDetailsService userDetailsService, InvalidatedTokenRepository invalidatedTokenRepository) {
+         this.jwtUtil = jwtUtil;
+         this.userDetailsService = userDetailsService;
+         this.invalidatedTokenRepository = invalidatedTokenRepository;
+     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
