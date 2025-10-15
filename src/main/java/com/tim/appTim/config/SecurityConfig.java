@@ -27,15 +27,15 @@ public class SecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final UserService userService;
 
-    public SecurityConfig(UserRepository userRepository,
-                          CustomJwtAuthenticationProvider customJwtAuthenticationProvider,
-                          JwtDecoder jwtDecoder,
-                          UserService userService) {
-        this.userRepository = userRepository;
-        this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
-        this.jwtDecoder = jwtDecoder;
-        this.userService = userService;
-    }
+    // public SecurityConfig(UserRepository userRepository,
+    //                       CustomJwtAuthenticationProvider customJwtAuthenticationProvider,
+    //                       JwtDecoder jwtDecoder,
+    //                       UserService userService) {
+    //     this.userRepository = userRepository;
+    //     this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
+    //     this.jwtDecoder = jwtDecoder;
+    //     this.userService = userService;
+    // }
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
