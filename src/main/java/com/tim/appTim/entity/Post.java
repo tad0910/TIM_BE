@@ -1,7 +1,7 @@
 package com.tim.appTim.entity;
 import java.time.LocalDateTime;
-import java.util.ArrayList; // Import
-import java.util.List; // Import
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.*;
 

@@ -89,7 +89,7 @@ public class PostService {
     }
 
     @Transactional
-    public PostDTO updatePostWithFiles(Long userId, Long postId, String content, Post.Privacy privacy, List<com.tim.appTim.entity.File> newFiles, boolean replaceFiles) {
+    public PostDTO updatePostWithFiles(Long userId, Long postId, String content, Post.Privacy privacy, List<com.tim.appTim.entity.File> newFiles, List<Integer> fileIdsToDelete) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
@@ -101,12 +101,13 @@ public class PostService {
         post.setPrivacy(privacy);
         post.setUpdatedAt(LocalDateTime.now());
 
-        if (newFiles != null && !newFiles.isEmpty()) {
-            if (replaceFiles) {
-                post.getFiles().clear();
-            }
+        if (fileIdsToDelete != null && !fileIdsToDelete.isEmpty()) {
+            List<File> currentFiles = post.getFiles();
+            currentFiles.removeIf(file -> fileIdsToDelete.contains(file.getId()));
+        }
 
-            for (com.tim.appTim.entity.File f : newFiles) {
+        if (newFiles != null && !newFiles.isEmpty()) {
+            for (File f : newFiles) {
                 post.addFile(f);
             }
         }
@@ -144,5 +145,18 @@ public class PostService {
                 reactions,
                 post.getFiles()
         );
+    }
+    public PostDTO getPostByIdForUser(Long userId, Long postId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User not found with id: " + userId);
+        }
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
+        if (!post.getUser().getId().equals(userId)) {
+            throw new UnauthorizedException("User does not have permission to access this post");
+        }
+        return convertToDto(post);
     }
 }
