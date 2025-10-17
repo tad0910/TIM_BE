@@ -34,7 +34,6 @@ public class PostDTO {
         this.files = files;
     }
 
-    // Backward-compatible constructor (old signature)
     public PostDTO(Long id, Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
                    List<CommentDTO> comments, List<ReactionDTO> reactions, List<File> files) {
         this(id, userId, content, privacy, createdAt, updatedAt,
@@ -42,7 +41,7 @@ public class PostDTO {
                 comments != null ? comments.size() : 0,
                 comments, reactions, files);
     }
-    // Getters/Setters
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }

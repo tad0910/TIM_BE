@@ -86,7 +86,7 @@ public class UserService implements UserDetailsService {
             throw new IllegalArgumentException("Password is required");
         }
         if (user.getRole() == null) {
-            user.setRole(User.Role.sinh_vien); // hoặc role mặc định của bạn
+            user.setRole(User.Role.sinh_vien);
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
@@ -123,9 +123,9 @@ public class UserService implements UserDetailsService {
     existingUser.setFirstName(user.getFirstName());
     existingUser.setLastName(user.getLastName());
     existingUser.setPhoneNumber(user.getPhoneNumber());
-    // Không encode lại password, chỉ gán giá trị đã encode từ resetPassword
+
     if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-        existingUser.setPassword(user.getPassword()); // Gán trực tiếp
+        existingUser.setPassword(user.getPassword());
     }
     return userRepository.save(existingUser);
 }
@@ -141,7 +141,7 @@ public class UserService implements UserDetailsService {
     public User findByUsernameOrEmail(String usernameOrEmail) {
     return userRepository.findByUsername(usernameOrEmail)
             .or(() -> userRepository.findByEmail(usernameOrEmail))
-            .orElse(null); // Trả về null thay vì ném ngoại lệ
+            .orElse(null);
     }
 
     public User findByEmail(String email) {
@@ -245,16 +245,16 @@ public class UserService implements UserDetailsService {
 
                 return new PostDTO(
                     post.getId(),
-                    post.getUser().getId(), // 1. Thêm userId
+                    post.getUser().getId(),
                     post.getContent(),
                     post.getPrivacy() != null ? post.getPrivacy().name() : null,
                     post.getCreatedAt(),
                     post.getUpdatedAt(),
                     comments,
                     reactions,
-                    post.getFiles() // 3. Lấy file trực tiếp từ Post, không cần query repository
+                    post.getFiles()
             );
-        }).collect(Collectors.toList()); // 2. Sửa .collect()
+        }).collect(Collectors.toList());
 
     List<UserImageDTO> images = userImageRepository.findByUserId(userId).stream()
             .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
@@ -299,14 +299,14 @@ public class UserService implements UserDetailsService {
         UserImage image = userImageRepository.findById(imageId)
             .orElseThrow(() -> new RuntimeException("Image not found"));
         
-        // Kiểm tra quyền: Chỉ update nếu thuộc userId
+
         if (!image.getUser().getId().equals(userId)) {
             throw new SecurityException("You can only update your own images");
         }
         
         if (imageUrl != null) image.setImageUrl(imageUrl);
         if (description != null) image.setDescription(description);
-        image.setCreatedAt( LocalDateTime.now());  // Optional: update timestamp
+        image.setCreatedAt( LocalDateTime.now());
         
         UserImage saved = userImageRepository.save(image);
         return convertToDTO(saved);
@@ -316,8 +316,7 @@ public class UserService implements UserDetailsService {
         public void deleteUserImage(Long userId, Long imageId) {
         UserImage image = userImageRepository.findById(imageId)
             .orElseThrow(() -> new RuntimeException("Image not found"));
-        
-        // Kiểm tra quyền
+
         if (!image.getUser().getId().equals(userId)) {
             throw new SecurityException("You can only delete your own images");
         }
@@ -336,8 +335,7 @@ public class UserService implements UserDetailsService {
 
     public User updateProfileImage(Long userId, String imageUrl) {
         User user = findById(userId);
-        
-        // Nếu user đã có ảnh đại diện, xóa ảnh cũ khỏi UserImage
+
         if (user.getProfileImage() != null && !user.getProfileImage().trim().isEmpty()) {
             deleteOldProfileImage(userId, user.getProfileImage());
         }
@@ -348,8 +346,7 @@ public class UserService implements UserDetailsService {
 
     public User updateCoverImage(Long userId, String imageUrl) {
         User user = findById(userId);
-        
-        // Nếu user đã có ảnh bìa, xóa ảnh cũ khỏi UserImage
+
         if (user.getCoverImage() != null && !user.getCoverImage().trim().isEmpty()) {
             deleteOldCoverImage(userId, user.getCoverImage());
         }
@@ -360,7 +357,6 @@ public class UserService implements UserDetailsService {
 
     private void deleteOldProfileImage(Long userId, String oldImageUrl) {
         try {
-            // Tìm và xóa UserImage record
             List<UserImage> oldImages = userImageRepository.findByUserId(userId);
             for (UserImage image : oldImages) {
                 if (oldImageUrl.equals(image.getImageUrl())) {
@@ -368,8 +364,7 @@ public class UserService implements UserDetailsService {
                     break;
                 }
             }
-            
-            // Xóa file vật lý từ filesystem
+
             if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
                 String filename = oldImageUrl.substring("/uploads/".length());
                 java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
@@ -378,14 +373,12 @@ public class UserService implements UserDetailsService {
                 }
             }
         } catch (Exception e) {
-            // Log error nhưng không throw để không làm gián đoạn việc upload ảnh mới
             System.err.println("Error deleting old profile image: " + e.getMessage());
         }
     }
 
     private void deleteOldCoverImage(Long userId, String oldImageUrl) {
         try {
-            // Tìm và xóa UserImage record
             List<UserImage> oldImages = userImageRepository.findByUserId(userId);
             for (UserImage image : oldImages) {
                 if (oldImageUrl.equals(image.getImageUrl())) {
@@ -393,8 +386,7 @@ public class UserService implements UserDetailsService {
                     break;
                 }
             }
-            
-            // Xóa file vật lý từ filesystem
+
             if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
                 String filename = oldImageUrl.substring("/uploads/".length());
                 java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
@@ -403,7 +395,6 @@ public class UserService implements UserDetailsService {
                 }
             }
         } catch (Exception e) {
-            // Log error nhưng không throw để không làm gián đoạn việc upload ảnh mới
             System.err.println("Error deleting old cover image: " + e.getMessage());
         }
     }

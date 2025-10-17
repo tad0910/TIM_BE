@@ -8,12 +8,11 @@ import java.time.Instant;
 public class InvalidatedToken {
 
     @Id
-    private String jti; // Dùng chính JTI làm ID để tra cứu nhanh
+    private String jti;
 
     @Column(nullable = false)
     private Instant expiryDate;
 
-    // Constructors, Getters, Setters
     public InvalidatedToken() {}
 
     public InvalidatedToken(String jti, Instant expiryDate) {
@@ -21,7 +20,6 @@ public class InvalidatedToken {
         this.expiryDate = expiryDate;
     }
 
-    // Getters and Setters...
     public String getJti() {
         return jti;
     }

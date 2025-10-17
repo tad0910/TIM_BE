@@ -20,17 +20,14 @@ public class AuthService {
     }
 
     public void logout(String token) {
-        // 1. Verify token (optional but good practice)
-        if (!jwtUtil.isTokenValid(token)) { // isTokenValid nên chỉ check chữ ký và thời gian hết hạn
+        if (!jwtUtil.isTokenValid(token)) {
             throw new IllegalArgumentException("Token không hợp lệ.");
         }
 
-        // 2. Lấy thông tin từ token
         Claims claims = jwtUtil.getClaims(token);
         String jti = claims.getId();
         Date expiryDate = claims.getExpiration();
 
-        // 3. Tạo đối tượng và lưu vào DB
         InvalidatedToken invalidatedToken = new InvalidatedToken(jti, expiryDate.toInstant());
             invalidatedTokenRepository.saveAndFlush(invalidatedToken);
     }

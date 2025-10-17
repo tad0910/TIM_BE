@@ -50,14 +50,12 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // 🟢 REGISTER
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {
         userService.register(user);
         return ResponseEntity.ok("User registered successfully");
     }
 
-    // 🟢 LOGIN — trả về Access + Refresh token
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
@@ -77,7 +75,6 @@ public class AuthController {
 
             user.setRefreshToken(refreshToken);
             user.setRefreshTokenExpiry(Instant.now().plus(7, ChronoUnit.DAYS));
-            // userService.save(user); // bật nếu muốn lưu refresh token vào DB
 
             UserResponse userResponse = new UserResponse(user);
             LoginResponse loginResponse = new LoginResponse(accessToken, refreshToken, userResponse);

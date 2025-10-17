@@ -23,21 +23,18 @@ public class ClassController {
 
     @GetMapping("/{id}")
     public ClassDTO getClassInfo(@PathVariable Long id) {
-        // Lấy thông tin lớp học
         Class classInfo = classService.getClassById(id)
                 .orElseThrow(() -> new RuntimeException("Class not found with id: " + id));
 
-        // Lấy danh sách thành viên của lớp
         List<ClassMember> members = classService.getClassMembersByClassId(id);
 
-        // Chuyển đổi thành DTO để trả về
         ClassDTO classDTO = new ClassDTO(
                 classInfo.getClassName(),
                 classInfo.getDescription(),
                 members.stream()
                         .map(member -> new ClassDTO.MemberDTO(
-                                member.getUserId(), // Sử dụng userId thay vì nguoiDungId
-                                member.getRole().name(), // Lấy tên role (hoc_vien, giang_vien)
+                                member.getUserId(),
+                                member.getRole().name(),
                                 member.getJoinDate()
                         ))
                         .collect(Collectors.toList())

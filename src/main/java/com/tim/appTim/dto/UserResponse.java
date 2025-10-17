@@ -16,10 +16,9 @@ public class UserResponse {
         this.email = user.getEmail();
         this.fullName = user.getFirstName() + " " + user.getLastName();
         this.profileImage = user.getProfileImage();
-        this.role = user.getRole().name(); // enum -> String
+        this.role = user.getRole().name();
     }
 
-    // Getters
     public Long getId() { return id; }
     public String getUsername() { return username; }
     public String getEmail() { return email; }

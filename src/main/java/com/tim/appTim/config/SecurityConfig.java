@@ -1,7 +1,7 @@
 package com.tim.appTim.config;
 
 import com.tim.appTim.repository.UserRepository;
-import com.tim.appTim.service.UserService; // Cần import UserService
+import com.tim.appTim.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +16,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
+
 
 @Configuration
 @EnableWebSecurity
@@ -26,15 +28,18 @@ public class SecurityConfig {
     private final CustomJwtAuthenticationProvider customJwtAuthenticationProvider;
     private final JwtDecoder jwtDecoder;
     private final UserService userService;
+    @Autowired
+    private final JwtAuthenticationFilter jwtAuthFilter;
 
      public SecurityConfig(UserRepository userRepository,
                            CustomJwtAuthenticationProvider customJwtAuthenticationProvider,
                            JwtDecoder jwtDecoder,
-                           UserService userService) {
+                           UserService userService, JwtAuthenticationFilter jwtAuthFilter) {
          this.userRepository = userRepository;
          this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
          this.jwtDecoder = jwtDecoder;
          this.userService = userService;
+         this.jwtAuthFilter = jwtAuthFilter;
      }
 
     @Bean
@@ -53,7 +58,6 @@ public class SecurityConfig {
     @Bean
     @Qualifier("loginManager")
     public AuthenticationManager loginAuthenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        // Bean này được inject vào AuthController để xử lý login
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -66,7 +70,6 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager tokenAuthenticationManager(JwtAuthenticationProvider keycloakJwtAuthenticationProvider) {
-        // Bean này là "bộ não" phân loại token
         return new DelegatingAuthenticationManager(keycloakJwtAuthenticationProvider, customJwtAuthenticationProvider);
     }
 
@@ -75,24 +78,27 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(daoAuthenticationProvider()) // Đăng ký provider cho luồng login
+                .authenticationProvider(daoAuthenticationProvider())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/v1/keycloak/**").permitAll()
                         .requestMatchers(
                                 "/users/**",
                                 "/profile/**",
                                 "/classes/**",
                                 "/posts/**",
                                 "/comments/**",
-                                "/reactions/**"
+                                "/reactions/**",
+                                "/uploads/**"
                         ).hasRole("SINH_VIEN")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.authenticationManager(tokenAuthenticationManager))
                         .authenticationEntryPoint(new CustomAuthEntryPoint())
-                );
+                )
 
+                .addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

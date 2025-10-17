@@ -16,7 +16,6 @@
 
         @Override
         public void addResourceHandlers(ResourceHandlerRegistry registry) {
-            // Cấu hình để serve các file từ thư mục uploads
             Path uploadPath = Paths.get(uploadFolder);
             String uploadPathString = uploadPath.toFile().getAbsolutePath();
 

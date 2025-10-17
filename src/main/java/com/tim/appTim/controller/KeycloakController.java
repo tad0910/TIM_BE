@@ -51,41 +51,17 @@ public class KeycloakController {
                     .body("Internal server error during user update: " + e.getMessage());
         }
     }
-    @PostMapping("/users")
-    public ResponseEntity<?> createUser(@RequestBody CreateUserDTO createUserDTO) {
-        try {
-            keycloakSyncService.createUserInDbAndKeycloak(
-                    createUserDTO.getUsername(),
-                    createUserDTO.getEmail(),
-                    createUserDTO.getFullName(),
-                    createUserDTO.getPassword(),
-                    createUserDTO.getStatus()
-            );
-            return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
-        } catch (ClientErrorException e) {
-            String errorMessage = e.getResponse().readEntity(String.class);
-            // Xử lý lỗi cụ thể, ví dụ: 409 Conflict (user đã tồn tại)
-            if (e.getResponse().getStatus() == 409) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists: " + errorMessage);
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to create user in Keycloak: " + errorMessage);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Internal server error: " + e.getMessage());
-        }
-    }
+
     @PostMapping("/users/{userId}/logout")
     public ResponseEntity<?> logoutUser(@PathVariable String userId) {
         try {
             keycloakSyncService.logoutUserFromKeycloak(userId);
             return ResponseEntity.ok("Đã vô hiệu hóa tất cả phiên làm việc của người dùng thành công.");
         } catch (ClientErrorException e) {
-            // Lỗi phổ biến nhất là không tìm thấy user
             if (e.getResponse().getStatus() == 404) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("Không tìm thấy người dùng với ID: " + userId);
             }
-            // Các lỗi khác từ Keycloak
             String errorMessage = e.getResponse().readEntity(String.class);
             return ResponseEntity.status(e.getResponse().getStatus())
                     .body("Lỗi từ Keycloak khi đăng xuất: " + errorMessage);
@@ -102,7 +78,6 @@ public class KeycloakController {
         private String lastName;
         private String status;
 
-        // Getters and setters
         public String getUsername() { return username; }
         public void setUsername(String username) { this.username = username; }
         public String getEmail() { return email; }

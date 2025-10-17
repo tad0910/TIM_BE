@@ -15,7 +15,7 @@ import com.tim.appTim.entity.User;
 @Component
 public class JwtUtil {
 
-    private final String SECRET_KEY = "12345678901234567890123456789012"; // Thay bằng secret của bạn
+    private final String SECRET_KEY = "12345678901234567890123456789012";
     private final long EXPIRATION_MS = 1000 * 60 * 60; // 1 giờ
 
     @Autowired
@@ -25,7 +25,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(usernameOrEmail)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                 .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
                 .setId(UUID.randomUUID().toString())
                 .compact();
@@ -35,7 +35,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(usernameOrEmail)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7)) // 7 ngày
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7))
                 .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -48,10 +48,10 @@ public class JwtUtil {
         try {
             Claims claims = getClaims(token);
             String usernameOrEmail = claims.getSubject();
-            User user = userService.findByUsernameOrEmail(usernameOrEmail);  // Thêm method này ở UserService nếu chưa có
+            User user = userService.findByUsernameOrEmail(usernameOrEmail);
             Date issuedAt = claims.getIssuedAt();
             if (user.getPasswordChangedAt() != null && issuedAt.before(Date.from(user.getPasswordChangedAt()))) {
-                return false;  // Invalidate nếu token issued trước password change
+                return false;
             }
             return !claims.getExpiration().before(new Date());
         } catch (Exception e) {

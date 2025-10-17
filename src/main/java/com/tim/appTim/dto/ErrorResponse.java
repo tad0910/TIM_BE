@@ -2,10 +2,6 @@ package com.tim.appTim.dto;
 
 import java.time.Instant;
 
-/**
- * Simple DTO for sending structured error responses from controllers /
- * exception handlers.
- */
 public class ErrorResponse {
 
     private Instant timestamp;

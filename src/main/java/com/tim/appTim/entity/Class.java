@@ -15,7 +15,6 @@ public class Class {
     @Column(name = "mo_ta")
     private String description;
 
-    // Getters/Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getClassName() { return className; }

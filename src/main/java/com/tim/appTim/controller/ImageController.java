@@ -69,7 +69,7 @@ public class ImageController {
 
             User user = userService.findById(userId);
             if (user == null) {
-                Files.deleteIfExists(filePath); // Xóa file nếu user không tồn tại
+                Files.deleteIfExists(filePath);
                 return ResponseEntity.notFound().build();
             }
 

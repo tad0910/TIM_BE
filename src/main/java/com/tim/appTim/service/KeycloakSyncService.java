@@ -23,7 +23,6 @@ import com.tim.appTim.controller.KeycloakController.UpdateUserDTO;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.UserRepository;
 
-//import javax.servlet.http.HttpServletRequest;
 
 @Service
 public class KeycloakSyncService {
@@ -49,11 +48,6 @@ public class KeycloakSyncService {
     }
 
     private Keycloak getKeycloakClient() {
-        System.out.println("Loading from properties - serverUrl: " + serverUrl);
-        System.out.println("Loading from properties - realm: " + realm);
-        System.out.println("Loading from properties - clientId: " + clientId);
-        System.out.println("Loading from properties - clientSecret: " + clientSecret);
-        System.out.println("System property spring.config.location: " + System.getProperty("spring.config.location"));
         return KeycloakBuilder.builder()
                 .serverUrl(serverUrl.trim())
                 .realm(realm.trim())
@@ -141,7 +135,6 @@ public class KeycloakSyncService {
                 userResource.resetPassword(credential);
                 System.out.println("✅ Password set for user: " + username);
 
-                // Cập nhật keycloakId sau khi tạo user
                 newUser.setKeycloakId(userId);
                 userRepository.save(newUser);
             } else {
@@ -165,14 +158,12 @@ public class KeycloakSyncService {
     public void updateUser(String userId, UpdateUserDTO updateUserDTO) {
         Keycloak keycloak = null;
         try {
-            // Chỉ sử dụng getKeycloakClient, bỏ logic token từ header
             keycloak = getKeycloakClient();
 
             RealmResource realmResource = keycloak.realm(realm);
             UserResource userResource = realmResource.users().get(userId);
             UserRepresentation userRepresentation = userResource.toRepresentation();
 
-            // Update fields in Keycloak if provided
             if (updateUserDTO.getUsername() != null && !updateUserDTO.getUsername().isEmpty()) {
                 userRepresentation.setUsername(updateUserDTO.getUsername());
             }
@@ -189,11 +180,9 @@ public class KeycloakSyncService {
                 userRepresentation.setEnabled("active".equalsIgnoreCase(updateUserDTO.getStatus()));
             }
 
-            // Update user in Keycloak
             userResource.update(userRepresentation);
             System.out.println("✅ Updated user in Keycloak: " + userId);
 
-            // Update user in database using keycloakId
             User dbUser = userRepository.findByKeycloakId(userId)
                     .orElseThrow(() -> new RuntimeException("User not found in database with keycloakId: " + userId));
             if (updateUserDTO.getUsername() != null && !updateUserDTO.getUsername().isEmpty()) {
@@ -223,18 +212,16 @@ public class KeycloakSyncService {
         }
     }
     public void logoutUserFromKeycloak(String userId) {
-        Keycloak keycloak = null; // Khai báo và khởi tạo là null
+        Keycloak keycloak = null;
         try {
-            keycloak = getKeycloakClient(); // Khởi tạo đối tượng Keycloak
+            keycloak = getKeycloakClient();
             UserResource userResource = keycloak.realm(realm).users().get(userId);
             userResource.logout();
             System.out.println("✅ Successfully logged out user: " + userId);
         } catch (Exception e) {
             System.err.println("❌ Failed to logout user " + userId + ": " + e.getMessage());
-            // Ném lại exception để lớp gọi nó có thể xử lý (ví dụ: trả về lỗi 500)
             throw new RuntimeException("Failed to logout user " + userId, e);
         } finally {
-            // Đảm bảo kết nối luôn được đóng
             if (keycloak != null) {
                 keycloak.close();
             }

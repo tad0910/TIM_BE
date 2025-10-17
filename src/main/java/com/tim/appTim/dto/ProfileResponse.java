@@ -31,8 +31,6 @@ public class ProfileResponse {
     }
 
     public ProfileResponse() {}
-
-    // Getters/Setters
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
     public String getUsername() { return username; }

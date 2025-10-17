@@ -15,7 +15,7 @@ public class UserImageDTO {
         this.description = description;
         this.createdAt = createdAt;
     }
-    // Getters/Setters
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getImageUrl() { return imageUrl; }

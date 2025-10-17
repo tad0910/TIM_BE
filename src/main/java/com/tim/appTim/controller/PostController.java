@@ -1,23 +1,16 @@
 package com.tim.appTim.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
-// Thêm các import cho Logger
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
 
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.File;
@@ -28,10 +21,10 @@ import com.tim.appTim.service.PostService;
 @RequestMapping("/posts")
 public class PostController {
 
-    // 1. Khai báo Logger
-    private static final Logger logger = LoggerFactory.getLogger(PostController.class);
-
     private final PostService postService;
+
+    @Value("${upload.folder}")
+    private String uploadFolder;
 
     @Autowired
     public PostController(PostService postService) {
@@ -46,46 +39,52 @@ public class PostController {
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles
     ) {
         try {
-            logger.info("Received request to create post for userId: {}", userId);
             Post.Privacy privacyEnum = Post.Privacy.valueOf(privacy);
             List<File> files = new ArrayList<>();
 
-            if (multipartFiles != null) {
-                // ... (giữ nguyên logic xử lý file)
+            if (multipartFiles != null && !multipartFiles.isEmpty()) {
                 for (MultipartFile mf : multipartFiles) {
-                    File f = new File();
-                    f.setFileUrl(mf.getOriginalFilename());
-                    String lowerName = mf.getOriginalFilename().toLowerCase();
-                    if (lowerName.endsWith(".mp4") || lowerName.endsWith(".mov") || lowerName.endsWith(".avi")) {
-                        f.setFileType(File.FileType.VIDEO);
-                    } else if (lowerName.endsWith(".pdf") || lowerName.endsWith(".doc") || lowerName.endsWith(".docx")
-                            || lowerName.endsWith(".xls") || lowerName.endsWith(".xlsx")
-                            || lowerName.endsWith(".ppt") || lowerName.endsWith(".pptx")
-                            || lowerName.endsWith(".txt") || lowerName.endsWith(".rtf")
-                            || lowerName.endsWith(".zip") || lowerName.endsWith(".rar") || lowerName.endsWith(".7z")) {
-                        f.setFileType(File.FileType.DOCUMENT);
+                    if (mf.isEmpty()) continue;
+
+                    String originalName = mf.getOriginalFilename();
+                    String fileExt = originalName != null && originalName.contains(".")
+                            ? originalName.substring(originalName.lastIndexOf("."))
+                            : "";
+
+                    String uniqueName = UUID.randomUUID().toString() + fileExt;
+                    Path uploadPath = Paths.get(uploadFolder, uniqueName);
+                    Files.createDirectories(uploadPath.getParent());
+                    Files.write(uploadPath, mf.getBytes());
+
+                    String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                    File.FileType fileType;
+                    if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                        fileType = File.FileType.VIDEO;
+                    } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                        fileType = File.FileType.DOCUMENT;
                     } else {
-                        f.setFileType(File.FileType.IMAGE);
+                        fileType = File.FileType.IMAGE;
                     }
+
+                    File f = new File();
+                    f.setFileUrl("/uploads/" + uniqueName);
+                    f.setFileType(fileType);
                     files.add(f);
                 }
             }
-
 
             PostDTO createdPost = postService.createPostWithFiles(userId, content, privacyEnum, files);
             return ResponseEntity.ok(createdPost);
 
         } catch (IllegalArgumentException e) {
-            // 2. Thêm lệnh ghi log lỗi vào đây
-            logger.error("Error creating post due to invalid privacy value: {}", privacy, e);
             return ResponseEntity.badRequest().body(null);
-
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(null);
         } catch (Exception e) {
-            logger.error("An unexpected error occurred while creating post", e);
-            e.printStackTrace(); // Có thể giữ lại để debug chi tiết
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(null);
         }
     }
+
     @GetMapping
     public ResponseEntity<Page<PostDTO>> getAllPosts(Pageable pageable) {
         Page<PostDTO> posts = postService.getAllPosts(pageable);
@@ -101,23 +100,63 @@ public class PostController {
     @PutMapping("/{postId}")
     public ResponseEntity<PostDTO> updatePost(
             @PathVariable Long postId,
-            @RequestParam("userId") Long userId, // Dùng để xác thực chủ sở hữu
+            @RequestParam("userId") Long userId,
             @RequestParam("content") String content,
-            @RequestParam("privacy") String privacy) {
+            @RequestParam("privacy") String privacy,
+            @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles,
+            @RequestParam(value = "replaceFiles", defaultValue = "false") boolean replaceFiles
+    ) {
         try {
-            Post.Privacy privacyEnum = Post.Privacy.valueOf(privacy.toLowerCase());
-            PostDTO updatedPost = postService.updatePost(userId, postId, content, privacyEnum);
+            Post.Privacy privacyEnum = Post.Privacy.valueOf(privacy);
+            List<File> files = new ArrayList<>();
+
+            if (multipartFiles != null && !multipartFiles.isEmpty()) {
+                for (MultipartFile mf : multipartFiles) {
+                    if (mf.isEmpty()) continue;
+
+                    String originalName = mf.getOriginalFilename();
+                    String fileExt = originalName != null && originalName.contains(".")
+                            ? originalName.substring(originalName.lastIndexOf("."))
+                            : "";
+
+                    String uniqueName = UUID.randomUUID().toString() + fileExt;
+                    Path uploadPath = Paths.get(uploadFolder, uniqueName);
+                    Files.createDirectories(uploadPath.getParent());
+                    Files.write(uploadPath, mf.getBytes());
+
+                    String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                    File.FileType fileType;
+                    if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                        fileType = File.FileType.VIDEO;
+                    } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                        fileType = File.FileType.DOCUMENT;
+                    } else {
+                        fileType = File.FileType.IMAGE;
+                    }
+
+                    File f = new File();
+                    f.setFileUrl("/uploads/" + uniqueName);
+                    f.setFileType(fileType);
+                    files.add(f);
+                }
+            }
+
+            PostDTO updatedPost = postService.updatePostWithFiles(userId, postId, content, privacyEnum, files, replaceFiles);
             return ResponseEntity.ok(updatedPost);
+
         } catch (IllegalArgumentException e) {
-            logger.error("Invalid privacy value: {}", privacy);
             return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
-        // Các exception ResourceNotFoundException và UnauthorizedException sẽ tự được Spring xử lý
     }
+
     @DeleteMapping("/{postId}")
     public ResponseEntity<String> deletePost(
             @PathVariable Long postId,
-            @RequestParam("userId") Long userId) { // Dùng để xác thực
+            @RequestParam("userId") Long userId) {
         postService.deletePost(userId, postId);
         return ResponseEntity.ok("Post with id " + postId + " deleted successfully.");
     }

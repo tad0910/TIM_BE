@@ -37,7 +37,6 @@ public class Ranking {
     @JoinColumn(name = "courses_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Course course;
 
-    // Getters/Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }

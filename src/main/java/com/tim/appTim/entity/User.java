@@ -66,7 +66,6 @@ public class User {
     @Column(name = "keycloak_id", unique = true)
     private String keycloakId;
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }

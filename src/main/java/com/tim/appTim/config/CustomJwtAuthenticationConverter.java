@@ -21,19 +21,15 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, JwtAuthe
 
     @Override
     public JwtAuthenticationToken convert(Jwt jwt) {
-        // Lấy username từ token của Keycloak
         String username = jwt.getClaimAsString("preferred_username");
 
-        // Tìm user trong DB
         Optional<User> userOptional = userRepository.findByUsername(username);
 
         List<GrantedAuthority> authorities;
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            // Lấy role trong DB — chú ý thêm prefix ROLE_
             authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name().toUpperCase()));
         } else {
-            // Nếu không tìm thấy, gán role mặc định
             authorities = List.of(new SimpleGrantedAuthority("ROLE_GUEST"));
         }
 

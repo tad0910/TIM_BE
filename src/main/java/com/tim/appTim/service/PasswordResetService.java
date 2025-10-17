@@ -42,25 +42,21 @@ public class PasswordResetService {
     private JavaMailSender mailSender;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;  // BCrypt cho password, nhưng dùng HMAC cho OTP
+    private PasswordEncoder passwordEncoder;
 
-    @Value("${app.pepper}")  // Từ application.properties
+    @Value("${app.pepper}")
     private String pepper;
 
     public void requestReset(String email, String requestIp, String userAgent) {
-        // Rate limit here (e.g., 1 request / 60s, max 3 / 24h) - TODO: Implement with Redis or Guava
-
-        User user = userService.findByUsernameOrEmail(email);  // Nếu không tồn tại, không throw error để tránh leak info
+        User user = userService.findByUsernameOrEmail(email);
         if (user == null) {
             logger.info("Reset request for non-existing email: {}", email);
-            return;  // Silent fail
+            return;
         }
 
-        // Tạo OTP
         String otp = generateOtp();
         String otpHash = hashOtp(otp);
 
-        // Lưu request
         PasswordResetRequest request = new PasswordResetRequest();
         request.setUser(user);
         request.setOtpHash(otpHash);
@@ -70,14 +66,11 @@ public class PasswordResetService {
         request.setUserAgent(userAgent);
         resetRepo.save(request);
 
-        // Send email (async nếu cần)
         sendOtpEmail(user.getEmail(), otp);
         logger.info("OTP sent for user: {}", user.getId());
     }
 
     public String verifyOtp(String email, String otp) {
-        // Rate limit here
-
         User user = userService.findByUsernameOrEmail(email);
         if (user == null) {
             throw new IllegalArgumentException("Invalid request");
@@ -103,26 +96,23 @@ public class PasswordResetService {
             throw new IllegalArgumentException("Invalid OTP");
         }
 
-        // Success: Mark used, create reset token
         request.setUsed(true);
         resetRepo.save(request);
 
         String resetToken = generateResetToken();
-        String resetTokenHash = passwordEncoder.encode(resetToken);  // Use BCrypt for reset token hash
+        String resetTokenHash = passwordEncoder.encode(resetToken);
 
-        // Tạo request mới cho reset token (hoặc update existing)
         PasswordResetRequest tokenRequest = new PasswordResetRequest();
         tokenRequest.setUser(user);
-        tokenRequest.setOtpHash(resetTokenHash);  // Reuse otp_hash field for reset_token_hash
+        tokenRequest.setOtpHash(resetTokenHash);
         tokenRequest.setTokenType(TokenType.LINK);
         tokenRequest.setExpiresAt(Instant.now().plus(RESET_TOKEN_TTL_MINUTES, ChronoUnit.MINUTES));
         resetRepo.save(tokenRequest);
 
-        return resetToken;  // Return plain reset_token cho client (client gửi lại ở reset-password)
+        return resetToken;
     }
 
     public void resetPassword(String email, String resetToken, String newPassword) {
-    // Validate new password policy (e.g., length >=8, etc.) - TODO: Implement
     User user = userService.findByUsernameOrEmail(email);
     if (user == null) {
         throw new IllegalArgumentException("Invalid request");
@@ -135,23 +125,20 @@ public class PasswordResetService {
     if (request.getExpiresAt().isBefore(Instant.now()) || request.isUsed()) {
         throw new IllegalArgumentException("Invalid or expired reset token");
     }
-    if (!passwordEncoder.matches(resetToken, request.getOtpHash())) {  // Check hash match
+    if (!passwordEncoder.matches(resetToken, request.getOtpHash())) {
         throw new IllegalArgumentException("Invalid reset token");
     }
-    // Reset password - Encode chỉ một lần
+
     String encodedPassword = passwordEncoder.encode(newPassword);
     user.setPassword(encodedPassword);
     user.setPasswordChangedAt(Instant.now());
-    userService.update(user.getId(), user); // Truyền user đã encode
-    // Mark used
+    userService.update(user.getId(), user);
     request.setUsed(true);
     resetRepo.save(request);
-    // Send confirmation email
     sendConfirmationEmail(user.getEmail());
     logger.info("Password reset for user: {}, encoded password starts with: {}", user.getId(), encodedPassword.substring(0, 10));
     }
 
-    // Helper methods
     private String generateOtp() {
         SecureRandom random = new SecureRandom();
         StringBuilder otp = new StringBuilder(OTP_LENGTH);
@@ -175,7 +162,7 @@ public class PasswordResetService {
 
     private String generateResetToken() {
         SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[32];  // 32 bytes random
+        byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }

@@ -45,8 +45,7 @@ public class ProfileController {
         List<UserImageDTO> images = userService.getUserImages(userId);
         return ResponseEntity.ok(images);
     }
-    
-    // CREATE
+
     @PostMapping("/{userId}/images")
     public ResponseEntity<UserImageDTO> createUserImage(
             @PathVariable Long userId,
@@ -61,7 +60,6 @@ public class ProfileController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // UPDATE
     @PutMapping("/{userId}/images/{imageId}")
     public ResponseEntity<UserImageDTO> updateUserImage(
             @PathVariable Long userId,
@@ -73,7 +71,6 @@ public class ProfileController {
         return ResponseEntity.ok(updated);
     }
 
-    // DELETE
     @DeleteMapping("/{userId}/images/{imageId}")
     public ResponseEntity<Void> deleteUserImage(
             @PathVariable Long userId,

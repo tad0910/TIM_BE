@@ -22,7 +22,7 @@ public class ReplyCommentDTO {
         this.fileId = fileId;
         this.createdAt = createdAt;
     }
-    // Getters/Setters
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }

@@ -24,11 +24,11 @@ public class PasswordResetRequest {
     private User user;
 
     @Column(name = "otp_hash", length = 255)
-    private String otpHash;  // HMAC hashed OTP
+    private String otpHash;
 
     @Column(name = "token_type")
     @Enumerated(EnumType.STRING)
-    private TokenType tokenType = TokenType.OTP;  // ENUM('OTP','LINK')
+    private TokenType tokenType = TokenType.OTP;
 
     @Column
     private int attempts = 0;
@@ -53,7 +53,6 @@ public class PasswordResetRequest {
         OTP, LINK
     }
 
-    // Getters/Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public User getUser() { return user; }

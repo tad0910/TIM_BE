@@ -18,7 +18,6 @@ public class CommentController {
     @Autowired
     private CommentService commentService;
 
-    // Tạo comment mới
     @PostMapping("/posts/{postId}")
     public ResponseEntity<CommentDTO> createComment(
             @PathVariable Long postId,
@@ -26,7 +25,7 @@ public class CommentController {
             @RequestParam String content,
             @RequestParam(required = false) String emotion,
             @RequestParam(required = false) Long fileId) {
-        
+
         Comment.Emotion emotionEnum = null;
         if (emotion != null && !emotion.isEmpty()) {
             try {
@@ -39,22 +38,20 @@ public class CommentController {
         CommentDTO comment = commentService.createComment(postId, userId, content, emotionEnum, fileId);
         return ResponseEntity.ok(comment);
     }
-    
-    // Lấy tất cả comments của một post
+
     @GetMapping("/posts/{postId}")
     public ResponseEntity<List<CommentDTO>> getCommentsByPostId(@PathVariable Long postId) {
         List<CommentDTO> comments = commentService.getCommentsByPostId(postId);
         return ResponseEntity.ok(comments);
     }
 
-    // Cập nhật comment
     @PutMapping("/{commentId}")
     public ResponseEntity<CommentDTO> updateComment(
             @PathVariable Long commentId,
             @RequestParam Long userId,
             @RequestParam String content,
             @RequestParam(required = false) String emotion) {
-        
+
         Comment.Emotion emotionEnum = null;
         if (emotion != null && !emotion.isEmpty()) {
             try {
@@ -68,7 +65,6 @@ public class CommentController {
         return ResponseEntity.ok(comment);
     }
 
-    // Xóa comment
     @DeleteMapping("/{commentId}")
     public ResponseEntity<String> deleteComment(
             @PathVariable Long commentId,
@@ -77,7 +73,6 @@ public class CommentController {
         return ResponseEntity.ok("Comment deleted successfully");
     }
 
-    // Tạo reply comment
     @PostMapping("/{commentId}/replies")
     public ResponseEntity<ReplyCommentDTO> createReplyComment(
             @PathVariable Long commentId,
@@ -85,7 +80,7 @@ public class CommentController {
             @RequestParam String content,
             @RequestParam(required = false) String emotion,
             @RequestParam(required = false) Long fileId) {
-        
+
         ReplyComment.Emotion emotionEnum = null;
         if (emotion != null && !emotion.isEmpty()) {
             try {
@@ -99,20 +94,18 @@ public class CommentController {
         return ResponseEntity.ok(replyComment);
     }
 
-    // Lấy tất cả reply comments của một comment
     @GetMapping("/{commentId}/replies")
     public ResponseEntity<List<ReplyCommentDTO>> getReplyCommentsByCommentId(@PathVariable Long commentId) {
         List<ReplyCommentDTO> replyComments = commentService.getReplyCommentsByCommentId(commentId);
         return ResponseEntity.ok(replyComments);
     }
 
-    // Cập nhật reply comment
     @PutMapping("/replies/{replyCommentId}")
     public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
             @RequestParam String content,
             @RequestParam(required = false) String emotion) {
-        
+
         ReplyComment.Emotion emotionEnum = null;
         if (emotion != null && !emotion.isEmpty()) {
             try {
@@ -126,7 +119,6 @@ public class CommentController {
         return ResponseEntity.ok(replyComment);
     }
 
-    // Xóa reply comment
     @DeleteMapping("/replies/{replyCommentId}")
     public ResponseEntity<String> deleteReplyComment(@PathVariable Long replyCommentId) {
         commentService.deleteReplyComment(replyCommentId);

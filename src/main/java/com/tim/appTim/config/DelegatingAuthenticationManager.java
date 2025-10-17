@@ -22,17 +22,13 @@ public class DelegatingAuthenticationManager implements AuthenticationManager {
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String tokenString = ((BearerTokenAuthenticationToken) authentication).getToken();
-
-        // 1. Thử xác thực bằng Keycloak trước
         try {
             return keycloakJwtAuthenticationProvider.authenticate(authentication);
         } catch (AuthenticationException keycloakException) {
-            // 2. Nếu Keycloak thất bại, thử xác thực bằng provider JWT cục bộ
             UsernamePasswordAuthenticationToken customToken = new UsernamePasswordAuthenticationToken(null, tokenString);
             try {
                 return customJwtAuthenticationProvider.authenticate(customToken);
             } catch (AuthenticationException localJwtException) {
-                // 3. Nếu cả hai đều thất bại, ném ra lỗi ban đầu của Keycloak (hoặc lỗi của local)
                 throw localJwtException;
             }
         }

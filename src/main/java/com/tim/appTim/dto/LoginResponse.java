@@ -11,12 +11,10 @@ public class LoginResponse {
         this.user = user;
     }
 
-    // Getters
     public String getAccessToken() { return accessToken; }
     public String getRefreshToken() { return refreshToken; }
     public UserResponse getUser() { return user; }
 
-    // Setters (nếu cần)
     public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
     public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
     public void setUser(UserResponse user) { this.user = user; }

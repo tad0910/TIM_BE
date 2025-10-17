@@ -29,7 +29,6 @@ public class PostService {
     private final CommentService commentService;
     private final ReactionService reactionService;
 
-    // Không cần FileRepository ở đây nữa nếu dùng cascade
     public PostService(PostRepository postRepository, UserRepository userRepository, 
                        CommentService commentService, ReactionService reactionService) {
         this.postRepository = postRepository;
@@ -40,11 +39,9 @@ public class PostService {
 
     @Transactional
     public PostDTO createPostWithFiles(Long userId, String content, Post.Privacy privacy, List<File> filesFromController) {
-        // 1. Tìm User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        // 2. Tạo đối tượng Post
         Post post = new Post();
         post.setUser(user);
         post.setContent(content);
@@ -54,18 +51,14 @@ public class PostService {
         post.setTotalComments(0);
         post.setTotalReactions(0);
 
-        // 3. Gán các file vào Post (sử dụng phương thức tiện ích đã tạo)
         if (filesFromController != null && !filesFromController.isEmpty()) {
             for (File file : filesFromController) {
-                post.addFile(file); // <-- SỬA Ở ĐÂY: Gán Post cho File và thêm File vào List
+                post.addFile(file);
             }
         }
 
-        // 4. Lưu Post. Nhờ CascadeType.ALL, các File cũng sẽ được tự động lưu.
         Post savedPost = postRepository.save(post);
 
-        // 5. Tạo DTO để trả về
-        // Lưu ý: nên có FileDTO để tránh lộ chi tiết của Entity
         return new PostDTO(
                 savedPost.getId(),
                 savedPost.getUser().getId(),
@@ -82,58 +75,59 @@ public class PostService {
     }
     public Page<PostDTO> getAllPosts(Pageable pageable) {
         Page<Post> postPage = postRepository.findAll(pageable);
-        return postPage.map(this::convertToDto); // Sử dụng hàm chuyển đổi chung
+        return postPage.map(this::convertToDto);
     }
 
     public List<PostDTO> getPostsByUserId(Long userId) {
-        // Kiểm tra xem user có tồn tại không
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId); // Sắp xếp theo tgian mới nhất
+        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId);
         return posts.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public PostDTO updatePost(Long userId, Long postId, String content, Post.Privacy privacy) {
-        // 1. Tìm bài viết theo ID
+    public PostDTO updatePostWithFiles(Long userId, Long postId, String content, Post.Privacy privacy, List<com.tim.appTim.entity.File> newFiles, boolean replaceFiles) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
-        // 2. ⭐ KIỂM TRA QUYỀN: Chỉ chủ nhân bài viết mới được sửa
         if (!post.getUser().getId().equals(userId)) {
             throw new UnauthorizedException("User does not have permission to update this post");
         }
 
-        // 3. Cập nhật thông tin
         post.setContent(content);
         post.setPrivacy(privacy);
         post.setUpdatedAt(LocalDateTime.now());
 
-        // 4. Lưu lại và trả về DTO
+        if (newFiles != null && !newFiles.isEmpty()) {
+            if (replaceFiles) {
+                post.getFiles().clear();
+            }
+
+            for (com.tim.appTim.entity.File f : newFiles) {
+                post.addFile(f);
+            }
+        }
+
         Post updatedPost = postRepository.save(post);
         return convertToDto(updatedPost);
     }
 
     @Transactional
     public void deletePost(Long userId, Long postId) {
-        // 1. Tìm bài viết theo ID
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
-        // 2. ⭐ KIỂM TRA QUYỀN: Chỉ chủ nhân bài viết mới được xóa
         if (!post.getUser().getId().equals(userId)) {
             throw new UnauthorizedException("User does not have permission to delete this post");
         }
 
-        // 3. Xóa bài viết
         postRepository.delete(post);
     }
 
     private PostDTO convertToDto(Post post) {
-        // Lấy comments và reactions cho post này
         List<CommentDTO> comments = commentService.getCommentsByPostId(post.getId());
         List<ReactionDTO> reactions = reactionService.getReactionsByPostId(post.getId());
 

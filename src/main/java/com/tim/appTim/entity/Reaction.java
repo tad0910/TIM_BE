@@ -49,7 +49,6 @@ public class Reaction {
         like, love, haha, wow, sad, angry
     }
 
-    // Getters/Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getPostId() { return postId; }

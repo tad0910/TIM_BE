@@ -14,7 +14,6 @@ public class ClassDTO {
         this.members = members;
     }
 
-    // Getters và Setters
     public String getClassName() { return className; }
     public String getDescription() { return description; }
     public List<MemberDTO> getMembers() { return members; }
@@ -30,7 +29,6 @@ public class ClassDTO {
             this.joinDate = joinDate;
         }
 
-        // Getters và Setters
         public Long getUserId() { return userId; }
         public String getRole() { return role; }
         public LocalDateTime getJoinDate() { return joinDate; }

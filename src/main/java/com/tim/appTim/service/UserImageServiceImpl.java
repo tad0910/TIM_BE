@@ -21,7 +21,7 @@ public class UserImageServiceImpl implements UserImageService {
     @Autowired
     private UserImageRepository userImageRepository;
 
-    @Value("${upload.folder:/path/to/upload}") // Default value nếu không cấu hình
+    @Value("${upload.folder:/path/to/upload}")
     private String uploadFolder;
 
     @Override

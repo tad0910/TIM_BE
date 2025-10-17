@@ -47,7 +47,6 @@ public class UserController {
         this.userImageService = userImageService;
     }
 
-    //PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<User>> getAll() {
         return ResponseEntity.ok(userService.findAll());

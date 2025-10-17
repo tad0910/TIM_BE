@@ -1,100 +1,88 @@
 package com.tim.appTim.config;
 
-import com.tim.appTim.repository.InvalidatedTokenRepository;
+import com.tim.appTim.service.KeycloakIntrospectionService;
+import com.tim.appTim.service.UserService;
 import com.tim.appTim.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.lang.NonNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Base64;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
-    private final InvalidatedTokenRepository invalidatedTokenRepository;
+    @Autowired
+    private JwtUtil jwtUtil;
 
-    public JwtAuthenticationFilter(
-            JwtUtil jwtUtil,
-            UserDetailsService userDetailsService,
-            InvalidatedTokenRepository invalidatedTokenRepository
-    ) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
-        this.invalidatedTokenRepository = invalidatedTokenRepository;
-    }
+    @Autowired
+    private KeycloakIntrospectionService keycloakIntrospectionService;
+
+    @Autowired
+    private UserService userService;
 
     @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-
-        // ✅ Nếu không có token hoặc token không bắt đầu bằng "Bearer "
+        String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String token = authHeader.substring(7);
+        String token = authHeader.substring(7);
 
         try {
-            if (token.contains("realm_access") || token.contains("preferred_username")) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-            Claims claims = jwtUtil.getClaims(token);
-
-            // 🔸 1. Bỏ qua nếu token của Keycloak
-            String issuer = claims.getIssuer();
-            if (issuer != null && issuer.toLowerCase().contains("keycloak")) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            // 🔸 2. Nếu token bị vô hiệu hóa
-            String jti = claims.getId();
-            if (invalidatedTokenRepository.existsByJti(jti)) {
+            String[] parts = token.split("\\.");
+            if (parts.length < 2) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token đã bị vô hiệu hóa (đã đăng xuất).");
+                response.getWriter().write("Invalid token format");
                 return;
             }
 
-            // 🔸 3. Giải mã token
-            final String usernameOrEmail = jwtUtil.extractUsernameOrEmail(token);
-            if (usernameOrEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(usernameOrEmail);
+            String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]));
 
-                if (jwtUtil.isTokenValid(token)) {
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (headerJson.contains("\"RS256\"")) {
+                boolean active = keycloakIntrospectionService.introspectToken(token);
+                if (!active) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Keycloak token inactive or expired");
+                    return;
                 }
+
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            Claims claims = jwtUtil.getClaims(token);
+            String username = claims.getSubject();
+
+            if (jwtUtil.isTokenValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
+                var userDetails = userService.loadUserByUsername(username);
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
 
         } catch (Exception e) {
-            // Nếu token lỗi format
-            filterChain.doFilter(request, response);
-            return;
+
         }
 
         filterChain.doFilter(request, response);

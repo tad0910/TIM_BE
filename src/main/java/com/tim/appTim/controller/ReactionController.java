@@ -41,15 +41,12 @@ public class ReactionController {
         }
     }
 
-    
-    // Lấy tất cả reactions của một post
     @GetMapping("/posts/{postId}")
     public ResponseEntity<List<ReactionDTO>> getReactionsByPostId(@PathVariable Long postId) {
         List<ReactionDTO> reactions = reactionService.getReactionsByPostId(postId);
         return ResponseEntity.ok(reactions);
     }
 
-    // Xóa reaction
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<String> deleteReaction(
             @PathVariable Long postId,
@@ -58,20 +55,6 @@ public class ReactionController {
         return ResponseEntity.ok("Reaction deleted successfully");
     }
 
-    // // Lấy reaction của user cho một post
-    // @GetMapping("/posts/{postId}/users/{userId}")
-    // public ResponseEntity<ReactionDTO> getUserReaction(
-    //         @PathVariable Long postId,
-    //         @PathVariable Long userId) {
-    //     ReactionDTO reaction = reactionService.getUserReaction(postId, userId);
-    //     if (reaction != null) {
-    //         return ResponseEntity.ok(reaction);
-    //     } els    e {
-    //         return ResponseEntity.notFound().build();
-    //     }
-    // }
-
-    // Đếm số lượng reaction theo loại
     @GetMapping("/posts/{postId}/count/{emotionType}")
     public ResponseEntity<Long> countReactionsByType(
             @PathVariable Long postId,
@@ -86,7 +69,7 @@ public class ReactionController {
         long count = reactionService.countReactionsByType(postId, emotionTypeEnum);
         return ResponseEntity.ok(count);
     }
-    // Comment reactions
+
     @PostMapping("/comments/{commentId}")
     public ResponseEntity<?> createOrUpdateCommentReaction(
             @PathVariable Long commentId,
@@ -125,7 +108,6 @@ public class ReactionController {
         return ResponseEntity.ok(reactionService.countCommentReactionsByType(commentId, emotionTypeEnum));
     }
 
-    // Reply comment reactions
     @PostMapping("/replies/{replyCommentId}")
     public ResponseEntity<?> createOrUpdateReplyCommentReaction(
             @PathVariable Long replyCommentId,

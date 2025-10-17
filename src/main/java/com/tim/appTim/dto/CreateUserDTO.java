@@ -1,4 +1,4 @@
-package com.tim.appTim.dto; // <-- Đảm bảo tên package chính xác
+package com.tim.appTim.dto;
 
 public class CreateUserDTO {
     private String username;
@@ -7,7 +7,7 @@ public class CreateUserDTO {
     private String password;
     private String status;
 
-    // Getters and Setters
+
     public String getUsername() {
         return username;
     }
