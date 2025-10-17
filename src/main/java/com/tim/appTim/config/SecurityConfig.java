@@ -89,7 +89,8 @@ public class SecurityConfig {
                                 "/posts/**",
                                 "/comments/**",
                                 "/reactions/**",
-                                "/uploads/**"
+                                "/uploads/**",
+                                "/courses/**"
                         ).hasRole("SINH_VIEN")
                         .anyRequest().authenticated()
                 )

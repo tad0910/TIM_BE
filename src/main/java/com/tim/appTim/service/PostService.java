@@ -155,7 +155,7 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         if (!post.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("User does not have permission to access this post");
+            throw new ResourceNotFoundException("User does not have permission to access this post");
         }
         return convertToDto(post);
     }
