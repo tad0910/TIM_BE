@@ -1,13 +1,21 @@
 package com.tim.appTim.dto;
 
 public class LoginResponse {
-    private String token;  // Placeholder, có thể thay bằng session ID hoặc JWT
+    private String accessToken;
+    private String refreshToken;
+    private UserResponse user;
 
-    public LoginResponse(String token) {
-        this.token = token;
+    public LoginResponse(String accessToken, String refreshToken, UserResponse user) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.user = user;
     }
 
-    // Getters/Setters
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
+    public String getAccessToken() { return accessToken; }
+    public String getRefreshToken() { return refreshToken; }
+    public UserResponse getUser() { return user; }
+
+    public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
+    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+    public void setUser(UserResponse user) { this.user = user; }
 }

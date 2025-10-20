@@ -1,4 +1,8 @@
 package com.tim.appTim.config;
+
+import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -6,54 +10,94 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import com.tim.appTim.service.UserService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
+
+
 @Configuration
 @EnableWebSecurity
+
 public class SecurityConfig {
+
+    private final UserRepository userRepository;
+    private final CustomJwtAuthenticationProvider customJwtAuthenticationProvider;
+    private final JwtDecoder jwtDecoder;
+    private final UserService userService;
+    @Autowired
+    private final JwtAuthenticationFilter jwtAuthFilter;
+
+     public SecurityConfig(UserRepository userRepository,
+                           CustomJwtAuthenticationProvider customJwtAuthenticationProvider,
+                           JwtDecoder jwtDecoder,
+                           UserService userService, JwtAuthenticationFilter jwtAuthFilter) {
+         this.userRepository = userRepository;
+         this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
+         this.jwtDecoder = jwtDecoder;
+         this.userService = userService;
+         this.jwtAuthFilter = jwtAuthFilter;
+     }
+
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, DaoAuthenticationProvider authenticationProvider) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable()) // Vô hiệu hóa CSRF
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Thêm cấu hình CORS
-            .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/register", "/auth/login", "/auth/logout").permitAll() // Cho phép truy cập
-                .anyRequest().authenticated() // Các request khác yêu cầu xác thực
-            )
-            .authenticationProvider(authenticationProvider) // Đăng ký authentication provider
-            .formLogin().disable() // Vô hiệu hóa form login
-            .logout().disable() // Vô hiệu hóa logout
-            .httpBasic().disable(); // Vô hiệu hóa HTTP Basic
-        return http.build();
-    }
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:5173"); // Cho phép origin của frontend
-        configuration.addAllowedMethod("*"); // Cho phép tất cả các phương thức (GET, POST, etc.)
-        configuration.addAllowedHeader("*"); // Cho phép tất cả header
-        configuration.setAllowCredentials(true); // Cho phép gửi cookie/auth nếu cần
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Áp dụng cho tất cả endpoint
-        return source;
-    }
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserService userService) {
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
+    }
+
+    @Bean
+    @Qualifier("loginManager")
+    public AuthenticationManager loginAuthenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public JwtAuthenticationProvider keycloakJwtAuthenticationProvider() {
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(jwtDecoder);
+        provider.setJwtAuthenticationConverter(new CustomJwtAuthenticationConverter(userRepository));
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager tokenAuthenticationManager(JwtAuthenticationProvider keycloakJwtAuthenticationProvider) {
+        return new DelegatingAuthenticationManager(keycloakJwtAuthenticationProvider, customJwtAuthenticationProvider);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager tokenAuthenticationManager) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(daoAuthenticationProvider())
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/v1/keycloak/**").permitAll()
+                        .requestMatchers(
+                                "/users/**",
+                                "/profile/**",
+                                "/classes/**",
+                                "/posts/**",
+                                "/uploads/**",
+                                "/courses/**"
+                        ).hasRole("SINH_VIEN")
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.authenticationManager(tokenAuthenticationManager))
+                        .authenticationEntryPoint(new CustomAuthEntryPoint())
+                )
+
+                .addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
+        return http.build();
     }
 }

@@ -17,7 +17,8 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        String roleName = "ROLE_" + user.getRole().name().toUpperCase();
+        return Collections.singletonList(new SimpleGrantedAuthority(roleName));
     }
 
     @Override
@@ -38,4 +39,8 @@ public class UserDetailsImpl implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
     @Override
     public boolean isEnabled() { return true; }
+
+    public User getUser() {
+        return user;
+    }
 }
