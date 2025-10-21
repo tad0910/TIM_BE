@@ -8,7 +8,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 
-@RequiredArgsConstructor
+
 public class DelegatingAuthenticationManager implements AuthenticationManager {
 
     private final JwtAuthenticationProvider keycloakJwtAuthenticationProvider;

@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,8 +47,8 @@ public class ImageController {
     private String uploadFolder;
 
     @PostMapping("/{userId}/image")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<String> uploadImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file) {
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #userId)")
+    public ResponseEntity<String> uploadImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file, Authentication authentication) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body("File is empty");
         }
@@ -99,8 +100,8 @@ public class ImageController {
 
 
     @DeleteMapping("/{userId}/image/{imageId}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<String> deleteImage(@PathVariable Long userId, @PathVariable Long imageId) {
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #userId)")
+    public ResponseEntity<String> deleteImage(@PathVariable Long userId, @PathVariable Long imageId, Authentication authentication) {
         UserImage userImage = userImageService.findById(imageId);
         if (userImage == null || !userImage.getUserId().equals(userId)) {
             return ResponseEntity.notFound().build();

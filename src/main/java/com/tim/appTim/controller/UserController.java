@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.tim.appTim.service.UserImageService;
 
 
@@ -41,22 +42,24 @@ public class UserController {
 
     @Value("${upload.folder}")
     private String uploadFolder;
-    
+
     public UserController(UserService userService, UserImageService userImageService) {
         this.userService = userService;
         this.userImageService = userImageService;
     }
-
+    
     @GetMapping
+    @PreAuthorize("hasAuthority('user:read_all')")
     public ResponseEntity<List<User>> getAll() {
         return ResponseEntity.ok(userService.findAll());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('SINH_VIEN')")
+    @PreAuthorize("hasAuthority('user:read_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<User> getById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.findById(id));
     }
+
 
     @GetMapping("/profile/{email}")
     public ResponseEntity<ProfileResponse> getUserProfileByEmail(@PathVariable String email) {
@@ -71,16 +74,20 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
         return ResponseEntity.ok(userService.update(id, user));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:delete')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
     @PostMapping("/{id}/profile-image")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<?> uploadProfileImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             Map<String, String> error = new HashMap<>();
@@ -155,7 +162,9 @@ public class UserController {
     }
 
     @PutMapping("/{id}/profile-image")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<?> updateProfileImage(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        // ... (code của bạn giữ nguyên)
         try {
             String imageUrl = request.get("imageUrl");
             if (imageUrl == null || imageUrl.trim().isEmpty()) {
@@ -176,8 +185,11 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
+
     @PostMapping("/{id}/cover-image")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<?> uploadCoverImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        // ... (code của bạn giữ nguyên)
         if (file.isEmpty()) {
             Map<String, String> error = new HashMap<>();
             error.put("error", "File không được để trống");
@@ -251,6 +263,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}/cover-image")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<?> updateCoverImage(@PathVariable Long id, @RequestBody Map<String, String> request) {
         try {
             String imageUrl = request.get("imageUrl");

@@ -11,6 +11,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.Set;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 
 @Entity
 @Table(name = "users")
@@ -45,20 +50,19 @@ public class User {
     @Column(name = "anh_bia")
     private String coverImage;
 
-    @Column(name = "vai_tro")
-    @Enumerated(EnumType.STRING)
-    private Role role;
-
     @Column(name = "ngay_tao")
     private LocalDateTime createdAt;
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles;
+
     @Column(name = "refresh_token", length = 500)
     private String refreshToken;
-
-
-    public enum Role {
-        sinh_vien, giao_vien, admin
-    }
 
     @Column(name = "password_changed_at")
     private Instant passwordChangedAt;
@@ -86,8 +90,12 @@ public class User {
     public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
+    public Set<Role> getRoles() {
+        return roles;
+    }
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public String getKeycloakId() { return keycloakId; } // Sửa getter cho khớp với field keycloakId

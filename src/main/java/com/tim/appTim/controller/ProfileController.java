@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +37,7 @@ public class ProfileController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
         return ResponseEntity.ok(userService.update(id, user));
     }
@@ -47,6 +49,7 @@ public class ProfileController {
     }
 
     @PostMapping("/{userId}/images")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #userId)")
     public ResponseEntity<UserImageDTO> createUserImage(
             @PathVariable Long userId,
             @RequestBody Map<String, String> requestBody) {
@@ -61,6 +64,7 @@ public class ProfileController {
     }
 
     @PutMapping("/{userId}/images/{imageId}")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #userId)")
     public ResponseEntity<UserImageDTO> updateUserImage(
             @PathVariable Long userId,
             @PathVariable Long imageId,
@@ -72,6 +76,7 @@ public class ProfileController {
     }
 
     @DeleteMapping("/{userId}/images/{imageId}")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #userId)")
     public ResponseEntity<Void> deleteUserImage(
             @PathVariable Long userId,
             @PathVariable Long imageId) {

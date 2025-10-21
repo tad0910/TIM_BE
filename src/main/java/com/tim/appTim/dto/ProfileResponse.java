@@ -23,7 +23,10 @@ public class ProfileResponse {
         this.email = user.getEmail();
         this.phoneNumber = user.getPhoneNumber();
         this.profileImage = user.getProfileImage();
-        this.role = user.getRole() != null ? user.getRole().name() : null;
+        this.role = user.getRoles().stream()
+                .findFirst()
+                .map(com.tim.appTim.entity.Role::getName)
+                .orElse(null); //
         this.createdAt = user.getCreatedAt();
         this.posts = posts;
         this.images = images;

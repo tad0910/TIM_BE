@@ -3,6 +3,7 @@ package com.tim.appTim.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
@@ -14,6 +15,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tim.appTim.controller.KeycloakController.UpdateUserDTO;
 import com.tim.appTim.entity.User;
+import com.tim.appTim.entity.Role;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.repository.RoleRepository;
 
 
-@Service
+@Service("keycloakService")
 public class KeycloakSyncService {
 
     @Value("${keycloak.server-url}")
@@ -39,12 +43,13 @@ public class KeycloakSyncService {
     @Value("${keycloak.client-secret}")
     private String clientSecret;
 
+    private final RoleRepository roleRepository;
     private final UserRepository userRepository;
 
 
-
-    public KeycloakSyncService(UserRepository userRepository) {
+    public KeycloakSyncService(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
 
     private Keycloak getKeycloakClient() {
@@ -76,7 +81,9 @@ public class KeycloakSyncService {
                     newUser.setEmail(kcUser.getEmail());
                     newUser.setCreatedAt(LocalDateTime.now());
                     newUser.setPassword("KEYCLOAK_MANAGED");
-                    newUser.setRole(User.Role.sinh_vien);
+                    Role role = roleRepository.findByName("ROLE_SINH_VIEN")
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy Role trong DB"));
+                    newUser.setRoles(Set.of(role));
 
                     userRepository.save(newUser);
                     syncedUsers.add(newUser);
@@ -105,23 +112,26 @@ public class KeycloakSyncService {
             newUser.setEmail(email);
             newUser.setCreatedAt(LocalDateTime.now());
             newUser.setPassword("KEYCLOAK_MANAGED");
-            newUser.setRole(User.Role.sinh_vien);
+            Role role = roleRepository.findByName("ROLE_SINH_VIEN")
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Role trong DB"));
+            newUser.setRoles(Set.of(role));
+
             userRepository.save(newUser);
             System.out.println("✅ Created user in DB: " + username);
 
             keycloak = getKeycloakClient();
             RealmResource realmResource = keycloak.realm(realm);
 
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername(username);
-            user.setEmail(email);
-            user.setFirstName(fullName != null ? fullName.split(" ")[0] : "");
-            user.setLastName(fullName != null ?
+            UserRepresentation userRepresentation = new UserRepresentation();
+            userRepresentation.setUsername(username);
+            userRepresentation.setEmail(email);
+            userRepresentation.setFirstName(fullName != null ? fullName.split(" ")[0] : "");
+            userRepresentation.setLastName(fullName != null ?
                     String.join(" ", java.util.Arrays.copyOfRange(fullName.split(" "), 1, fullName.split(" ").length)) : "");
-            user.setEnabled("active".equalsIgnoreCase(status));
-            user.setEmailVerified(false);
+            userRepresentation.setEnabled("active".equalsIgnoreCase(status));
+            userRepresentation.setEmailVerified(false);
 
-            Response response = realmResource.users().create(user);
+            Response response = realmResource.users().create(userRepresentation);
             if (response.getStatus() >= 200 && response.getStatus() < 300) {
                 String userId = response.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
                 System.out.println("✅ Created user in Keycloak: " + username);
@@ -154,6 +164,7 @@ public class KeycloakSyncService {
             }
         }
     }
+
     @Transactional
     public void updateUser(String userId, UpdateUserDTO updateUserDTO) {
         Keycloak keycloak = null;
