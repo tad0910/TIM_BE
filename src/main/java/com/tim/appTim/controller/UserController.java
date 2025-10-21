@@ -13,7 +13,10 @@ import java.util.UUID;
 
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.UserService;
+import com.tim.appTim.service.ClassService;
 import com.tim.appTim.dto.ProfileResponse;
+import com.tim.appTim.dto.UserClassDTO;
+import com.tim.appTim.entity.ClassMember;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -39,13 +42,16 @@ public class UserController {
 
     private final UserService userService;
     private final UserImageService userImageService;
+    private final ClassService classService;
 
     @Value("${upload.folder}")
     private String uploadFolder;
 
-    public UserController(UserService userService, UserImageService userImageService) {
+    public UserController(UserService userService, UserImageService userImageService, ClassService classService) {
+
         this.userService = userService;
         this.userImageService = userImageService;
+        this.classService = classService;
     }
     
     @GetMapping
@@ -283,6 +289,36 @@ public class UserController {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{id}/classes")
+    public ResponseEntity<?> getUserClasses(@PathVariable Long id) {
+        try {
+            List<ClassMember> userClasses = classService.getUserClasses(id);
+            
+            List<UserClassDTO> classDTOs = userClasses.stream()
+                    .map(classMember -> {
+                        return new UserClassDTO(
+                                classMember.getClassId(),
+                                classMember.getClassEntity() != null ? classMember.getClassEntity().getClassName() : "N/A",
+                                classMember.getClassEntity() != null ? classMember.getClassEntity().getDescription() : "N/A",
+                                classMember.getRole().name(),
+                                classMember.getJoinDate()
+                        );
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", id);
+            response.put("classes", classDTOs);
+            response.put("totalClasses", classDTOs.size());
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         }
     }
 }

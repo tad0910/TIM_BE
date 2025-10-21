@@ -22,7 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Configuration
 @EnableWebSecurity
+
 @EnableMethodSecurity
+
 public class SecurityConfig {
 
     private final UserRepository userRepository;

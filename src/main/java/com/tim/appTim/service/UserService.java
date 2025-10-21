@@ -206,6 +206,18 @@ public class UserService implements UserDetailsService {
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
 
+                    // Convert files to FileDTO
+            // Convert files to FileDTO
+            List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
+                    .map(file -> new com.tim.appTim.dto.FileDTO(
+                            file.getId(),
+                            file.getFileUrl(),
+                            file.getFileType().name(),
+                            file.getFileName() != null ? file.getFileName() : extractFileName(file.getFileUrl()),
+                            file.getFileSize() != null ? file.getFileSize() : 0L
+                    ))
+                    .collect(Collectors.toList());
+                    
             return new PostDTO(
                     post.getId(),
                     post.getUser().getId(),
@@ -215,7 +227,7 @@ public class UserService implements UserDetailsService {
                     post.getUpdatedAt(),
                     comments,
                     reactions,
-                    post.getFiles()
+                    fileDTOs
             );
         }).collect(Collectors.toList());
 
@@ -263,7 +275,16 @@ public class UserService implements UserDetailsService {
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
 
-            return new PostDTO(
+        List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
+                .map(file -> new com.tim.appTim.dto.FileDTO(
+                        file.getId(),
+                        file.getFileUrl(),
+                        file.getFileType().name(),
+                        file.getFileName() != null ? file.getFileName() : extractFileName(file.getFileUrl()),
+                        file.getFileSize() != null ? file.getFileSize() : 0L
+                ))
+                .collect(Collectors.toList());
+                return new PostDTO(
                     post.getId(),
                     post.getUser().getId(),
                     post.getContent(),
@@ -272,7 +293,7 @@ public class UserService implements UserDetailsService {
                     post.getUpdatedAt(),
                     comments,
                     reactions,
-                    post.getFiles()
+                    fileDTOs
             );
         }).collect(Collectors.toList());
 
@@ -447,5 +468,12 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
         return user.getUsername().equals(currentUsername);
+    }
+    private String extractFileName(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return "unknown";
+        }
+        String[] parts = fileUrl.split("/");
+        return parts[parts.length - 1];
     }
 }

@@ -11,4 +11,6 @@ import com.tim.appTim.entity.ClassMember;
 public interface ClassMemberRepository extends JpaRepository<ClassMember, Long> {
     List<ClassMember> findByClassId(Long classId);
     Optional<ClassMember> findByUserIdAndClassId(Long userId, Long classId);
+    List<ClassMember> findByUserId(Long userId);
+    Optional<ClassMember> findByClassIdAndUserId(Long classId, Long userId);
 }

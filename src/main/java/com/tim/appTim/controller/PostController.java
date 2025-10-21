@@ -81,6 +81,8 @@
 
                         File f = new File();
                         f.setFileUrl("/uploads/" + uniqueName);
+                        f.setFileName(originalName);
+                        f.setFileSize(mf.getSize());
                         f.setFileType(fileType);
                         files.add(f);
                     }
@@ -161,6 +163,8 @@
 
                         File f = new File();
                         f.setFileUrl("/uploads/" + uniqueName);
+                        f.setFileName(originalName);
+                        f.setFileSize(mf.getSize());
                         f.setFileType(fileType);
                         files.add(f);
                     }
