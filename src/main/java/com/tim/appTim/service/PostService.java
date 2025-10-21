@@ -59,6 +59,18 @@ public class PostService {
 
         Post savedPost = postRepository.save(post);
 
+        // Convert files to FileDTO
+        List<com.tim.appTim.dto.FileDTO> fileDTOs = savedPost.getFiles().stream()
+                .map(file -> new com.tim.appTim.dto.FileDTO(
+                        file.getId(),
+                        file.getFileUrl(),
+                        file.getFileType().name(),
+                        file.getFileName() != null ? file.getFileName() : extractFileName(file.getFileUrl()),
+                        file.getFileSize() != null ? file.getFileSize() : 0L
+                ))
+                .collect(Collectors.toList());
+
+
         return new PostDTO(
                 savedPost.getId(),
                 savedPost.getUser().getId(),
@@ -70,7 +82,7 @@ public class PostService {
                 savedPost.getTotalComments(),
                 new ArrayList<>(),
                 new ArrayList<>(),
-                savedPost.getFiles()
+                fileDTOs
         );
     }
     public Page<PostDTO> getAllPosts(Pageable pageable) {
@@ -132,6 +144,18 @@ public class PostService {
         List<CommentDTO> comments = commentService.getCommentsByPostId(post.getId());
         List<ReactionDTO> reactions = reactionService.getReactionsByPostId(post.getId());
 
+        // Convert File entities to FileDTO with IDs
+        List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
+                .map(file -> new com.tim.appTim.dto.FileDTO(
+                        file.getId(),
+                        file.getFileUrl(),
+                        file.getFileType().name(),
+                        file.getFileName() != null ? file.getFileName() : extractFileName(file.getFileUrl()),
+                        file.getFileSize() != null ? file.getFileSize() : 0L
+                ))
+                .collect(Collectors.toList());
+
+
         return new PostDTO(
                 post.getId(),
                 post.getUser().getId(),
@@ -143,9 +167,19 @@ public class PostService {
                 comments != null ? comments.size() : 0,
                 comments,
                 reactions,
-                post.getFiles()
+                fileDTOs
         );
     }
+
+    private String extractFileName(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return "unknown";
+        }
+        String[] parts = fileUrl.split("/");
+        return parts[parts.length - 1];
+    }
+
+
     public PostDTO getPostByIdForUser(Long userId, Long postId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);
