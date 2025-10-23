@@ -1,10 +1,12 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.entity.Course;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.repository.CourseRepository;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CourseService {
@@ -18,31 +20,34 @@ public class CourseService {
         return courseRepository.findAll();
     }
 
-    public Optional<Course> getCourseById(Long id) {
-        return courseRepository.findById(id);
+    public Course getCourseById(Long id) {
+        return courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học với id = " + id));
     }
 
     public Course createCourse(Course course) {
+        if (course.getCourseName() == null || course.getCourseName().isBlank()) {
+            throw new BadRequestException("Tên khóa học không được để trống");
+        }
         return courseRepository.save(course);
     }
 
-    // Cập nhật khóa học
-    public Optional<Course> updateCourse(Long id, Course updatedCourse) {
-        return courseRepository.findById(id).map(course -> {
-            course.setCourseName(updatedCourse.getCourseName());
-            course.setDescription(updatedCourse.getDescription());
-            course.setStartDate(updatedCourse.getStartDate());
-            course.setTuitionFee(updatedCourse.getTuitionFee());
-            return courseRepository.save(course);
-        });
+    public Course updateCourse(Long id, Course updatedCourse) {
+        Course existingCourse = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khóa học với id = " + id));
+
+        existingCourse.setCourseName(updatedCourse.getCourseName());
+        existingCourse.setDescription(updatedCourse.getDescription());
+        existingCourse.setStartDate(updatedCourse.getStartDate());
+        existingCourse.setTuitionFee(updatedCourse.getTuitionFee());
+
+        return courseRepository.save(existingCourse);
     }
 
-    // Xóa khóa học
-    public boolean deleteCourse(Long id) {
-        if (courseRepository.existsById(id)) {
-            courseRepository.deleteById(id);
-            return true;
+    public void deleteCourse(Long id) {
+        if (!courseRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Không tìm thấy khóa học với id = " + id);
         }
-        return false;
+        courseRepository.deleteById(id);
     }
 }

@@ -1,6 +1,5 @@
 package com.tim.appTim.controller;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -60,14 +59,8 @@ public class ClassController {
             @RequestBody ClassDTO classDTO,
             Authentication authentication
     ) {
-        try {
-            ClassDTO createdClass = classService.createClass(classDTO, authentication);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdClass);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to create class: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Return null or error DTO
-        }
+        ClassDTO createdClass = classService.createClass(classDTO, authentication);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdClass);
     }
 
     @PutMapping("/{classId}")
@@ -77,14 +70,8 @@ public class ClassController {
             @RequestBody ClassDTO classDTO,
             Authentication authentication
     ) {
-        try {
-            ClassDTO updatedClass = classService.updateClass(classId, classDTO);
-            return ResponseEntity.ok(updatedClass);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(null);
-        }
+        ClassDTO updatedClass = classService.updateClass(classId, classDTO);
+        return ResponseEntity.ok(updatedClass);
     }
 
     @DeleteMapping("/{classId}")
@@ -93,80 +80,49 @@ public class ClassController {
             @PathVariable Long classId,
             Authentication authentication
     ) {
-        try {
-            classService.deleteClass(classId);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        classService.deleteClass(classId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{classId}/members")
     @PreAuthorize("hasAuthority('class:update_all') or @classService.isClassTeacher(authentication, #classId)")
-    public ResponseEntity<?> addMemberToClass(
+    public ResponseEntity<Map<String, Object>> addMemberToClass(
             @PathVariable Long classId,
             @RequestBody AddMemberDTO request,
             Authentication authentication
     ) {
-        try {
-            ClassMember classMember = classService.addMember(classId, request);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Thêm thành viên vào lớp học thành công");
-            response.put("member", classMember);
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
+        ClassMember classMember = classService.addMember(classId, request);
+        return ResponseEntity.ok(Map.of(
+                "message", "Thêm thành viên vào lớp học thành công",
+                "member", classMember
+        ));
     }
 
     @PutMapping("/{classId}/members/{userId}")
     @PreAuthorize("hasAuthority('class:update_all') or @classService.isClassTeacher(authentication, #classId)")
-    public ResponseEntity<?> updateMemberRole(
+    public ResponseEntity<Map<String, Object>> updateMemberRole(
             @PathVariable Long classId,
             @PathVariable Long userId,
             @RequestBody UpdateMemberRequest request,
             Authentication authentication
     ) {
-        try {
-            ClassMember classMember = classService.updateMemberRole(classId, userId, request.getRole());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Cập nhật vai trò thành viên thành công");
-            response.put("member", classMember);
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
+        ClassMember classMember = classService.updateMemberRole(classId, userId, request.getRole());
+        return ResponseEntity.ok(Map.of(
+                "message", "Cập nhật vai trò thành viên thành công",
+                "member", classMember
+        ));
     }
 
     @DeleteMapping("/{classId}/members/{userIdToRemove}")
     @PreAuthorize("hasAuthority('class:update_all') or " +
             "@classService.isClassTeacher(authentication, #classId) or " +
             "@userService.isSelf(authentication, #userIdToRemove)")
-    public ResponseEntity<?> removeMemberFromClass(
-                                                    @PathVariable Long classId,
-                                                    @PathVariable Long userIdToRemove,
-                                                    Authentication authentication
+    public ResponseEntity<Map<String, String>> removeMemberFromClass(
+            @PathVariable Long classId,
+            @PathVariable Long userIdToRemove,
+            Authentication authentication
     ) {
-        try {
-            classService.removeMember(classId, userIdToRemove);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Xóa thành viên khỏi lớp học thành công");
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
+        classService.removeMember(classId, userIdToRemove);
+        return ResponseEntity.ok(Map.of("message", "Xóa thành viên khỏi lớp học thành công"));
     }
-
 }

@@ -18,6 +18,8 @@ import com.tim.appTim.entity.ClassMember;
 import org.springframework.security.core.Authentication;
 import com.tim.appTim.dto.ClassDTO;
 import com.tim.appTim.dto.AddMemberDTO;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.BadRequestException;
 
 @Service("classService")
 public class ClassService {
@@ -96,7 +98,7 @@ public class ClassService {
         // Kiểm tra xem user đã tham gia class chưa
         Optional<ClassMember> existingMember = classMemberRepository.findByClassIdAndUserId(classId, userId);
         if (existingMember.isPresent()) {
-            throw new RuntimeException("User đã tham gia lớp học này rồi");
+            throw new BadRequestException("User đã tham gia lớp học này rồi");
         }
 
         ClassMember classMember = new ClassMember();
@@ -110,7 +112,7 @@ public class ClassService {
 
     public ClassMember updateMemberRole(Long classId, Long userId, ClassMember.Role newRole) {
         ClassMember classMember = classMemberRepository.findByClassIdAndUserId(classId, userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thành viên trong lớp học"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành viên trong lớp học"));
         
         classMember.setRole(newRole);
         return classMemberRepository.save(classMember);
@@ -118,7 +120,7 @@ public class ClassService {
 
     public void removeMemberFromClass(Long classId, Long userId) {
         ClassMember classMember = classMemberRepository.findByClassIdAndUserId(classId, userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thành viên trong lớp học"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành viên trong lớp học"));
         
         classMemberRepository.delete(classMember);
     }
