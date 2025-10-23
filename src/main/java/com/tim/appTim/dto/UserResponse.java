@@ -16,7 +16,10 @@ public class UserResponse {
         this.email = user.getEmail();
         this.fullName = user.getFirstName() + " " + user.getLastName();
         this.profileImage = user.getProfileImage();
-        this.role = user.getRole().name();
+        this.role = user.getRoles().stream()
+                .findFirst()
+                .map(com.tim.appTim.entity.Role::getName)
+                .orElse(null);
     }
 
     public Long getId() { return id; }

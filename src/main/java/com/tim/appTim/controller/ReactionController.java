@@ -2,8 +2,12 @@ package com.tim.appTim.controller;
 
 import java.util.List;
 
+import com.tim.appTim.entity.User;
+import com.tim.appTim.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,18 +24,30 @@ import com.tim.appTim.service.ReactionService;
 @RequestMapping("/reactions")
 public class ReactionController {
 
-    @Autowired
     private ReactionService reactionService;
+    private final UserService userService;
+
+    @Autowired
+    public ReactionController(ReactionService reactionService, UserService userService) {
+        this.reactionService = reactionService;
+        this.userService = userService;
+    }
+
+    private User getUserFromAuthentication(Authentication authentication) {
+        return userService.findByUsernameOrEmail(authentication.getName());
+    }
 
     @PostMapping("/posts/{postId}")
+    @PreAuthorize("hasAuthority('reaction:create')")
     public ResponseEntity<?> createOrUpdateReaction(
             @PathVariable Long postId,
-            @RequestParam Long userId,
+            Authentication authentication,
             @RequestParam String emotionType) {
 
         try {
+            User currentUser = getUserFromAuthentication(authentication);
             Reaction.EmotionType emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
-            ReactionDTO reaction = reactionService.createOrUpdateReaction(postId, userId, emotionTypeEnum);
+            ReactionDTO reaction = reactionService.createOrUpdateReaction(postId, currentUser.getId(), emotionTypeEnum);
 
             return ResponseEntity.ok(reaction);
         } catch (IllegalArgumentException e) {
@@ -48,10 +64,12 @@ public class ReactionController {
     }
 
     @DeleteMapping("/posts/{postId}")
+    @PreAuthorize("hasAuthority('reaction:delete')")
     public ResponseEntity<String> deleteReaction(
             @PathVariable Long postId,
-            @RequestParam Long userId) {
-        reactionService.deleteReaction(postId, userId);
+            Authentication authentication) {
+        User currentUser = getUserFromAuthentication(authentication);
+        reactionService.deleteReaction(postId, currentUser.getId());
         return ResponseEntity.ok("Reaction deleted successfully");
     }
 
@@ -71,13 +89,15 @@ public class ReactionController {
     }
 
     @PostMapping("/comments/{commentId}")
+    @PreAuthorize("hasAuthority('reaction:create')")
     public ResponseEntity<?> createOrUpdateCommentReaction(
             @PathVariable Long commentId,
-            @RequestParam Long userId,
+            Authentication authentication,
             @RequestParam String emotionType) {
         try {
+            User currentUser = getUserFromAuthentication(authentication);
             Reaction.EmotionType emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
-            ReactionDTO reaction = reactionService.createOrUpdateCommentReaction(commentId, userId, emotionTypeEnum);
+            ReactionDTO reaction = reactionService.createOrUpdateCommentReaction(commentId, currentUser.getId(), emotionTypeEnum);
             return ResponseEntity.ok(reaction);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid emotion type: " + emotionType);
@@ -92,8 +112,10 @@ public class ReactionController {
     }
 
     @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<String> deleteCommentReaction(@PathVariable Long commentId, @RequestParam Long userId) {
-        reactionService.deleteCommentReaction(commentId, userId);
+    @PreAuthorize("hasAuthority('reaction:delete')")
+    public ResponseEntity<String> deleteCommentReaction(@PathVariable Long commentId, Authentication authentication) {
+        User currentUser = getUserFromAuthentication(authentication);
+        reactionService.deleteCommentReaction(commentId, currentUser.getId());
         return ResponseEntity.ok("Reaction deleted successfully");
     }
 
@@ -109,13 +131,15 @@ public class ReactionController {
     }
 
     @PostMapping("/replies/{replyCommentId}")
+    @PreAuthorize("hasAuthority('reaction:create')")
     public ResponseEntity<?> createOrUpdateReplyCommentReaction(
             @PathVariable Long replyCommentId,
-            @RequestParam Long userId,
+            Authentication authentication,
             @RequestParam String emotionType) {
         try {
+            User currentUser = getUserFromAuthentication(authentication);
             Reaction.EmotionType emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
-            ReactionDTO reaction = reactionService.createOrUpdateReplyCommentReaction(replyCommentId, userId, emotionTypeEnum);
+            ReactionDTO reaction = reactionService.createOrUpdateReplyCommentReaction(replyCommentId, currentUser.getId(), emotionTypeEnum);
             return ResponseEntity.ok(reaction);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid emotion type: " + emotionType);
@@ -130,8 +154,10 @@ public class ReactionController {
     }
 
     @DeleteMapping("/replies/{replyCommentId}")
-    public ResponseEntity<String> deleteReplyCommentReaction(@PathVariable Long replyCommentId, @RequestParam Long userId) {
-        reactionService.deleteReplyCommentReaction(replyCommentId, userId);
+    @PreAuthorize("hasAuthority('reaction:delete')")
+    public ResponseEntity<String> deleteReplyCommentReaction(@PathVariable Long replyCommentId, Authentication authentication) {
+        User currentUser = getUserFromAuthentication(authentication);
+        reactionService.deleteReplyCommentReaction(replyCommentId, currentUser.getId());
         return ResponseEntity.ok("Reaction deleted successfully");
     }
 

@@ -4,11 +4,13 @@ import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.entity.Comment;
 import com.tim.appTim.entity.ReplyComment;
+import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,23 +18,31 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.NoSuchElementException;
 
-@Service
+@Service("commentService")
 @Transactional
 public class CommentService {
 
-    @Autowired
-    private CommentRepository commentRepository;
+    private final CommentRepository commentRepository;
+    private final ReplyCommentRepository replyCommentRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Autowired
-    private ReplyCommentRepository replyCommentRepository;
+    private NotificationService notificationService;
 
-    @Autowired
-    private PostRepository postRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
+    public CommentService(CommentRepository commentRepository,
+                          ReplyCommentRepository replyCommentRepository,
+                          UserService userService, PostRepository postRepository, UserRepository userRepository) {
+        this.commentRepository = commentRepository;
+        this.replyCommentRepository = replyCommentRepository;
+        this.userService = userService;
+        this.postRepository = postRepository;
+        this.userRepository = userRepository;
+    }
     public CommentDTO createComment(Long postId, Long userId, String content, Comment.Emotion emotion, Long fileId) {
         postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
@@ -113,7 +123,7 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
-    public ReplyCommentDTO updateReplyComment(Long replyCommentId, String content, ReplyComment.Emotion emotion) {
+    public ReplyCommentDTO updateReplyComment(Long userId, Long replyCommentId, String content, ReplyComment.Emotion emotion) {
         ReplyComment replyComment = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
@@ -125,7 +135,7 @@ public class CommentService {
         return convertReplyToDTO(updatedReplyComment);
     }
 
-    public void deleteReplyComment(Long replyCommentId) {
+    public void deleteReplyComment(Long userId, Long replyCommentId) {
         ReplyComment replyComment = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
@@ -163,4 +173,28 @@ public class CommentService {
                 replyComment.getCreatedAt()
         );
     }
+
+        public boolean isOwner(Authentication authentication, Long commentId) {
+            if (authentication == null || !authentication.isAuthenticated()) return false;
+
+            User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+            if (currentUser == null) return false;
+
+            Comment comment = commentRepository.findById(commentId)
+                    .orElseThrow(() -> new NoSuchElementException("Không tìm thấy Comment: " + commentId));
+
+            return comment.getUser().getId().equals(currentUser.getId());
+        }
+
+        public boolean isReplyOwner(Authentication authentication, Long replyCommentId) {
+            if (authentication == null || !authentication.isAuthenticated()) return false;
+
+            User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+            if (currentUser == null) return false;
+
+            ReplyComment reply = replyCommentRepository.findById(replyCommentId)
+                    .orElseThrow(() -> new NoSuchElementException("Không tìm thấy Reply Comment: " + replyCommentId));
+
+            return reply.getUser().getId().equals(currentUser.getId());
+        }
 }

@@ -6,11 +6,11 @@ import com.tim.appTim.service.KeycloakSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 
-//import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ClientErrorException;
 import java.util.List;
 
@@ -22,6 +22,7 @@ public class KeycloakController {
     private KeycloakSyncService keycloakSyncService;
 
     @PutMapping("/users/{userId}")
+    @PreAuthorize("hasAuthority('user:update_all') or authentication.principal.getSubject() == #userId")
     public ResponseEntity<?> updateUser(@PathVariable String userId, @RequestBody UpdateUserDTO updateUserDTO) {
         try {
             keycloakSyncService.updateUser(userId, updateUserDTO);
@@ -53,6 +54,7 @@ public class KeycloakController {
     }
 
     @PostMapping("/users/{userId}/logout")
+    @PreAuthorize("hasAuthority('user:logout_all') or authentication.principal.getSubject() == #userId")
     public ResponseEntity<?> logoutUser(@PathVariable String userId) {
         try {
             keycloakSyncService.logoutUserFromKeycloak(userId);

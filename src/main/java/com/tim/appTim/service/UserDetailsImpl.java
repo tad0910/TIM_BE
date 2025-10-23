@@ -6,7 +6,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Set; // Import thêm
+import java.util.stream.Collectors; // Import thêm
 
 public class UserDetailsImpl implements UserDetails {
     private final User user;
@@ -17,8 +18,20 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String roleName = "ROLE_" + user.getRole().name().toUpperCase();
-        return Collections.singletonList(new SimpleGrantedAuthority(roleName));
+        // *** LOGIC MỚI BẮT ĐẦU TỪ ĐÂY ***
+
+        // 1. Lấy tất cả permissions từ tất cả roles của user
+        Set<GrantedAuthority> authorities = user.getRoles().stream() // Lấy Set<Role> mới
+                .flatMap(role -> role.getPermissions().stream()) // Biến thành một Stream<Permission>
+                .map(permission -> new SimpleGrantedAuthority(permission.getName())) // Chuyển thành "user:read", "post:create"
+                .collect(Collectors.toSet());
+
+        // 2. (Tùy chọn) Thêm cả tên Role vào danh sách
+        user.getRoles().forEach(role ->
+                authorities.add(new SimpleGrantedAuthority(role.getName())) // Thêm "ROLE_ADMIN", "ROLE_USER"
+        );
+
+        return authorities;
     }
 
     @Override

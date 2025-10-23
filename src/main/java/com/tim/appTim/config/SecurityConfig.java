@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,6 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Configuration
 @EnableWebSecurity
 
+@EnableMethodSecurity
+
 public class SecurityConfig {
 
     private final UserRepository userRepository;
@@ -31,16 +34,16 @@ public class SecurityConfig {
     @Autowired
     private final JwtAuthenticationFilter jwtAuthFilter;
 
-     public SecurityConfig(UserRepository userRepository,
-                           CustomJwtAuthenticationProvider customJwtAuthenticationProvider,
-                           JwtDecoder jwtDecoder,
-                           UserService userService, JwtAuthenticationFilter jwtAuthFilter) {
-         this.userRepository = userRepository;
-         this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
-         this.jwtDecoder = jwtDecoder;
-         this.userService = userService;
-         this.jwtAuthFilter = jwtAuthFilter;
-     }
+    public SecurityConfig(UserRepository userRepository,
+                          CustomJwtAuthenticationProvider customJwtAuthenticationProvider,
+                          JwtDecoder jwtDecoder,
+                          UserService userService, JwtAuthenticationFilter jwtAuthFilter) {
+        this.userRepository = userRepository;
+        this.customJwtAuthenticationProvider = customJwtAuthenticationProvider;
+        this.jwtDecoder = jwtDecoder;
+        this.userService = userService;
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -82,15 +85,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/v1/keycloak/**").permitAll()
-                        .requestMatchers(
-                                "/users/**",
-                                "/profile/**",
-                                "/classes/**",
-                                "/posts/**",
-                                "/uploads/**",
-                                "/courses/**"
-                        ).hasRole("SINH_VIEN")
-                        .anyRequest().authenticated()
+                        .anyRequest().authenticated() 
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.authenticationManager(tokenAuthenticationManager))

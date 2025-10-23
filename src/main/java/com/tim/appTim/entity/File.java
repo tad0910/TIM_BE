@@ -28,6 +28,12 @@ public class File {
     @Column(name = "file_type", nullable = false, length = 10)
     private FileType fileType;
 
+    @Column(name = "file_name", length = 255)
+    private String fileName;
+
+    @Column(name = "file_size")
+    private Long fileSize;
+
     @ManyToOne
     @JoinColumn(name = "post_id", nullable = false)
     @JsonIgnore
@@ -44,6 +50,10 @@ public class File {
     public void setFileType(FileType fileType) { this.fileType = fileType; }
     public Post getPost() { return post; }
     public void setPost(Post post) { this.post = post; }
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
+    public Long getFileSize() { return fileSize; }
+    public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
 
     @Override
     public boolean equals(Object o) {

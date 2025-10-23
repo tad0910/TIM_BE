@@ -32,7 +32,7 @@ public class ClassMember {
     private User user;
 
     public enum Role {
-        hoc_vien, giang_vien
+        sinh_vien, giao_vien
     }
 
 

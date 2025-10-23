@@ -1,8 +1,6 @@
 package com.tim.appTim.dto;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.tim.appTim.entity.File;
-
 
 public class PostDTO {
     private Long id;
@@ -15,12 +13,12 @@ public class PostDTO {
     private Integer totalComments;
     private List<CommentDTO> comments;
     private List<ReactionDTO> reactions;
-    private List<File> files;
+    private List<FileDTO> files;
 
 
     public PostDTO(Long id,Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
                    Integer totalReactions, Integer totalComments,
-                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<File> files ) {
+                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<FileDTO> files ) {
         this.id = id;
         this.userId = userId;
         this.content = content;
@@ -35,7 +33,7 @@ public class PostDTO {
     }
 
     public PostDTO(Long id, Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
-                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<File> files) {
+                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<com.tim.appTim.dto.FileDTO> files) {
         this(id, userId, content, privacy, createdAt, updatedAt,
                 reactions != null ? reactions.size() : 0,
                 comments != null ? comments.size() : 0,
@@ -58,8 +56,8 @@ public class PostDTO {
     public void setComments(List<CommentDTO> comments) { this.comments = comments; }
     public List<ReactionDTO> getReactions() { return reactions; }
     public void setReactions(List<ReactionDTO> reactions) { this.reactions = reactions; }
-    public List<File> getFiles() { return files; }
-    public void setFiles(List<File> files) { this.files = files; }
+    public List<FileDTO> getFiles() { return files; }
+    public void setFiles(List<FileDTO> files) { this.files = files; }
     public Integer getTotalReactions() { return totalReactions; }
     public void setTotalReactions(Integer totalReactions) { this.totalReactions = totalReactions; }
     public Integer getTotalComments() { return totalComments; }
