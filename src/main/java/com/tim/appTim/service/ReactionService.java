@@ -17,6 +17,7 @@ import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.entity.Notification;
 
 @Service
 @Transactional
@@ -36,6 +37,9 @@ public class ReactionService {
 
     @Autowired
     private ReplyCommentRepository replyCommentRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public ReactionDTO createOrUpdateReaction(Long postId, Long userId, Reaction.EmotionType emotionType) {
 
@@ -61,6 +65,28 @@ public class ReactionService {
         }
 
         Reaction savedReaction = reactionRepository.save(reaction);
+        
+        // Tạo thông báo cho chủ bài viết
+        try {
+            var post = postRepository.findById(postId).orElse(null);
+            var user = userRepository.findById(userId).orElse(null);
+            if (post != null && user != null && !post.getUser().getId().equals(userId)) {
+                notificationService.createReactionNotification(
+                    post.getUser().getId(), // postOwnerId
+                    null, // commentOwnerId
+                    null, // replyOwnerId
+                    userId, // senderId
+                    user.getUsername(), // senderUsername
+                    Notification.NotificationType.POST_REACTION,
+                    "POST",
+                    postId
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the reaction creation
+            System.err.println("Error creating notification: " + e.getMessage());
+        }
+        
         return convertToDTO(savedReaction);
     }
 
@@ -80,7 +106,30 @@ public class ReactionService {
         reaction.setEmotionType(emotionType);
         reaction.setCreatedAt(LocalDateTime.now());
 
-        return convertToDTO(reactionRepository.save(reaction));
+        Reaction savedReaction = reactionRepository.save(reaction);
+        
+        // Tạo thông báo cho chủ comment
+        try {
+            var comment = commentRepository.findById(commentId).orElse(null);
+            var user = userRepository.findById(userId).orElse(null);
+            if (comment != null && user != null && !comment.getUserId().equals(userId)) {
+                notificationService.createReactionNotification(
+                    null, // postOwnerId
+                    comment.getUserId(), // commentOwnerId
+                    null, // replyOwnerId
+                    userId, // senderId
+                    user.getUsername(), // senderUsername
+                    Notification.NotificationType.COMMENT_REACTION,
+                    "COMMENT",
+                    commentId
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the reaction creation
+            System.err.println("Error creating notification: " + e.getMessage());
+        }
+        
+        return convertToDTO(savedReaction);
     }
 
     public List<ReactionDTO> getReactionsByCommentId(Long commentId) {
@@ -121,7 +170,30 @@ public class ReactionService {
         reaction.setEmotionType(emotionType);
         reaction.setCreatedAt(LocalDateTime.now());
 
-        return convertToDTO(reactionRepository.save(reaction));
+        Reaction savedReaction = reactionRepository.save(reaction);
+        
+        // Tạo thông báo cho chủ reply comment
+        try {
+            var replyComment = replyCommentRepository.findById(replyCommentId).orElse(null);
+            var user = userRepository.findById(userId).orElse(null);
+            if (replyComment != null && user != null && !replyComment.getUserId().equals(userId)) {
+                notificationService.createReactionNotification(
+                    null, // postOwnerId
+                    null, // commentOwnerId
+                    replyComment.getUserId(), // replyOwnerId
+                    userId, // senderId
+                    user.getUsername(), // senderUsername
+                    Notification.NotificationType.REPLY_REACTION,
+                    "REPLY",
+                    replyCommentId
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the reaction creation
+            System.err.println("Error creating notification: " + e.getMessage());
+        }
+        
+        return convertToDTO(savedReaction);
     }
 
     public List<ReactionDTO> getReactionsByReplyCommentId(Long replyCommentId) {

@@ -11,7 +11,6 @@ import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.repository.UserRepository;
 import org.springframework.security.core.Authentication;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,19 +28,18 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final UserService userService;
-
-    @Autowired
-    private NotificationService notificationService;
-
+    private final NotificationService notificationService;
 
     public CommentService(CommentRepository commentRepository,
                           ReplyCommentRepository replyCommentRepository,
-                          UserService userService, PostRepository postRepository, UserRepository userRepository) {
+                          UserService userService, PostRepository postRepository, UserRepository userRepository,
+                          NotificationService notificationService) {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.userService = userService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
     public CommentDTO createComment(Long postId, Long userId, String content, Comment.Emotion emotion, Long fileId) {
         postRepository.findById(postId)
@@ -59,6 +57,26 @@ public class CommentService {
         comment.setCreatedAt(LocalDateTime.now());
 
         Comment savedComment = commentRepository.save(comment);
+        
+        // Tạo thông báo cho chủ bài viết
+        try {
+            var post = postRepository.findById(postId).orElse(null);
+            var user = userRepository.findById(userId).orElse(null);
+            if (post != null && user != null && !post.getUser().getId().equals(userId)) {
+                notificationService.createCommentNotification(
+                    post.getUser().getId(), // postOwnerId
+                    null, // commentOwnerId
+                    userId, // senderId
+                    user.getUsername(), // senderUsername
+                    "POST",
+                    postId
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the comment creation
+            System.err.println("Error creating notification: " + e.getMessage());
+        }
+        
         return convertToDTO(savedComment);
     }
 
@@ -113,6 +131,26 @@ public class CommentService {
         replyComment.setCreatedAt(LocalDateTime.now());
 
         ReplyComment savedReplyComment = replyCommentRepository.save(replyComment);
+        
+        // Tạo thông báo cho chủ comment
+        try {
+            var comment = commentRepository.findById(commentId).orElse(null);
+            var user = userRepository.findById(userId).orElse(null);
+            if (comment != null && user != null && !comment.getUserId().equals(userId)) {
+                notificationService.createCommentNotification(
+                    null, // postOwnerId
+                    comment.getUserId(), // commentOwnerId
+                    userId, // senderId
+                    user.getUsername(), // senderUsername
+                    "COMMENT",
+                    commentId
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the reply creation
+            System.err.println("Error creating notification: " + e.getMessage());
+        }
+        
         return convertReplyToDTO(savedReplyComment);
     }
 
