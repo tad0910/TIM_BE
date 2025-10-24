@@ -26,6 +26,9 @@ import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Role; // *** THÊM IMPORT NÀY ***
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.exception.ConflictException;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.UnauthorizedException;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.CourseRepository;
@@ -82,14 +85,14 @@ public class UserService implements UserDetailsService {
             throw new IllegalArgumentException("Username is required");
         }
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new ConflictException("Username already exists");
         }
 
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
             throw new IllegalArgumentException("Email is required");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
@@ -100,7 +103,7 @@ public class UserService implements UserDetailsService {
         // Gán vai trò mặc định cho user mới
         // Đảm bảo bạn đã có "ROLE_SINH_VIEN" trong bảng 'roles' của DB
         Role defaultRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
+                .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
 
         user.setRoles(Set.of(defaultRole));
         // --- KẾT THÚC LOGIC MỚI ---
@@ -118,14 +121,10 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
     }
 
-    // ... (Tất cả các phương thức khác của bạn: findById, create, update, delete, ... ) ...
-    // ... (getUserProfileByEmail, getUserProfile, ... ) ...
-    // ... (Tất cả các phương thức xử lý ảnh ... ) ...
-    // ... (Giữ nguyên không thay đổi) ...
 
     public User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
     public User create(User user) {
@@ -170,7 +169,7 @@ public class UserService implements UserDetailsService {
 
     public ProfileResponse getUserProfileByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         List<PostDTO> posts = postRepository.findByUserId(user.getId()).stream().map(post -> {
             List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
@@ -249,7 +248,7 @@ public class UserService implements UserDetailsService {
 
     public ProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         List<PostDTO> posts = postRepository.findByUserId(userId).stream().map(post -> {
             List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
@@ -327,7 +326,7 @@ public class UserService implements UserDetailsService {
     public UserImageDTO createUserImage(Long userId, String imageUrl, String description) {
         UserImage image = new UserImage();
         image.setUser(userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found")));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found")));
         image.setImageUrl(imageUrl);
         image.setDescription(description);
         image.setCreatedAt( LocalDateTime.now());
@@ -338,11 +337,11 @@ public class UserService implements UserDetailsService {
 
     public UserImageDTO updateUserImage(Long userId, Long imageId, String imageUrl, String description) {
         UserImage image = userImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
 
 
         if (!image.getUser().getId().equals(userId)) {
-            throw new SecurityException("You can only update your own images");
+            throw new UnauthorizedException("You can only update your own images");
         }
 
         if (imageUrl != null) image.setImageUrl(imageUrl);
@@ -356,10 +355,10 @@ public class UserService implements UserDetailsService {
 
     public void deleteUserImage(Long userId, Long imageId) {
         UserImage image = userImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
 
         if (!image.getUser().getId().equals(userId)) {
-            throw new SecurityException("You can only delete your own images");
+            throw new UnauthorizedException("You can only delete your own images");
         }
 
         userImageRepository.delete(image);
@@ -465,7 +464,7 @@ public class UserService implements UserDetailsService {
         }
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         return user.getUsername().equals(currentUsername);
     }
