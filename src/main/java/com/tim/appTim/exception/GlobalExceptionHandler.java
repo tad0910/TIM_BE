@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -21,9 +20,15 @@ public class GlobalExceptionHandler {
     }
 
     // 403 - Không có quyền truy cập
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException ex) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    // 401 - Chưa đăng nhập hoặc không xác thực
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
-        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     // 400 - Yêu cầu sai (thường do dữ liệu đầu vào không hợp lệ)
@@ -32,29 +37,30 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    // 409 - Xung đột dữ liệu (ví dụ: email đã tồn tại)
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     // 400 - Sai kiểu dữ liệu đầu vào (ví dụ: /api/users/abc → userId phải là Long)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String message = String.format("Tham số '%s' có giá trị không hợp lệ: %s", 
-                                       ex.getName(), ex.getValue());
+        String message = String.format("Tham số '%s' có giá trị không hợp lệ: %s",
+                ex.getName(), ex.getValue());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
+    }
+
+    // 500 - Lỗi máy chủ nội bộ
+    @ExceptionHandler(InternalServerErrorException.class)
+    public ResponseEntity<Map<String, Object>> handleInternalServerError(InternalServerErrorException ex) {
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
     // 500 - Các lỗi không xác định khác
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Lỗi hệ thống: " + ex.getMessage());
-    }
-
-    @ExceptionHandler(InternalServerErrorException.class)
-    public ResponseEntity<?> handleInternalServerError(InternalServerErrorException ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "timestamp", LocalDateTime.now(),
-                "status", 500,
-                "error", "Internal Server Error",
-                "message", ex.getMessage()
-        ));
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống: " + ex.getMessage());
     }
 
     /**
@@ -66,7 +72,6 @@ public class GlobalExceptionHandler {
         errorResponse.put("status", status.value());
         errorResponse.put("error", status.getReasonPhrase());
         errorResponse.put("message", message);
-
         return new ResponseEntity<>(errorResponse, status);
     }
 }

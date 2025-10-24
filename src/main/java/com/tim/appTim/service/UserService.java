@@ -26,6 +26,7 @@ import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Role; // *** THÊM IMPORT NÀY ***
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.UnauthorizedException;
 import com.tim.appTim.repository.ClassMemberRepository;
@@ -84,14 +85,14 @@ public class UserService implements UserDetailsService {
             throw new IllegalArgumentException("Username is required");
         }
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new ConflictException("Username already exists");
         }
 
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
             throw new IllegalArgumentException("Email is required");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
