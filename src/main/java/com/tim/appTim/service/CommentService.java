@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.NoSuchElementException;
 
 @Service("commentService")
 @Transactional
@@ -37,7 +36,8 @@ public class CommentService {
                           ReplyCommentRepository replyCommentRepository,
                           UserService userService,
                           PostRepository postRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          NotificationService notificationService) {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.userService = userService;
@@ -200,6 +200,7 @@ public class CommentService {
                 comment.getId(),
                 comment.getUserId(),
                 username,
+                comment.getUser() != null ? comment.getUser().getProfileImage() : " " ,
                 comment.getContent(),
                 comment.getEmotion() != null ? comment.getEmotion().name() : null,
                 comment.getFileId(),
@@ -217,7 +218,8 @@ public class CommentService {
                 reply.getContent(),
                 reply.getEmotion(),
                 reply.getFileId(),
-                reply.getCreatedAt()
+                reply.getCreatedAt(),
+                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
         );
     }
 

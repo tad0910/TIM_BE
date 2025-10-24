@@ -8,14 +8,16 @@ public class ReactionDTO {
     private String username;
     private String emotionType;
     private LocalDateTime createdAt;
+    private String userAvatar ;
 
 
-    public ReactionDTO(Long id, Long userId, String username, String emotionType, LocalDateTime createdAt) {
+    public ReactionDTO(Long id, Long userId, String username,String userAvatar, String emotionType, LocalDateTime createdAt) {
         this.id = id;
         this.userId = userId;
         this.username = username;
         this.emotionType = emotionType;
         this.createdAt = createdAt;
+        this.userAvatar = userAvatar;
     }
 
     public Long getId() { return id; }
@@ -28,5 +30,7 @@ public class ReactionDTO {
     public void setEmotionType(String emotionType) { this.emotionType = emotionType;}
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getUserAvatar() { return userAvatar; }
+    public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
 
 }

@@ -22,7 +22,6 @@ import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.dto.UserImageDTO;
-import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Role; // *** THÊM IMPORT NÀY ***
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
@@ -181,13 +180,15 @@ public class UserService implements UserDetailsService {
                                 reply.getContent(),
                                 reply.getEmotion(),
                                 reply.getFileId(),
-                                reply.getCreatedAt()
+                                reply.getCreatedAt(),
+                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
                         ))
                         .collect(Collectors.toList());
                 return new CommentDTO(
                         comment.getId(),
                         comment.getUserId(),
                         comment.getUser().getUsername(),
+                        comment.getUser().getProfileImage(),
                         comment.getContent(),
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
                         comment.getFileId(),
@@ -201,11 +202,13 @@ public class UserService implements UserDetailsService {
                             reaction.getId(),
                             reaction.getUserId(),
                             reaction.getUser().getUsername(),
+                            reaction.getUser().getProfileImage(), 
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
 
                     // Convert files to FileDTO
+
             // Convert files to FileDTO
             List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
                     .map(file -> new com.tim.appTim.dto.FileDTO(
@@ -260,16 +263,19 @@ public class UserService implements UserDetailsService {
                                 reply.getContent(),
                                 reply.getEmotion(),
                                 reply.getFileId(),
-                                reply.getCreatedAt()
+                                reply.getCreatedAt(),
+                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
                         ))
                         .collect(Collectors.toList());
-                return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây
+                return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây 
+                        comment.getUser().getProfileImage(),
                         comment.getContent(), comment.getEmotion() != null ? comment.getEmotion().name() : null,
                         comment.getFileId(), comment.getCreatedAt(), replyComments);
             }).collect(Collectors.toList());
 
             List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
                     .map(reaction -> new ReactionDTO(reaction.getId(), reaction.getUserId(), reaction.getUser().getUsername(), // Sửa ở đây
+                            reaction.getUser().getProfileImage(), 
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());

@@ -163,6 +163,9 @@ public class PostService {
                 post.getPrivacy().name(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
+                /*post.getUser().getUsername()
+                 * post.getUser().getProfileImage()
+                 */
                 reactions != null ? reactions.size() : 0,
                 comments != null ? comments.size() : 0,
                 comments,
