@@ -42,7 +42,7 @@ public class ReactionController {
         Reaction.EmotionType emotionTypeEnum;
 
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid emotion type: " + emotionType);
         }
@@ -74,7 +74,7 @@ public class ReactionController {
 
         Reaction.EmotionType emotionTypeEnum;
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid emotion type: " + emotionType);
         }
@@ -93,7 +93,7 @@ public class ReactionController {
         Reaction.EmotionType emotionTypeEnum;
 
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid emotion type: " + emotionType);
         }
@@ -122,7 +122,7 @@ public class ReactionController {
 
         Reaction.EmotionType emotionTypeEnum;
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid emotion type: " + emotionType);
         }
@@ -141,7 +141,7 @@ public class ReactionController {
         Reaction.EmotionType emotionTypeEnum;
 
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid emotion type: " + emotionType);
         }
@@ -170,7 +170,7 @@ public class ReactionController {
 
         Reaction.EmotionType emotionTypeEnum;
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid emotion type: " + emotionType);
         }

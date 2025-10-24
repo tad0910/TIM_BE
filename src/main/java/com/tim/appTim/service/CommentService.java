@@ -30,7 +30,7 @@ public class CommentService {
     private final UserRepository userRepository;
     private final UserService userService;
 
-    @Autowired
+
     private NotificationService notificationService;
 
     public CommentService(CommentRepository commentRepository,
