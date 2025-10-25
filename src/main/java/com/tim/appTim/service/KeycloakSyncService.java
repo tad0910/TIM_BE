@@ -43,8 +43,8 @@ public class KeycloakSyncService {
     @Value("${keycloak.client-secret}")
     private String clientSecret;
 
-    private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
 
     public KeycloakSyncService(UserRepository userRepository, RoleRepository roleRepository) {
@@ -81,9 +81,9 @@ public class KeycloakSyncService {
                     newUser.setEmail(kcUser.getEmail());
                     newUser.setCreatedAt(LocalDateTime.now());
                     newUser.setPassword("KEYCLOAK_MANAGED");
-                    Role role = roleRepository.findByName("ROLE_SINH_VIEN")
+                    Role defaultRole = roleRepository.findByName("ROLE_USER")
                             .orElseThrow(() -> new RuntimeException("Không tìm thấy Role trong DB"));
-                    newUser.setRoles(Set.of(role));
+                    newUser.setRoles(Set.of(defaultRole));
 
                     userRepository.save(newUser);
                     syncedUsers.add(newUser);
@@ -112,9 +112,10 @@ public class KeycloakSyncService {
             newUser.setEmail(email);
             newUser.setCreatedAt(LocalDateTime.now());
             newUser.setPassword("KEYCLOAK_MANAGED");
-            Role role = roleRepository.findByName("ROLE_SINH_VIEN")
+
+            Role defaultRole = roleRepository.findByName("ROLE_USER")
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy Role trong DB"));
-            newUser.setRoles(Set.of(role));
+            newUser.setRoles(Set.of(defaultRole));
 
             userRepository.save(newUser);
             System.out.println("✅ Created user in DB: " + username);

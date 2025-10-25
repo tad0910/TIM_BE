@@ -25,7 +25,9 @@ import com.tim.appTim.dto.UserImageDTO;
 import com.tim.appTim.entity.Role; // *** THÊM IMPORT NÀY ***
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ConflictException;
+import com.tim.appTim.exception.InternalServerErrorException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.UnauthorizedException;
 import com.tim.appTim.repository.ClassMemberRepository;
@@ -136,6 +138,21 @@ public class UserService implements UserDetailsService {
 
     public User update(Long id, User user) {
         User existingUser = findById(id);
+        if (existingUser == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + id);
+        }
+
+        // Kiểm tra trùng email hoặc username (nếu có thay đổi)
+        if (!existingUser.getEmail().equals(user.getEmail())
+                && userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new ConflictException("Email đã tồn tại");
+        }
+
+        if (!existingUser.getUsername().equals(user.getUsername())
+                && userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new ConflictException("Username đã tồn tại");
+        }
+
         existingUser.setUsername(user.getUsername());
         existingUser.setEmail(user.getEmail());
         existingUser.setFirstName(user.getFirstName());
@@ -145,12 +162,27 @@ public class UserService implements UserDetailsService {
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             existingUser.setPassword(user.getPassword());
         }
-        return userRepository.save(existingUser);
+
+        try {
+            return userRepository.save(existingUser);
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Không thể cập nhật thông tin người dùng: " + e.getMessage());
+        }
     }
 
     public void delete(Long id) {
-        userRepository.deleteById(id);
+        User existingUser = findById(id);
+        if (existingUser == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + id);
+        }
+
+        try {
+            userRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Không thể xóa người dùng: " + e.getMessage());
+        }
     }
+
 
     public java.util.List<User> findAll() {
         return userRepository.findAll();
@@ -381,24 +413,54 @@ public class UserService implements UserDetailsService {
 
     public User updateProfileImage(Long userId, String imageUrl) {
         User user = findById(userId);
-
-        if (user.getProfileImage() != null && !user.getProfileImage().trim().isEmpty()) {
-            deleteOldProfileImage(userId, user.getProfileImage());
+        if (user == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
         }
 
-        user.setProfileImage(imageUrl);
-        return userRepository.save(user);
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            throw new BadRequestException("URL ảnh đại diện không hợp lệ");
+        }
+
+        try {
+            // Nếu có ảnh cũ thì xóa trước
+            if (user.getProfileImage() != null && !user.getProfileImage().trim().isEmpty()) {
+                deleteOldProfileImage(userId, user.getProfileImage());
+            }
+
+            user.setProfileImage(imageUrl);
+            return userRepository.save(user);
+
+        } catch (ConflictException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Không thể cập nhật ảnh đại diện: " + e.getMessage());
+        }
     }
 
     public User updateCoverImage(Long userId, String imageUrl) {
         User user = findById(userId);
-
-        if (user.getCoverImage() != null && !user.getCoverImage().trim().isEmpty()) {
-            deleteOldCoverImage(userId, user.getCoverImage());
+        if (user == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
         }
 
-        user.setCoverImage(imageUrl);
-        return userRepository.save(user);
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            throw new BadRequestException("URL ảnh bìa không hợp lệ");
+        }
+
+        try {
+            // Nếu có ảnh cũ thì xóa trước
+            if (user.getCoverImage() != null && !user.getCoverImage().trim().isEmpty()) {
+                deleteOldCoverImage(userId, user.getCoverImage());
+            }
+
+            user.setCoverImage(imageUrl);
+            return userRepository.save(user);
+
+        } catch (ConflictException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Không thể cập nhật ảnh bìa: " + e.getMessage());
+        }
     }
 
     private void deleteOldProfileImage(Long userId, String oldImageUrl) {
@@ -414,12 +476,12 @@ public class UserService implements UserDetailsService {
             if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
                 String filename = oldImageUrl.substring("/uploads/".length());
                 java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
-                if (file.exists()) {
-                    file.delete();
+                if (file.exists() && !file.delete()) {
+                    throw new InternalServerErrorException("Không thể xóa file ảnh cũ: " + filename);
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error deleting old profile image: " + e.getMessage());
+            throw new InternalServerErrorException("Lỗi khi xóa ảnh đại diện cũ: " + e.getMessage());
         }
     }
 
@@ -436,14 +498,15 @@ public class UserService implements UserDetailsService {
             if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
                 String filename = oldImageUrl.substring("/uploads/".length());
                 java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
-                if (file.exists()) {
-                    file.delete();
+                if (file.exists() && !file.delete()) {
+                    throw new InternalServerErrorException("Không thể xóa file ảnh cũ: " + filename);
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error deleting old cover image: " + e.getMessage());
+            throw new InternalServerErrorException("Lỗi khi xóa ảnh bìa cũ: " + e.getMessage());
         }
     }
+
 
     public User save(User user) {
         return userRepository.save(user);
