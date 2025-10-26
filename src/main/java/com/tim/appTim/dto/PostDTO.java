@@ -33,6 +33,8 @@ public class PostDTO {
         this.comments = comments;
         this.reactions = reactions;
         this.files = files;
+        this.userAvatar = userAvatar;
+        this.username = username;
     }
 
     public PostDTO(Long id, Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
