@@ -82,7 +82,9 @@ public class PostService {
                 savedPost.getTotalComments(),
                 new ArrayList<>(),
                 new ArrayList<>(),
-                fileDTOs
+                fileDTOs,
+                user.getProfileImage(),
+                user.getUsername()
         );
     }
     public Page<PostDTO> getAllPosts(Pageable pageable) {
@@ -163,14 +165,13 @@ public class PostService {
                 post.getPrivacy().name(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
-                /*post.getUser().getUsername()
-                 * post.getUser().getProfileImage()
-                 */
                 reactions != null ? reactions.size() : 0,
                 comments != null ? comments.size() : 0,
                 comments,
                 reactions,
-                fileDTOs
+                fileDTOs,
+                post.getUser().getProfileImage(),
+                post.getUser().getUsername()
         );
     }
 
