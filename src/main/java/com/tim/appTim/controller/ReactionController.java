@@ -79,7 +79,7 @@ public class ReactionController {
             @PathVariable String emotionType) {
         Reaction.EmotionType emotionTypeEnum;
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -123,7 +123,7 @@ public class ReactionController {
     public ResponseEntity<Long> countCommentReactionsByType(@PathVariable Long commentId, @PathVariable String emotionType) {
         Reaction.EmotionType emotionTypeEnum;
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -165,7 +165,7 @@ public class ReactionController {
     public ResponseEntity<Long> countReplyCommentReactionsByType(@PathVariable Long replyCommentId, @PathVariable String emotionType) {
         Reaction.EmotionType emotionTypeEnum;
         try {
-            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toUpperCase());
+            emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }

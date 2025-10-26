@@ -43,7 +43,7 @@
         }
 
         @PostMapping("/create")
-        @PreAuthorize("hasAuthority('post:create')")
+        @PreAuthorize("hasAuthority('post:create') ")
         public ResponseEntity<PostDTO> createPost(
                 Authentication authentication,
                 @RequestParam("content") String content,
