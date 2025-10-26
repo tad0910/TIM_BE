@@ -49,7 +49,7 @@ public class ReactionService {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        Optional<Reaction> existingReaction = reactionRepository.findByPostIdAndUserId(postId, userId);
+        Optional<Reaction> existingReaction = reactionRepository.findByPostIdAndUserIdAndCommentIdIsNullAndReplyCommentIdIsNull(postId, userId);
         
         Reaction reaction;
         if (existingReaction.isPresent()) {
@@ -97,7 +97,7 @@ public class ReactionService {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        Optional<Reaction> existing = reactionRepository.findByCommentIdAndUserId(commentId, userId);
+        Optional<Reaction> existing = reactionRepository.findByCommentIdAndUserIdAndReplyCommentIdIsNull(commentId, userId);
 
         Reaction reaction = existing.orElseGet(Reaction::new);
         reaction.setCommentId(commentId);
@@ -133,12 +133,16 @@ public class ReactionService {
     }
 
     public List<ReactionDTO> getReactionsByCommentId(Long commentId) {
-        return reactionRepository.findByCommentId(commentId)
-                .stream().map(this::convertToDTO).collect(Collectors.toList());
+        // List<Reaction> reactions = reactionRepository.findByCommentId(commentId); // <--- DÒNG CŨ
+        List<Reaction> reactions = reactionRepository.findByCommentIdAndReplyCommentIdIsNull(commentId); // <--- DÒNG MỚI
+
+        return reactions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     public void deleteCommentReaction(Long commentId, Long userId) {
-        Optional<Reaction> reaction = reactionRepository.findByCommentIdAndUserId(commentId, userId);
+        Optional<Reaction> reaction = reactionRepository.findByCommentIdAndUserIdAndReplyCommentIdIsNull(commentId, userId);
         if (reaction.isPresent()) {
             reactionRepository.delete(reaction.get());
         } else {
@@ -215,14 +219,15 @@ public class ReactionService {
     }
 
     public List<ReactionDTO> getReactionsByPostId(Long postId) {
-        List<Reaction> reactions = reactionRepository.findByPostId(postId);
+        //List<Reaction> reactions = reactionRepository.findByPostId(postId);
+        List<Reaction> reactions = reactionRepository.findByPostIdAndCommentIdIsNullAndReplyCommentIdIsNull(postId);
         return reactions.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public void deleteReaction(Long postId, Long userId) {
-        Optional<Reaction> reaction = reactionRepository.findByPostIdAndUserId(postId, userId);
+        Optional<Reaction> reaction = reactionRepository.findByPostIdAndUserIdAndCommentIdIsNullAndReplyCommentIdIsNull(postId, userId);
         if (reaction.isPresent()) {
             reactionRepository.delete(reaction.get());
         } else {
@@ -231,11 +236,11 @@ public class ReactionService {
     }
 
     public boolean hasUserReacted(Long postId, Long userId) {
-        return reactionRepository.findByPostIdAndUserId(postId, userId).isPresent();
+        return reactionRepository.findByPostIdAndUserIdAndCommentIdIsNullAndReplyCommentIdIsNull(postId, userId).isPresent();
     }
 
     public ReactionDTO getUserReaction(Long postId, Long userId) {
-        Optional<Reaction> reaction = reactionRepository.findByPostIdAndUserId(postId, userId);
+        Optional<Reaction> reaction = reactionRepository.findByPostIdAndUserIdAndCommentIdIsNullAndReplyCommentIdIsNull(postId, userId);
         if (reaction.isPresent()) {
             return convertToDTO(reaction.get());
         }

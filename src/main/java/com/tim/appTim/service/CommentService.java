@@ -10,6 +10,7 @@ import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.repository.ReactionRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +30,19 @@ public class CommentService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final NotificationService notificationService;
+    private final ReactionRepository reactionRepository;
 
     public CommentService(CommentRepository commentRepository,
                           ReplyCommentRepository replyCommentRepository,
                           UserService userService, PostRepository postRepository, UserRepository userRepository,
-                          NotificationService notificationService) {
+                          NotificationService notificationService, ReactionRepository reactionRepository) {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.userService = userService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.reactionRepository = reactionRepository;
     }
     public CommentDTO createComment(Long postId, Long userId, String content, Comment.Emotion emotion, Long fileId) {
         postRepository.findById(postId)
@@ -112,7 +115,11 @@ public class CommentService {
         }
 
         List<ReplyComment> replyComments = replyCommentRepository.findByCommentId(commentId);
+        for (ReplyComment reply : replyComments) {
+            reactionRepository.deleteByReplyCommentId(reply.getId());
+        }
         replyCommentRepository.deleteAll(replyComments);
+        reactionRepository.deleteByCommentId(commentId);
         commentRepository.delete(comment);
     }
 
@@ -177,6 +184,7 @@ public class CommentService {
         ReplyComment replyComment = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
+        reactionRepository.deleteByReplyCommentId(replyCommentId);
         replyCommentRepository.delete(replyComment);
     }
 
@@ -235,4 +243,9 @@ public class CommentService {
 
             return reply.getUser().getId().equals(currentUser.getId());
         }
+
+    public long countCommentsByPostId(Long postId) {
+        return commentRepository.countByPostId(postId);
+    }
+
 }

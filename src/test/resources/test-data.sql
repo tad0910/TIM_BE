@@ -20,6 +20,6 @@ INSERT INTO user_roles (user_id, role_id) VALUES
 (3, 2); -- admin_user có ROLE_ADMIN
 
 -- Tạo Posts
-INSERT INTO posts (id, nguoi_dung_id, content, quyen_rieng_tu) VALUES
+INSERT INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES
 (10, 1, 'Bài viết của owner', 'open'),
 (11, 2, 'Bài viết của user khác', 'friends');
