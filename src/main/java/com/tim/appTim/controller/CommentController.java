@@ -102,7 +102,7 @@ public class CommentController {
     }
 
     @PutMapping("/replies/{replyCommentId}")
-    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.isReplyOwner(authentication, #replyCommentId)")
+    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.isReplyOwner(authentication   , #replyCommentId)")
     public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
             @RequestParam String content,
