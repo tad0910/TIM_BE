@@ -14,11 +14,14 @@ public class PostDTO {
     private List<CommentDTO> comments;
     private List<ReactionDTO> reactions;
     private List<FileDTO> files;
+    private String userAvatar;
+    private String username;
+      
 
 
     public PostDTO(Long id,Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
                    Integer totalReactions, Integer totalComments,
-                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<FileDTO> files ) {
+                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<FileDTO> files, String userAvatar, String username) {
         this.id = id;
         this.userId = userId;
         this.content = content;
@@ -30,6 +33,8 @@ public class PostDTO {
         this.comments = comments;
         this.reactions = reactions;
         this.files = files;
+        this.userAvatar = userAvatar;
+        this.username = username;
     }
 
     public PostDTO(Long id, Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
@@ -37,7 +42,7 @@ public class PostDTO {
         this(id, userId, content, privacy, createdAt, updatedAt,
                 reactions != null ? reactions.size() : 0,
                 comments != null ? comments.size() : 0,
-                comments, reactions, files);
+                comments, reactions, files, null, null);
     }
 
     public Long getId() { return id; }
@@ -62,4 +67,8 @@ public class PostDTO {
     public void setTotalReactions(Integer totalReactions) { this.totalReactions = totalReactions; }
     public Integer getTotalComments() { return totalComments; }
     public void setTotalComments(Integer totalComments) { this.totalComments = totalComments; }
+    public String getUserAvatar() { return userAvatar; }
+    public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }

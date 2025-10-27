@@ -67,11 +67,12 @@ class ReactionControllerTest {
 
         Long reactionId = 1L;
         Long userId = mockUser.getId();
-        String username = mockUser.getUsername(); // Lấy username từ mockUser
-        String emotionString = "like"; // Hàm tạo yêu cầu String
+        String username = mockUser.getUsername();
+        String userAvatar = null; // Hoặc "avatar/default.png"
+        String emotionString = "like";
         LocalDateTime timestamp = LocalDateTime.now();
 
-        reactionDTO = new ReactionDTO(reactionId, userId, username, emotionString, timestamp);
+        reactionDTO = new ReactionDTO(reactionId, userId, username, userAvatar, emotionString, timestamp);
 
     }
 
@@ -204,23 +205,24 @@ class ReactionControllerTest {
     @Test
     @WithMockUser(username = "testuser", authorities = {"reaction:create"})
     void createOrUpdateCommentReaction_WhenValid_ShouldReturn200AndReaction() throws Exception {
-        // Tạo một DTO mới *riêng* cho test case này với emotionType là "love"
-        Long reactionId = 2L; // Có thể dùng ID khác nếu muốn
+        Long reactionId = 2L;
         Long userId = mockUser.getId();
         String username = mockUser.getUsername();
-        String emotionString = "love"; // Đặt là "love"
+        String userAvatar = null; // Hoặc "avatar/test.jpg"
+        String emotionString = "love";
         LocalDateTime timestamp = LocalDateTime.now();
-        ReactionDTO loveReactionDTO = new ReactionDTO(reactionId, userId, username, emotionString, timestamp);
 
-        // Mock service để trả về DTO mới này
+        // Thêm userAvatar vào constructor
+        ReactionDTO loveReactionDTO = new ReactionDTO(reactionId, userId, username, userAvatar, emotionString, timestamp);
+
         given(reactionService.createOrUpdateCommentReaction(eq(20L), eq(mockUser.getId()), eq(Reaction.EmotionType.love)))
-                .willReturn(loveReactionDTO); // <-- Trả về DTO mới
+                .willReturn(loveReactionDTO);
 
         mockMvc.perform(post("/reactions/comments/20")
                         .param("emotionType", "love"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(reactionId)) // Kiểm tra ID của DTO mới
-                .andExpect(jsonPath("$.emotionType").value("love")); // <-- Bây giờ sẽ khớp
+                .andExpect(jsonPath("$.id").value(reactionId))
+                .andExpect(jsonPath("$.emotionType").value("love"));
     }
 
     @Test

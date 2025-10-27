@@ -22,10 +22,14 @@ import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.dto.UserImageDTO;
-import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Role; // *** THÊM IMPORT NÀY ***
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.exception.BadRequestException;
+import com.tim.appTim.exception.ConflictException;
+import com.tim.appTim.exception.InternalServerErrorException;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.UnauthorizedException;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.CourseRepository;
@@ -82,14 +86,14 @@ public class UserService implements UserDetailsService {
             throw new IllegalArgumentException("Username is required");
         }
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new ConflictException("Username already exists");
         }
 
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
             throw new IllegalArgumentException("Email is required");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
@@ -100,7 +104,7 @@ public class UserService implements UserDetailsService {
         // Gán vai trò mặc định cho user mới
         // Đảm bảo bạn đã có "ROLE_SINH_VIEN" trong bảng 'roles' của DB
         Role defaultRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
+                .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
 
         user.setRoles(Set.of(defaultRole));
         // --- KẾT THÚC LOGIC MỚI ---
@@ -118,14 +122,10 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
     }
 
-    // ... (Tất cả các phương thức khác của bạn: findById, create, update, delete, ... ) ...
-    // ... (getUserProfileByEmail, getUserProfile, ... ) ...
-    // ... (Tất cả các phương thức xử lý ảnh ... ) ...
-    // ... (Giữ nguyên không thay đổi) ...
 
     public User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
     public User create(User user) {
@@ -138,6 +138,21 @@ public class UserService implements UserDetailsService {
 
     public User update(Long id, User user) {
         User existingUser = findById(id);
+        if (existingUser == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + id);
+        }
+
+        // Kiểm tra trùng email hoặc username (nếu có thay đổi)
+        if (!existingUser.getEmail().equals(user.getEmail())
+                && userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new ConflictException("Email đã tồn tại");
+        }
+
+        if (!existingUser.getUsername().equals(user.getUsername())
+                && userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new ConflictException("Username đã tồn tại");
+        }
+
         existingUser.setUsername(user.getUsername());
         existingUser.setEmail(user.getEmail());
         existingUser.setFirstName(user.getFirstName());
@@ -147,12 +162,27 @@ public class UserService implements UserDetailsService {
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             existingUser.setPassword(user.getPassword());
         }
-        return userRepository.save(existingUser);
+
+        try {
+            return userRepository.save(existingUser);
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Không thể cập nhật thông tin người dùng: " + e.getMessage());
+        }
     }
 
     public void delete(Long id) {
-        userRepository.deleteById(id);
+        User existingUser = findById(id);
+        if (existingUser == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + id);
+        }
+
+        try {
+            userRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Không thể xóa người dùng: " + e.getMessage());
+        }
     }
+
 
     public java.util.List<User> findAll() {
         return userRepository.findAll();
@@ -170,7 +200,7 @@ public class UserService implements UserDetailsService {
 
     public ProfileResponse getUserProfileByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         List<PostDTO> posts = postRepository.findByUserId(user.getId()).stream().map(post -> {
             List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
@@ -182,13 +212,15 @@ public class UserService implements UserDetailsService {
                                 reply.getContent(),
                                 reply.getEmotion(),
                                 reply.getFileId(),
-                                reply.getCreatedAt()
+                                reply.getCreatedAt(),
+                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
                         ))
                         .collect(Collectors.toList());
                 return new CommentDTO(
                         comment.getId(),
                         comment.getUserId(),
                         comment.getUser().getUsername(),
+                        comment.getUser().getProfileImage(),
                         comment.getContent(),
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
                         comment.getFileId(),
@@ -202,11 +234,13 @@ public class UserService implements UserDetailsService {
                             reaction.getId(),
                             reaction.getUserId(),
                             reaction.getUser().getUsername(),
+                            reaction.getUser().getProfileImage(), 
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
 
                     // Convert files to FileDTO
+
             // Convert files to FileDTO
             List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
                     .map(file -> new com.tim.appTim.dto.FileDTO(
@@ -249,7 +283,7 @@ public class UserService implements UserDetailsService {
 
     public ProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         List<PostDTO> posts = postRepository.findByUserId(userId).stream().map(post -> {
             List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
@@ -261,16 +295,19 @@ public class UserService implements UserDetailsService {
                                 reply.getContent(),
                                 reply.getEmotion(),
                                 reply.getFileId(),
-                                reply.getCreatedAt()
+                                reply.getCreatedAt(),
+                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
                         ))
                         .collect(Collectors.toList());
-                return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây
+                return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây 
+                        comment.getUser().getProfileImage(),
                         comment.getContent(), comment.getEmotion() != null ? comment.getEmotion().name() : null,
                         comment.getFileId(), comment.getCreatedAt(), replyComments);
             }).collect(Collectors.toList());
 
             List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
                     .map(reaction -> new ReactionDTO(reaction.getId(), reaction.getUserId(), reaction.getUser().getUsername(), // Sửa ở đây
+                            reaction.getUser().getProfileImage(), 
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
@@ -327,7 +364,7 @@ public class UserService implements UserDetailsService {
     public UserImageDTO createUserImage(Long userId, String imageUrl, String description) {
         UserImage image = new UserImage();
         image.setUser(userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found")));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found")));
         image.setImageUrl(imageUrl);
         image.setDescription(description);
         image.setCreatedAt( LocalDateTime.now());
@@ -338,11 +375,11 @@ public class UserService implements UserDetailsService {
 
     public UserImageDTO updateUserImage(Long userId, Long imageId, String imageUrl, String description) {
         UserImage image = userImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
 
 
         if (!image.getUser().getId().equals(userId)) {
-            throw new SecurityException("You can only update your own images");
+            throw new UnauthorizedException("You can only update your own images");
         }
 
         if (imageUrl != null) image.setImageUrl(imageUrl);
@@ -356,10 +393,10 @@ public class UserService implements UserDetailsService {
 
     public void deleteUserImage(Long userId, Long imageId) {
         UserImage image = userImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
 
         if (!image.getUser().getId().equals(userId)) {
-            throw new SecurityException("You can only delete your own images");
+            throw new UnauthorizedException("You can only delete your own images");
         }
 
         userImageRepository.delete(image);
@@ -376,24 +413,54 @@ public class UserService implements UserDetailsService {
 
     public User updateProfileImage(Long userId, String imageUrl) {
         User user = findById(userId);
-
-        if (user.getProfileImage() != null && !user.getProfileImage().trim().isEmpty()) {
-            deleteOldProfileImage(userId, user.getProfileImage());
+        if (user == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
         }
 
-        user.setProfileImage(imageUrl);
-        return userRepository.save(user);
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            throw new BadRequestException("URL ảnh đại diện không hợp lệ");
+        }
+
+        try {
+            // Nếu có ảnh cũ thì xóa trước
+            if (user.getProfileImage() != null && !user.getProfileImage().trim().isEmpty()) {
+                deleteOldProfileImage(userId, user.getProfileImage());
+            }
+
+            user.setProfileImage(imageUrl);
+            return userRepository.save(user);
+
+        } catch (ConflictException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Không thể cập nhật ảnh đại diện: " + e.getMessage());
+        }
     }
 
     public User updateCoverImage(Long userId, String imageUrl) {
         User user = findById(userId);
-
-        if (user.getCoverImage() != null && !user.getCoverImage().trim().isEmpty()) {
-            deleteOldCoverImage(userId, user.getCoverImage());
+        if (user == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
         }
 
-        user.setCoverImage(imageUrl);
-        return userRepository.save(user);
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            throw new BadRequestException("URL ảnh bìa không hợp lệ");
+        }
+
+        try {
+            // Nếu có ảnh cũ thì xóa trước
+            if (user.getCoverImage() != null && !user.getCoverImage().trim().isEmpty()) {
+                deleteOldCoverImage(userId, user.getCoverImage());
+            }
+
+            user.setCoverImage(imageUrl);
+            return userRepository.save(user);
+
+        } catch (ConflictException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Không thể cập nhật ảnh bìa: " + e.getMessage());
+        }
     }
 
     private void deleteOldProfileImage(Long userId, String oldImageUrl) {
@@ -409,12 +476,12 @@ public class UserService implements UserDetailsService {
             if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
                 String filename = oldImageUrl.substring("/uploads/".length());
                 java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
-                if (file.exists()) {
-                    file.delete();
+                if (file.exists() && !file.delete()) {
+                    throw new InternalServerErrorException("Không thể xóa file ảnh cũ: " + filename);
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error deleting old profile image: " + e.getMessage());
+            throw new InternalServerErrorException("Lỗi khi xóa ảnh đại diện cũ: " + e.getMessage());
         }
     }
 
@@ -431,14 +498,15 @@ public class UserService implements UserDetailsService {
             if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
                 String filename = oldImageUrl.substring("/uploads/".length());
                 java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
-                if (file.exists()) {
-                    file.delete();
+                if (file.exists() && !file.delete()) {
+                    throw new InternalServerErrorException("Không thể xóa file ảnh cũ: " + filename);
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error deleting old cover image: " + e.getMessage());
+            throw new InternalServerErrorException("Lỗi khi xóa ảnh bìa cũ: " + e.getMessage());
         }
     }
+
 
     public User save(User user) {
         return userRepository.save(user);
@@ -465,7 +533,7 @@ public class UserService implements UserDetailsService {
         }
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         return user.getUsername().equals(currentUsername);
     }

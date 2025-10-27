@@ -122,7 +122,7 @@
         }
 
         @PutMapping("/{postId}")
-        @PreAuthorize("hasAuthority('post:update_all') or @postService.isOwner(authentication.name, #postId)")
+        @PreAuthorize("hasAuthority('post:update_all') or @postService.isOwner(authentication, #postId)")
         public ResponseEntity<PostDTO> updatePost(
                 @PathVariable Long postId,
                 Authentication authentication,

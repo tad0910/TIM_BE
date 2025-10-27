@@ -12,8 +12,9 @@ public class ReplyCommentDTO {
     private String emotion;
     private Long fileId;
     private LocalDateTime createdAt;
+    private String userAvatar;
 
-    public ReplyCommentDTO(Long id, Long userId, String username, String content, ReplyComment.Emotion emotion, Long fileId, LocalDateTime createdAt) {
+    public ReplyCommentDTO(Long id, Long userId, String username, String content, ReplyComment.Emotion emotion, Long fileId, LocalDateTime createdAt, String userAvatar) {
         this.id = id;
         this.userId = userId;
         this.username = username;
@@ -21,6 +22,7 @@ public class ReplyCommentDTO {
         this.emotion = emotion != null ? emotion.name() : null;
         this.fileId = fileId;
         this.createdAt = createdAt;
+        this.userAvatar = userAvatar;
     }
 
     public Long getId() { return id; }
@@ -37,4 +39,6 @@ public class ReplyCommentDTO {
     public void setFileId(Long fileId) { this.fileId = fileId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getUserAvatar() { return userAvatar; }
+    public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
 }

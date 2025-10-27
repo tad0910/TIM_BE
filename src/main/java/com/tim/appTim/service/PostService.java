@@ -46,7 +46,7 @@ public class PostService {
     @Transactional
     public PostDTO createPostWithFiles(Long userId, String content, Post.Privacy privacy, List<File> filesFromController) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         Post post = new Post();
         post.setUser(user);
@@ -88,7 +88,9 @@ public class PostService {
                 savedPost.getTotalComments(),
                 new ArrayList<>(),
                 new ArrayList<>(),
-                fileDTOs
+                fileDTOs,
+                user.getProfileImage(),
+                user.getUsername()
         );
     }
     public Page<PostDTO> getAllPosts(Pageable pageable) {
@@ -194,7 +196,9 @@ public class PostService {
                 (int) totalComments,
                 comments,
                 reactions,
-                fileDTOs
+                fileDTOs,
+                post.getUser().getProfileImage(),
+                post.getUser().getUsername()
         );
     }
 

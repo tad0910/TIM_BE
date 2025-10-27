@@ -5,6 +5,7 @@ import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.entity.Comment;
 import com.tim.appTim.entity.ReplyComment;
 import com.tim.appTim.entity.User;
+import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.service.CommentService;
 import com.tim.appTim.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +20,11 @@ import java.util.List;
 @RequestMapping("/comments")
 public class CommentController {
 
-    private CommentService commentService;
+    private final CommentService commentService;
     private final UserService userService;
 
     @Autowired
-    public CommentController(CommentService commentService, UserService userService) { // <-- THÊM
+    public CommentController(CommentService commentService, UserService userService) {
         this.commentService = commentService;
         this.userService = userService;
     }
@@ -42,14 +43,7 @@ public class CommentController {
             @RequestParam(required = false) Long fileId) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Comment.Emotion emotionEnum = null;
-        if (emotion != null && !emotion.isEmpty()) {
-            try {
-                emotionEnum = Comment.Emotion.valueOf(emotion.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().build();
-            }
-        }
+        Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
 
         CommentDTO comment = commentService.createComment(postId, currentUser.getId(), content, emotionEnum, fileId);
         return ResponseEntity.ok(comment);
@@ -57,8 +51,7 @@ public class CommentController {
 
     @GetMapping("/posts/{postId}")
     public ResponseEntity<List<CommentDTO>> getCommentsByPostId(@PathVariable Long postId) {
-        List<CommentDTO> comments = commentService.getCommentsByPostId(postId);
-        return ResponseEntity.ok(comments);
+        return ResponseEntity.ok(commentService.getCommentsByPostId(postId));
     }
 
     @PutMapping("/{commentId}")
@@ -70,17 +63,9 @@ public class CommentController {
             @RequestParam(required = false) String emotion) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Comment.Emotion emotionEnum = null;
-        if (emotion != null && !emotion.isEmpty()) {
-            try {
-                emotionEnum = Comment.Emotion.valueOf(emotion.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().build();
-            }
-        }
+        Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
 
-        CommentDTO comment = commentService.updateComment(commentId, currentUser.getId(), content, emotionEnum);
-        return ResponseEntity.ok(comment);
+        return ResponseEntity.ok(commentService.updateComment(commentId, currentUser.getId(), content, emotionEnum));
     }
 
     @DeleteMapping("/{commentId}")
@@ -88,6 +73,7 @@ public class CommentController {
     public ResponseEntity<String> deleteComment(
             @PathVariable Long commentId,
             Authentication authentication) {
+
         User currentUser = getUserFromAuthentication(authentication);
         commentService.deleteComment(commentId, currentUser.getId());
         return ResponseEntity.ok("Comment deleted successfully");
@@ -102,23 +88,17 @@ public class CommentController {
             @RequestParam(required = false) String emotion,
             @RequestParam(required = false) Long fileId) {
 
-        ReplyComment.Emotion emotionEnum = null;
-        if (emotion != null && !emotion.isEmpty()) {
-            try {
-                emotionEnum = ReplyComment.Emotion.valueOf(emotion.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().build();
-            }
-        }
         User currentUser = getUserFromAuthentication(authentication);
-        ReplyCommentDTO replyComment = commentService.createReplyComment(commentId, currentUser.getId(), content, emotionEnum, fileId);
-        return ResponseEntity.ok(replyComment);
+        ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
+
+        return ResponseEntity.ok(
+                commentService.createReplyComment(commentId, currentUser.getId(), content, emotionEnum, fileId)
+        );
     }
 
     @GetMapping("/{commentId}/replies")
     public ResponseEntity<List<ReplyCommentDTO>> getReplyCommentsByCommentId(@PathVariable Long commentId) {
-        List<ReplyCommentDTO> replyComments = commentService.getReplyCommentsByCommentId(commentId);
-        return ResponseEntity.ok(replyComments);
+        return ResponseEntity.ok(commentService.getReplyCommentsByCommentId(commentId));
     }
 
     @PutMapping("/replies/{replyCommentId}")
@@ -128,18 +108,13 @@ public class CommentController {
             @RequestParam String content,
             @RequestParam(required = false) String emotion,
             Authentication authentication) {
-        User currentUser = getUserFromAuthentication(authentication);
-        ReplyComment.Emotion emotionEnum = null;
-        if (emotion != null && !emotion.isEmpty()) {
-            try {
-                emotionEnum = ReplyComment.Emotion.valueOf(emotion.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().build();
-            }
-        }
 
-        ReplyCommentDTO replyComment = commentService.updateReplyComment(currentUser.getId(), replyCommentId, content, emotionEnum);
-        return ResponseEntity.ok(replyComment);
+        User currentUser = getUserFromAuthentication(authentication);
+        ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
+
+        return ResponseEntity.ok(
+                commentService.updateReplyComment(currentUser.getId(), replyCommentId, content, emotionEnum)
+        );
     }
 
     @DeleteMapping("/replies/{replyCommentId}")
@@ -148,5 +123,14 @@ public class CommentController {
         User currentUser = getUserFromAuthentication(authentication);
         commentService.deleteReplyComment(currentUser.getId(), replyCommentId);
         return ResponseEntity.ok("Reply comment deleted successfully");
+    }
+
+    private <T extends Enum<T>> T parseEmotion(String value, Class<T> enumType) {
+        if (value == null || value.isEmpty()) return null;
+        try {
+            return Enum.valueOf(enumType, value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Emotion không hợp lệ: " + value);
+        }
     }
 }
