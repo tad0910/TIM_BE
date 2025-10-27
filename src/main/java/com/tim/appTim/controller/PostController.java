@@ -179,7 +179,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    @PreAuthorize("hasAuthority('post:delete_all') or @postService.isOwner(authentication, #postId)")
+    @PreAuthorize("hasAuthority('post:delete_all') or @postService.isOwner(authentication.name, #postId)")
     public ResponseEntity<String> deletePost(
             @PathVariable Long postId,
             Authentication authentication) {
