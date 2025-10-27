@@ -29,8 +29,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final UserService userService;
-
-
+    private final ReactionRepository reactionRepository;
     private NotificationService notificationService;
 
     public CommentService(CommentRepository commentRepository,
@@ -38,7 +37,8 @@ public class CommentService {
                           UserService userService,
                           PostRepository postRepository,
                           UserRepository userRepository,
-                          NotificationService notificationService) {
+                          NotificationService notificationService,
+                          ReactionRepository reactionRepository) {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.userService = userService;
@@ -247,5 +247,9 @@ public class CommentService {
         ReplyComment reply = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Reply Comment: " + replyCommentId));
         return reply.getUser().getId().equals(currentUser.getId());
+    }
+
+    public long countCommentsByPostId(Long postId) {
+        return commentRepository.countByPostId(postId);
     }
 }

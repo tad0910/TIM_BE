@@ -179,7 +179,7 @@ public class NotificationService {
 
         if (notification.getSender() != null) {
             senderUsername = notification.getSender().getUsername();
-            // Có thể thêm logic lấy avatar từ User entity
+            senderAvatar = notification.getSender().getProfileImage();
         }
 
         String actionUrl = generateActionUrl(notification);

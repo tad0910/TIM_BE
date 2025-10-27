@@ -2,17 +2,17 @@ package com.tim.appTim.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set; // *** THÊM IMPORT NÀY ***
+import java.util.Set; 
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication; // *** THÊM IMPORT NÀY ***
+import org.springframework.security.core.Authentication; 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt; // *** THÊM IMPORT NÀY ***
+import org.springframework.security.oauth2.jwt.Jwt; 
 import org.springframework.stereotype.Service;
 
 import com.tim.appTim.dto.CommentDTO;
@@ -22,7 +22,7 @@ import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.dto.UserImageDTO;
-import com.tim.appTim.entity.Role; // *** THÊM IMPORT NÀY ***
+import com.tim.appTim.entity.Role;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
 import com.tim.appTim.exception.BadRequestException;
@@ -36,7 +36,7 @@ import com.tim.appTim.repository.CourseRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
-import com.tim.appTim.repository.RoleRepository; // *** THÊM IMPORT NÀY ***
+import com.tim.appTim.repository.RoleRepository; 
 import com.tim.appTim.repository.UserImageRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.FileRepository;
@@ -58,14 +58,14 @@ public class UserService implements UserDetailsService {
     private final CourseRepository courseRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final FileRepository fileRepository;
-    private final RoleRepository roleRepository; // *** THÊM REPO NÀY ***
+    private final RoleRepository roleRepository; 
 
 
     public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
                        ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
                        UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
                        CourseRepository courseRepository,@Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository,
-                       RoleRepository roleRepository // *** THÊM VÀO CONSTRUCTOR ***
+                       RoleRepository roleRepository 
     ) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
@@ -77,7 +77,7 @@ public class UserService implements UserDetailsService {
         this.courseRepository = courseRepository;
         this.passwordEncoder = passwordEncoder;
         this.fileRepository = fileRepository;
-        this.roleRepository = roleRepository; // *** THÊM VÀO CONSTRUCTOR ***
+        this.roleRepository = roleRepository; 
     }
 
     // *** THAY ĐỔI 2: SỬA LẠI HOÀN TOÀN PHƯƠNG THỨC 'register' ***
@@ -100,15 +100,10 @@ public class UserService implements UserDetailsService {
             throw new IllegalArgumentException("Password is required");
         }
 
-        // --- BẮT ĐẦU LOGIC MỚI ---
-        // Gán vai trò mặc định cho user mới
-        // Đảm bảo bạn đã có "ROLE_SINH_VIEN" trong bảng 'roles' của DB
         Role defaultRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
 
         user.setRoles(Set.of(defaultRole));
-        // --- KẾT THÚC LOGIC MỚI ---
-
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         userRepository.save(user);
