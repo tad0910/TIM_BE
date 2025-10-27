@@ -16,7 +16,7 @@ public class PostDTO {
     private List<FileDTO> files;
     private String userAvatar;
     private String username;
-     
+      
 
 
     public PostDTO(Long id,Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,

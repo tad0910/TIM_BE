@@ -11,6 +11,7 @@ import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.repository.ReactionRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final UserService userService;
-
+    private final ReactionRepository reactionRepository;
 
     private NotificationService notificationService;
 
@@ -37,13 +38,14 @@ public class CommentService {
                           UserService userService,
                           PostRepository postRepository,
                           UserRepository userRepository,
-                          NotificationService notificationService) {
+                          NotificationService notificationService, ReactionRepository reactionRepository) {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.userService = userService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.reactionRepository = reactionRepository;
     }
 
     public CommentDTO createComment(Long postId, Long userId, String content, Comment.Emotion emotion, Long fileId) {
@@ -116,7 +118,11 @@ public class CommentService {
         }
 
         List<ReplyComment> replyComments = replyCommentRepository.findByCommentId(commentId);
+        for (ReplyComment reply : replyComments) {
+            reactionRepository.deleteByReplyCommentId(reply.getId());
+        }
         replyCommentRepository.deleteAll(replyComments);
+        reactionRepository.deleteByCommentId(commentId);
         commentRepository.delete(comment);
     }
 

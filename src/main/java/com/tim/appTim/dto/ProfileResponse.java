@@ -54,4 +54,5 @@ public class ProfileResponse {
     public void setImages(List<UserImageDTO> images) { this.images = images; }
     public List<CourseDTO> getCourses() { return courses; }
     public void setCourses(List<CourseDTO> courses) { this.courses = courses; }
+
 }

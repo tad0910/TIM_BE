@@ -14,7 +14,7 @@ import com.tim.appTim.entity.Post;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.UserRepository;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.tim.appTim.repository.CommentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -29,13 +29,15 @@ public class PostService {
     private final UserRepository userRepository;
     private final CommentService commentService;
     private final ReactionService reactionService;
+    private final CommentRepository commentRepository;
 
     public PostService(PostRepository postRepository, UserRepository userRepository, 
-                       CommentService commentService, ReactionService reactionService) {
+                       CommentService commentService, ReactionService reactionService, CommentRepository commentRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentService = commentService;
         this.reactionService = reactionService;
+        this.commentRepository = commentRepository;
     }
 
     @Transactional
@@ -143,24 +145,13 @@ public class PostService {
         postRepository.delete(post);
     }
 
-    public boolean isOwner(String username, Long postId) {
-        // 1. Tìm bài post
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
-
-        // 2. Tìm user đang đăng nhập bằng username
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-
-        // 3. So sánh ID của user sở hữu bài post và ID của user đang đăng nhập
-        return post.getUser().getId().equals(user.getId());
-    }
-
     private PostDTO convertToDto(Post post) {
+        long totalComments = commentService.countCommentsByPostId(post.getId());
+        long totalReactions = reactionService.getReactionsByPostId(post.getId()).size();
+
         List<CommentDTO> comments = commentService.getCommentsByPostId(post.getId());
         List<ReactionDTO> reactions = reactionService.getReactionsByPostId(post.getId());
 
-        // Convert File entities to FileDTO with IDs
         List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
                 .map(file -> new com.tim.appTim.dto.FileDTO(
                         file.getId(),
@@ -171,7 +162,6 @@ public class PostService {
                 ))
                 .collect(Collectors.toList());
 
-
         return new PostDTO(
                 post.getId(),
                 post.getUser().getId(),
@@ -179,8 +169,8 @@ public class PostService {
                 post.getPrivacy().name(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
-                reactions != null ? reactions.size() : 0,
-                comments != null ? comments.size() : 0,
+                (int) totalReactions,
+                (int) totalComments,
                 comments,
                 reactions,
                 fileDTOs,
