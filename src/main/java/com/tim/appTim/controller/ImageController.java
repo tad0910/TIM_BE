@@ -13,21 +13,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.exception.BadRequestException;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.InternalServerErrorException;
 import com.tim.appTim.service.UserImageService;
 import com.tim.appTim.service.UserService;
 
@@ -48,9 +44,13 @@ public class ImageController {
 
     @PostMapping("/{userId}/image")
     @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #userId)")
-    public ResponseEntity<String> uploadImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file, Authentication authentication) {
+    public ResponseEntity<String> uploadImage(
+            @PathVariable Long userId,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("File is empty");
+            throw new BadRequestException("File tải lên bị trống");
         }
 
         try {
@@ -71,7 +71,7 @@ public class ImageController {
             User user = userService.findById(userId);
             if (user == null) {
                 Files.deleteIfExists(filePath);
-                return ResponseEntity.notFound().build();
+                throw new ResourceNotFoundException("Không tìm thấy người dùng có ID: " + userId);
             }
 
             UserImage userImage = new UserImage();
@@ -80,12 +80,12 @@ public class ImageController {
             userImage.setCreatedAt(LocalDateTime.now());
             userImageService.save(userImage);
 
-            logger.info("Image uploaded for userId {}: {}", userId, uniqueFilename);
+            logger.info("Tải ảnh thành công cho userId {}: {}", userId, uniqueFilename);
+            return ResponseEntity.ok("Tải ảnh thành công: " + uniqueFilename);
 
-            return ResponseEntity.ok("Image uploaded successfully: " + uniqueFilename);
         } catch (IOException e) {
-            logger.error("Failed to upload image for userId {}: {}", userId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload image: " + e.getMessage());
+            logger.error("Lỗi khi tải ảnh cho userId {}: {}", userId, e.getMessage());
+            throw new InternalServerErrorException("Không thể lưu ảnh: " + e.getMessage());
         }
     }
 
@@ -93,22 +93,25 @@ public class ImageController {
     public ResponseEntity<List<UserImage>> getAllImages(@PathVariable Long userId) {
         List<UserImage> userImages = userImageService.findAllByUserId(userId);
         if (userImages == null || userImages.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Không tìm thấy ảnh nào cho userId: " + userId);
         }
         return ResponseEntity.ok(userImages);
     }
 
-
     @DeleteMapping("/{userId}/image/{imageId}")
     @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #userId)")
-    public ResponseEntity<String> deleteImage(@PathVariable Long userId, @PathVariable Long imageId, Authentication authentication) {
+    public ResponseEntity<String> deleteImage(
+            @PathVariable Long userId,
+            @PathVariable Long imageId,
+            Authentication authentication) {
+
         UserImage userImage = userImageService.findById(imageId);
         if (userImage == null || !userImage.getUserId().equals(userId)) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Không tìm thấy ảnh hoặc ảnh không thuộc về userId: " + userId);
         }
 
         userImageService.delete(imageId);
-        logger.info("Image {} deleted for userId: {}", imageId, userId);
-        return ResponseEntity.ok("Image deleted successfully");
+        logger.info("Đã xóa ảnh {} cho userId: {}", imageId, userId);
+        return ResponseEntity.ok("Xóa ảnh thành công");
     }
 }

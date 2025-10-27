@@ -6,6 +6,7 @@ import com.tim.appTim.entity.Comment;
 import com.tim.appTim.entity.ReplyComment;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
@@ -18,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.NoSuchElementException;
 
 @Service("commentService")
 @Transactional
@@ -29,13 +29,16 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final UserService userService;
-    private final NotificationService notificationService;
-    private final ReactionRepository reactionRepository;
+
+
+    private NotificationService notificationService;
 
     public CommentService(CommentRepository commentRepository,
                           ReplyCommentRepository replyCommentRepository,
-                          UserService userService, PostRepository postRepository, UserRepository userRepository,
-                          NotificationService notificationService, ReactionRepository reactionRepository) {
+                          UserService userService,
+                          PostRepository postRepository,
+                          UserRepository userRepository,
+                          NotificationService notificationService) {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.userService = userService;
@@ -44,6 +47,7 @@ public class CommentService {
         this.notificationService = notificationService;
         this.reactionRepository = reactionRepository;
     }
+
     public CommentDTO createComment(Long postId, Long userId, String content, Comment.Emotion emotion, Long fileId) {
         postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
@@ -84,8 +88,8 @@ public class CommentService {
     }
 
     public List<CommentDTO> getCommentsByPostId(Long postId) {
-        List<Comment> comments = commentRepository.findByPostId(postId);
-        return comments.stream()
+        return commentRepository.findByPostId(postId)
+                .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -95,15 +99,14 @@ public class CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
 
         if (!comment.getUserId().equals(userId)) {
-            throw new RuntimeException("You don't have permission to update this comment");
+            throw new ForbiddenException("Bạn không có quyền sửa bình luận này");
         }
 
         comment.setContent(content);
         comment.setEmotion(emotion);
         comment.setCreatedAt(LocalDateTime.now());
 
-        Comment updatedComment = commentRepository.save(comment);
-        return convertToDTO(updatedComment);
+        return convertToDTO(commentRepository.save(comment));
     }
 
     public void deleteComment(Long commentId, Long userId) {
@@ -111,7 +114,7 @@ public class CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
 
         if (!comment.getUserId().equals(userId)) {
-            throw new RuntimeException("You don't have permission to delete this comment");
+            throw new ForbiddenException("Bạn không có quyền xóa bình luận này");
         }
 
         List<ReplyComment> replyComments = replyCommentRepository.findByCommentId(commentId);
@@ -162,8 +165,8 @@ public class CommentService {
     }
 
     public List<ReplyCommentDTO> getReplyCommentsByCommentId(Long commentId) {
-        List<ReplyComment> replyComments = replyCommentRepository.findByCommentId(commentId);
-        return replyComments.stream()
+        return replyCommentRepository.findByCommentId(commentId)
+                .stream()
                 .map(this::convertReplyToDTO)
                 .collect(Collectors.toList());
     }
@@ -172,80 +175,77 @@ public class CommentService {
         ReplyComment replyComment = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
+        if (!replyComment.getUserId().equals(userId)) {
+            throw new ForbiddenException("Bạn không có quyền sửa phản hồi này");
+        }
+
         replyComment.setContent(content);
         replyComment.setEmotion(emotion);
         replyComment.setCreatedAt(LocalDateTime.now());
 
-        ReplyComment updatedReplyComment = replyCommentRepository.save(replyComment);
-        return convertReplyToDTO(updatedReplyComment);
+        return convertReplyToDTO(replyCommentRepository.save(replyComment));
     }
 
     public void deleteReplyComment(Long userId, Long replyCommentId) {
         ReplyComment replyComment = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
-        reactionRepository.deleteByReplyCommentId(replyCommentId);
+        if (!replyComment.getUserId().equals(userId)) {
+            throw new ForbiddenException("Bạn không có quyền xóa phản hồi này");
+        }
+
         replyCommentRepository.delete(replyComment);
     }
 
     private CommentDTO convertToDTO(Comment comment) {
         String username = comment.getUser() != null ? comment.getUser().getUsername() : "Unknown";
-        List<ReplyComment> replyComments = replyCommentRepository.findByCommentId(comment.getId());
-        List<ReplyCommentDTO> replyCommentDTOs = replyComments.stream()
-                .map(this::convertReplyToDTO)
-                .collect(Collectors.toList());
+        List<ReplyCommentDTO> replies = replyCommentRepository.findByCommentId(comment.getId())
+                .stream().map(this::convertReplyToDTO).collect(Collectors.toList());
 
         return new CommentDTO(
                 comment.getId(),
                 comment.getUserId(),
                 username,
+                comment.getUser() != null ? comment.getUser().getProfileImage() : " " ,
                 comment.getContent(),
                 comment.getEmotion() != null ? comment.getEmotion().name() : null,
                 comment.getFileId(),
                 comment.getCreatedAt(),
-                replyCommentDTOs
+                replies
         );
     }
 
-    private ReplyCommentDTO convertReplyToDTO(ReplyComment replyComment) {
-        String username = replyComment.getUser() != null ? replyComment.getUser().getUsername() : "Unknown";
+    private ReplyCommentDTO convertReplyToDTO(ReplyComment reply) {
+        String username = reply.getUser() != null ? reply.getUser().getUsername() : "Unknown";
         return new ReplyCommentDTO(
-                replyComment.getId(),
-                replyComment.getUserId(),
+                reply.getId(),
+                reply.getUserId(),
                 username,
-                replyComment.getContent(),
-                replyComment.getEmotion(),
-                replyComment.getFileId(),
-                replyComment.getCreatedAt()
+                reply.getContent(),
+                reply.getEmotion(),
+                reply.getFileId(),
+                reply.getCreatedAt(),
+                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
         );
     }
 
-        public boolean isOwner(Authentication authentication, Long commentId) {
-            if (authentication == null || !authentication.isAuthenticated()) return false;
+    public boolean isOwner(Authentication authentication, Long commentId) {
+        if (authentication == null || !authentication.isAuthenticated()) return false;
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) return false;
 
-            User currentUser = userService.findByUsernameOrEmail(authentication.getName());
-            if (currentUser == null) return false;
-
-            Comment comment = commentRepository.findById(commentId)
-                    .orElseThrow(() -> new NoSuchElementException("Không tìm thấy Comment: " + commentId));
-
-            return comment.getUser().getId().equals(currentUser.getId());
-        }
-
-        public boolean isReplyOwner(Authentication authentication, Long replyCommentId) {
-            if (authentication == null || !authentication.isAuthenticated()) return false;
-
-            User currentUser = userService.findByUsernameOrEmail(authentication.getName());
-            if (currentUser == null) return false;
-
-            ReplyComment reply = replyCommentRepository.findById(replyCommentId)
-                    .orElseThrow(() -> new NoSuchElementException("Không tìm thấy Reply Comment: " + replyCommentId));
-
-            return reply.getUser().getId().equals(currentUser.getId());
-        }
-
-    public long countCommentsByPostId(Long postId) {
-        return commentRepository.countByPostId(postId);
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Comment: " + commentId));
+        return comment.getUser().getId().equals(currentUser.getId());
     }
 
+    public boolean isReplyOwner(Authentication authentication, Long replyCommentId) {
+        if (authentication == null || !authentication.isAuthenticated()) return false;
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) return false;
+
+        ReplyComment reply = replyCommentRepository.findById(replyCommentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Reply Comment: " + replyCommentId));
+        return reply.getUser().getId().equals(currentUser.getId());
+    }
 }

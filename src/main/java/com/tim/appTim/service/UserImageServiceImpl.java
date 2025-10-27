@@ -1,6 +1,8 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.InternalServerErrorException;
 import com.tim.appTim.repository.UserImageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,34 +33,37 @@ public class UserImageServiceImpl implements UserImageService {
 
     @Override
     public UserImage findById(Long id) {
-        return userImageRepository.findById(id).orElse(null);
+        return userImageRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ảnh với ID: " + id));
     }
 
     @Override
     public UserImage findLatestByUserId(Long userId) {
         List<UserImage> userImages = userImageRepository.findByUserId(userId);
         if (userImages == null || userImages.isEmpty()) {
-            return null;
+            throw new ResourceNotFoundException("Không tìm thấy ảnh nào cho userId: " + userId);
         }
         Optional<UserImage> latestImage = userImages.stream()
                 .max(Comparator.comparing(UserImage::getCreatedAt));
-        return latestImage.orElse(null);
+        return latestImage.orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy ảnh mới nhất cho userId: " + userId));
     }
 
     @Override
     public void delete(Long id) {
         UserImage userImage = userImageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ảnh với ID: " + id));
         try {
             String filePath = uploadFolder + File.separator + userImage.getImageUrl().substring("/uploads/".length());
             File file = new File(filePath);
             if (file.exists() && file.delete()) {
-                logger.info("Deleted file: {}", filePath);
+                logger.info("Đã xóa file vật lý: {}", filePath);
             }
+            userImageRepository.deleteById(id);
         } catch (Exception e) {
-            logger.error("Error deleting file for image ID {}: {}", id, e.getMessage());
+            logger.error("Lỗi khi xóa file ảnh ID {}: {}", id, e.getMessage());
+            throw new InternalServerErrorException("Lỗi khi xóa file ảnh: " + e.getMessage());
         }
-        userImageRepository.deleteById(id);
     }
 
     @Override
@@ -70,7 +75,7 @@ public class UserImageServiceImpl implements UserImageService {
     public void deleteAllByUserId(Long userId) {
         List<UserImage> userImages = userImageRepository.findByUserId(userId);
         if (userImages == null || userImages.isEmpty()) {
-            return;
+            throw new ResourceNotFoundException("Không tìm thấy ảnh nào để xóa cho userId: " + userId);
         }
 
         for (UserImage image : userImages) {
@@ -78,12 +83,14 @@ public class UserImageServiceImpl implements UserImageService {
                 String filePath = uploadFolder + File.separator + image.getImageUrl().substring("/uploads/".length());
                 File file = new File(filePath);
                 if (file.exists() && file.delete()) {
-                    logger.info("Deleted file: {}", filePath);
+                    logger.info("Đã xóa file: {}", filePath);
                 }
             } catch (Exception e) {
-                logger.error("Error deleting file for image ID {}: {}", image.getId(), e.getMessage());
+                logger.error("Lỗi khi xóa file ảnh ID {}: {}", image.getId(), e.getMessage());
+                throw new InternalServerErrorException("Lỗi khi xóa file ảnh ID: " + image.getId());
             }
         }
+
         userImageRepository.deleteAllById(userImages.stream().map(UserImage::getId).toList());
     }
 }

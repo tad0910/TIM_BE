@@ -258,6 +258,7 @@ public class ReactionService {
                 reaction.getId(),
                 reaction.getUserId(),
                 username,
+                reaction.getUser() != null? reaction.getUser().getProfileImage() : null, 
                 reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                 reaction.getCreatedAt()
         );
