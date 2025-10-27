@@ -6,6 +6,7 @@ package com.tim.appTim.service;
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.ReactionDTO;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.tim.appTim.exception.*;
 import com.tim.appTim.dto.PostDTO;
@@ -15,6 +16,8 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.CommentRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -91,6 +94,13 @@ public class PostService {
         );
     }
     public Page<PostDTO> getAllPosts(Pageable pageable) {
+        if (!pageable.getSort().isSorted()) {
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by("createdAt").descending()
+            );
+        }
         Page<Post> postPage = postRepository.findAll(pageable);
         return postPage.map(this::convertToDto);
     }
@@ -143,6 +153,19 @@ public class PostService {
         }
 
         postRepository.delete(post);
+    }
+
+    public boolean isOwner(String username, Long postId) {
+        // 1. Tìm bài post
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
+        // 2. Tìm user đang đăng nhập bằng username
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+
+        // 3. So sánh ID của user sở hữu bài post và ID của user đang đăng nhập
+        return post.getUser().getId().equals(user.getId());
     }
 
     private PostDTO convertToDto(Post post) {

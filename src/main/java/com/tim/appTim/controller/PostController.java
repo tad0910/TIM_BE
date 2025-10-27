@@ -19,7 +19,6 @@ import org.springframework.data.domain.Pageable;
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Post;
-import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.service.PostService;
 
 @RestController
@@ -34,6 +33,7 @@ public class PostController {
 
     @Autowired
     public PostController(PostService postService, UserService userService) {
+
         this.postService = postService;
         this.userService = userService;
     }
@@ -43,60 +43,61 @@ public class PostController {
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasAuthority('post:create')")
+    @PreAuthorize("hasAuthority('post:create') ")
     public ResponseEntity<PostDTO> createPost(
             Authentication authentication,
             @RequestParam("content") String content,
             @RequestParam("privacy") String privacy,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles
-    ) throws IOException {
-        User currentUser = getUserFromAuthentication(authentication);
-
-        // Validate privacy value
-        Post.Privacy privacyEnum;
+    ) {
         try {
-            privacyEnum = Post.Privacy.valueOf(privacy);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid privacy value: " + privacy);
-        }
+            User currentUser = getUserFromAuthentication(authentication);
+            Post.Privacy privacyEnum = Post.Privacy.valueOf(privacy);
+            List<File> files = new ArrayList<>();
 
-        List<File> files = new ArrayList<>();
+            if (multipartFiles != null && !multipartFiles.isEmpty()) {
+                for (MultipartFile mf : multipartFiles) {
+                    if (mf.isEmpty()) continue;
 
-        if (multipartFiles != null && !multipartFiles.isEmpty()) {
-            for (MultipartFile mf : multipartFiles) {
-                if (mf.isEmpty()) continue;
+                    String originalName = mf.getOriginalFilename();
+                    String fileExt = originalName != null && originalName.contains(".")
+                            ? originalName.substring(originalName.lastIndexOf("."))
+                            : "";
 
-                String originalName = mf.getOriginalFilename();
-                String fileExt = (originalName != null && originalName.contains("."))
-                        ? originalName.substring(originalName.lastIndexOf("."))
-                        : "";
+                    String uniqueName = UUID.randomUUID().toString() + fileExt;
+                    Path uploadPath = Paths.get(uploadFolder, uniqueName);
+                    Files.createDirectories(uploadPath.getParent());
+                    Files.write(uploadPath, mf.getBytes());
 
-                String uniqueName = UUID.randomUUID().toString() + fileExt;
-                Path uploadPath = Paths.get(uploadFolder, uniqueName);
-                Files.createDirectories(uploadPath.getParent());
-                Files.write(uploadPath, mf.getBytes());
+                    String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                    File.FileType fileType;
+                    if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                        fileType = File.FileType.VIDEO;
+                    } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                        fileType = File.FileType.DOCUMENT;
+                    } else {
+                        fileType = File.FileType.IMAGE;
+                    }
 
-                String lowerName = originalName != null ? originalName.toLowerCase() : "";
-                File.FileType fileType;
-                if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
-                    fileType = File.FileType.VIDEO;
-                } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
-                    fileType = File.FileType.DOCUMENT;
-                } else {
-                    fileType = File.FileType.IMAGE;
+                    File f = new File();
+                    f.setFileUrl("/uploads/" + uniqueName);
+                    f.setFileName(originalName);
+                    f.setFileSize(mf.getSize());
+                    f.setFileType(fileType);
+                    files.add(f);
                 }
-
-                File f = new File();
-                f.setFileUrl("/uploads/" + uniqueName);
-                f.setFileName(originalName);
-                f.setFileSize(mf.getSize());
-                f.setFileType(fileType);
-                files.add(f);
             }
-        }
 
-        PostDTO createdPost = postService.createPostWithFiles(currentUser.getId(), content, privacyEnum, files);
-        return ResponseEntity.ok(createdPost);
+            PostDTO createdPost = postService.createPostWithFiles(currentUser.getId(), content, privacyEnum, files);
+            return ResponseEntity.ok(createdPost);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(null);
+        }
     }
 
     @GetMapping
@@ -129,57 +130,60 @@ public class PostController {
             @RequestParam("privacy") String privacy,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles,
             @RequestParam(value = "fileIdsToDelete", required = false) List<Integer> fileIdsToDelete
-    ) throws IOException {
-        User currentUser = getUserFromAuthentication(authentication);
-        Post.Privacy privacyEnum;
-
+    ) {
+        System.out.println("File IDs to delete received from request: " + fileIdsToDelete);
         try {
-            privacyEnum = Post.Privacy.valueOf(privacy);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid privacy value: " + privacy);
-        }
+            User currentUser = getUserFromAuthentication(authentication);
+            Post.Privacy privacyEnum = Post.Privacy.valueOf(privacy);
+            List<File> files = new ArrayList<>();
 
-        List<File> files = new ArrayList<>();
+            if (multipartFiles != null && !multipartFiles.isEmpty()) {
+                for (MultipartFile mf : multipartFiles) {
+                    if (mf.isEmpty()) continue;
 
-        if (multipartFiles != null && !multipartFiles.isEmpty()) {
-            for (MultipartFile mf : multipartFiles) {
-                if (mf.isEmpty()) continue;
+                    String originalName = mf.getOriginalFilename();
+                    String fileExt = originalName != null && originalName.contains(".")
+                            ? originalName.substring(originalName.lastIndexOf("."))
+                            : "";
 
-                String originalName = mf.getOriginalFilename();
-                String fileExt = (originalName != null && originalName.contains("."))
-                        ? originalName.substring(originalName.lastIndexOf("."))
-                        : "";
+                    String uniqueName = UUID.randomUUID().toString() + fileExt;
+                    Path uploadPath = Paths.get(uploadFolder, uniqueName);
+                    Files.createDirectories(uploadPath.getParent());
+                    Files.write(uploadPath, mf.getBytes());
 
-                String uniqueName = UUID.randomUUID().toString() + fileExt;
-                Path uploadPath = Paths.get(uploadFolder, uniqueName);
-                Files.createDirectories(uploadPath.getParent());
-                Files.write(uploadPath, mf.getBytes());
+                    String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                    File.FileType fileType;
+                    if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                        fileType = File.FileType.VIDEO;
+                    } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                        fileType = File.FileType.DOCUMENT;
+                    } else {
+                        fileType = File.FileType.IMAGE;
+                    }
 
-                String lowerName = originalName != null ? originalName.toLowerCase() : "";
-                File.FileType fileType;
-                if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
-                    fileType = File.FileType.VIDEO;
-                } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
-                    fileType = File.FileType.DOCUMENT;
-                } else {
-                    fileType = File.FileType.IMAGE;
+                    File f = new File();
+                    f.setFileUrl("/uploads/" + uniqueName);
+                    f.setFileName(originalName);
+                    f.setFileSize(mf.getSize());
+                    f.setFileType(fileType);
+                    files.add(f);
                 }
-
-                File f = new File();
-                f.setFileUrl("/uploads/" + uniqueName);
-                f.setFileName(originalName);
-                f.setFileSize(mf.getSize());
-                f.setFileType(fileType);
-                files.add(f);
             }
-        }
 
-        PostDTO updatedPost = postService.updatePostWithFiles(currentUser.getId(), postId, content, privacyEnum, files, fileIdsToDelete);
-        return ResponseEntity.ok(updatedPost);
+            PostDTO updatedPost = postService.updatePostWithFiles(currentUser.getId(), postId, content, privacyEnum, files, fileIdsToDelete);
+            return ResponseEntity.ok(updatedPost);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @DeleteMapping("/{postId}")
-    @PreAuthorize("hasAuthority('post:delete_all') or @postService.isOwner(authentication, #postId)")
+    @PreAuthorize("hasAuthority('post:delete_all') or @postService.isOwner(authentication.name, #postId)")
     public ResponseEntity<String> deletePost(
             @PathVariable Long postId,
             Authentication authentication) {
@@ -188,3 +192,4 @@ public class PostController {
         return ResponseEntity.ok("Post with id " + postId + " deleted successfully.");
     }
 }
+

@@ -198,20 +198,22 @@ public class CommentService {
     }
 
     private CommentDTO convertToDTO(Comment comment) {
+        User user = comment.getUser();
         String username = comment.getUser() != null ? comment.getUser().getUsername() : "Unknown";
+        String userAvatar = user != null ? user.getProfileImage() : " ";
         List<ReplyCommentDTO> replies = replyCommentRepository.findByCommentId(comment.getId())
                 .stream().map(this::convertReplyToDTO).collect(Collectors.toList());
 
-        return new CommentDTO(
-                comment.getId(),
-                comment.getUserId(),
-                username,
-                comment.getUser() != null ? comment.getUser().getProfileImage() : " " ,
-                comment.getContent(),
-                comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                comment.getFileId(),
-                comment.getCreatedAt(),
-                replies
+        return new CommentDTO( // <-- Thứ tự ĐÚNG
+                comment.getId(),              // 1. id
+                comment.getUserId(),            // 2. userId
+                username,                     // 3. username
+                comment.getContent(),         // 4. content <<< ĐÚNG
+                userAvatar,                   // 5. userAvatar <<< ĐÚNG
+                comment.getEmotion() != null ? comment.getEmotion().name() : null, // 6. emotion
+                comment.getFileId(),            // 7. fileId
+                comment.getCreatedAt(),         // 8. createdAt
+                replies                       // 9. replies
         );
     }
 

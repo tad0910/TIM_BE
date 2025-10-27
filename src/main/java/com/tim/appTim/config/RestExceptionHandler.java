@@ -29,18 +29,18 @@ public class RestExceptionHandler {
     }
 
 
-     @ExceptionHandler(AccessDeniedException.class)
+    @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
         ErrorResponse error = new ErrorResponse(Instant.now(), HttpStatus.FORBIDDEN.value(), "Forbidden",
                 ex.getMessage() == null ? "Bạn không có quyền truy cập tài nguyên này." : ex.getMessage(),
                 request.getDescription(false).replace("uri=", ""));
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
-    
+
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
         ErrorResponse error = new ErrorResponse(Instant.now(), HttpStatus.BAD_REQUEST.value(),
-        "Bad Request",
+                "Bad Request",
                 ex.getMessage() == null ? "Runtime error occurred" : ex.getMessage(),
                 request.getDescription(false).replace("uri=", ""));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -54,13 +54,13 @@ public class RestExceptionHandler {
                 request.getDescription(false).replace("uri=", ""));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
-    
-    
+
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
-            ErrorResponse error = new ErrorResponse(Instant.now(), HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                    "Internal Server Error",
-                    ex.getMessage() == null ? "Unexpected error" : ex.getMessage(),
+        ErrorResponse error = new ErrorResponse(Instant.now(), HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                ex.getMessage() == null ? "Unexpected error" : ex.getMessage(),
                 request.getDescription(false).replace("uri=", ""));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
