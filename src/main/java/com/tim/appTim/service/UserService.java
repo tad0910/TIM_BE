@@ -30,6 +30,7 @@ import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.InternalServerErrorException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.UnauthorizedException;
+import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.CourseRepository;
@@ -83,21 +84,21 @@ public class UserService implements UserDetailsService {
     // *** THAY ĐỔI 2: SỬA LẠI HOÀN TOÀN PHƯƠNG THỨC 'register' ***
     public void register(User user) {
         if (user.getUsername() == null || user.getUsername().isEmpty()) {
-            throw new IllegalArgumentException("Username is required");
+            throw new UnprocessableException("Username is required");
         }
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new ConflictException("Username already exists");
         }
 
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
-            throw new IllegalArgumentException("Email is required");
+            throw new UnprocessableException("Email is required");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new ConflictException("Email already exists");
         }
 
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            throw new IllegalArgumentException("Password is required");
+            throw new UnprocessableException("Password is required");
         }
 
         Role defaultRole = roleRepository.findByName("ROLE_USER")
@@ -428,7 +429,7 @@ public class UserService implements UserDetailsService {
         } catch (ConflictException e) {
             throw e;
         } catch (Exception e) {
-            throw new InternalServerErrorException("Không thể cập nhật ảnh đại diện: " + e.getMessage());
+            throw new UnprocessableException("Không thể cập nhật ảnh đại diện: " + e.getMessage());
         }
     }
 
@@ -454,7 +455,7 @@ public class UserService implements UserDetailsService {
         } catch (ConflictException e) {
             throw e;
         } catch (Exception e) {
-            throw new InternalServerErrorException("Không thể cập nhật ảnh bìa: " + e.getMessage());
+            throw new UnprocessableException("Không thể cập nhật ảnh bìa: " + e.getMessage());
         }
     }
 

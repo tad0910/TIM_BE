@@ -5,14 +5,18 @@ import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.UnauthorizedException;
+import com.tim.appTim.exception.UnprocessableException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.security.access.AccessDeniedException;
+
+
 
 
 import java.time.Instant;
@@ -81,6 +85,30 @@ public class RestExceptionHandler {
                 ex.getMessage() == null ? "Invalid argument" : ex.getMessage(),
                 request.getDescription(false).replace("uri=", ""));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(UnprocessableException.class)
+    public ResponseEntity<ErrorResponse> handleUnprocessableEntity(UnprocessableException ex, WebRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                Instant.now(),
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                "Unprocessable Entity",
+                ex.getMessage() == null ? "Dữ liệu không hợp lệ hoặc thiếu trường bắt buộc" : ex.getMessage(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex, WebRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                Instant.now(),
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                "Unprocessable Entity",
+                "Thiếu tham số bắt buộc: " + ex.getParameterName(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
     }
 
 }
