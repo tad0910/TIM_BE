@@ -244,7 +244,7 @@ public class CommentService {
             return reply.getUser().getId().equals(currentUser.getId());
         }
 
-    public long countCommentsByPostId(Long postId) {
+        public long countCommentsByPostId(Long postId) {
         return commentRepository.countByPostId(postId);
     }
 
