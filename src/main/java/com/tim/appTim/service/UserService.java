@@ -255,10 +255,16 @@ public class UserService implements UserDetailsService {
                     post.getPrivacy() != null ? post.getPrivacy().name() : null,
                     post.getCreatedAt(),
                     post.getUpdatedAt(),
+                    reactions != null ? reactions.size() : 0,
+                    comments != null ? comments.size() : 0,
                     comments,
                     reactions,
-                    fileDTOs
+                    fileDTOs,
+                    post.getUser().getProfileImage(),
+                    post.getUser().getUsername(),
+                    getUserDisplayName(post.getUser())
             );
+
         }).collect(Collectors.toList());
 
         List<UserImageDTO> images = userImageRepository.findByUserId(user.getId()).stream()
@@ -324,10 +330,16 @@ public class UserService implements UserDetailsService {
                     post.getPrivacy() != null ? post.getPrivacy().name() : null,
                     post.getCreatedAt(),
                     post.getUpdatedAt(),
+                    reactions != null ? reactions.size() : 0,
+                    comments != null ? comments.size() : 0,
                     comments,
                     reactions,
-                    fileDTOs
+                    fileDTOs,
+                    post.getUser().getProfileImage(),
+                    post.getUser().getUsername(),
+                    getUserDisplayName(post.getUser())
             );
+
         }).collect(Collectors.toList());
 
         List<UserImageDTO> images = userImageRepository.findByUserId(userId).stream()
@@ -539,5 +551,34 @@ public class UserService implements UserDetailsService {
         }
         String[] parts = fileUrl.split("/");
         return parts[parts.length - 1];
+    }
+
+    private String getUserDisplayName(User user) {
+        if (user == null) {
+            return "Người dùng";
+        }
+        
+        String firstName = user.getFirstName();
+        String lastName = user.getLastName();
+        String username = user.getUsername();
+        
+        if (firstName != null && !firstName.trim().isEmpty() && 
+            lastName != null && !lastName.trim().isEmpty()) {
+            return firstName + " " + lastName;
+        }
+        
+        if (firstName != null && !firstName.trim().isEmpty()) {
+            return firstName;
+        }
+        
+        if (lastName != null && !lastName.trim().isEmpty()) {
+            return lastName;
+        }
+        
+        if (username != null && !username.trim().isEmpty()) {
+            return username;
+        }
+        
+        return "Người dùng";
     }
 }

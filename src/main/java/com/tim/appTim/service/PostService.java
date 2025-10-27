@@ -82,6 +82,8 @@ public class PostService {
                 ))
                 .collect(Collectors.toList());
 
+                String displayName = getUserDisplayName(user);
+
         return new PostDTO(
                 savedPost.getId(),
                 savedPost.getUser().getId(),
@@ -95,7 +97,8 @@ public class PostService {
                 new ArrayList<>(),
                 fileDTOs,
                 user.getProfileImage(),
-                user.getUsername()
+                user.getUsername(),
+                displayName
         );
     }
 
@@ -193,6 +196,8 @@ public class PostService {
                 ))
                 .collect(Collectors.toList());
 
+                String displayName = getUserDisplayName(post.getUser());
+
         return new PostDTO(
                 post.getId(),
                 post.getUser().getId(),
@@ -206,7 +211,8 @@ public class PostService {
                 reactions,
                 fileDTOs,
                 post.getUser().getProfileImage(),
-                post.getUser().getUsername()
+                post.getUser().getUsername(),
+                displayName
         );
     }
 
@@ -218,6 +224,34 @@ public class PostService {
         return parts[parts.length - 1];
     }
 
+    private String getUserDisplayName(User user) {
+        if (user == null) {
+            return "Người dùng";
+        }
+        
+        String firstName = user.getFirstName();
+        String lastName = user.getLastName();
+        String username = user.getUsername();
+        
+        if (firstName != null && !firstName.trim().isEmpty() && 
+            lastName != null && !lastName.trim().isEmpty()) {
+            return firstName + " " + lastName;
+        }
+        
+        if (firstName != null && !firstName.trim().isEmpty()) {
+            return firstName;
+        }
+        
+        if (lastName != null && !lastName.trim().isEmpty()) {
+            return lastName;
+        }
+        
+        if (username != null && !username.trim().isEmpty()) {
+            return username;
+        }
+        
+        return "Người dùng";
+    }
 
     public PostDTO getPostByIdForUser(Long userId, Long postId) {
         if (!userRepository.existsById(userId)) {
@@ -232,4 +266,6 @@ public class PostService {
         }
         return convertToDto(post);
     }
+
+
 }
