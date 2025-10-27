@@ -45,8 +45,15 @@ public class PostService {
 
     @Transactional
     public PostDTO createPostWithFiles(Long userId, String content, Post.Privacy privacy, List<File> filesFromController) {
+
+        if (userId == null) {
+            throw new UnprocessableException("User ID không được để trống");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new UnprocessableException("Nội dung bài viết không được để trống");
+        }
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User không tồn tại với id: " + userId));
 
         Post post = new Post();
         post.setUser(user);
@@ -65,7 +72,6 @@ public class PostService {
 
         Post savedPost = postRepository.save(post);
 
-        // Convert files to FileDTO
         List<com.tim.appTim.dto.FileDTO> fileDTOs = savedPost.getFiles().stream()
                 .map(file -> new com.tim.appTim.dto.FileDTO(
                         file.getId(),
@@ -75,7 +81,6 @@ public class PostService {
                         file.getFileSize() != null ? file.getFileSize() : 0L
                 ))
                 .collect(Collectors.toList());
-
 
         return new PostDTO(
                 savedPost.getId(),
@@ -93,6 +98,7 @@ public class PostService {
                 user.getUsername()
         );
     }
+
     public Page<PostDTO> getAllPosts(Pageable pageable) {
         if (!pageable.getSort().isSorted()) {
             pageable = PageRequest.of(
@@ -116,7 +122,12 @@ public class PostService {
     }
 
     @Transactional
-    public PostDTO updatePostWithFiles(Long userId, Long postId, String content, Post.Privacy privacy, List<com.tim.appTim.entity.File> newFiles, List<Integer> fileIdsToDelete) {
+    public PostDTO updatePostWithFiles(Long userId, Long postId, String content, Post.Privacy privacy,
+                                    List<com.tim.appTim.entity.File> newFiles, List<Integer> fileIdsToDelete) {
+        if (content == null || content.trim().isEmpty()) {
+            throw new UnprocessableException("Content cannot be empty");
+        }
+
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
@@ -143,6 +154,7 @@ public class PostService {
         return convertToDto(updatedPost);
     }
 
+
     @Transactional
     public void deletePost(Long userId, Long postId) {
         Post post = postRepository.findById(postId)
@@ -156,15 +168,11 @@ public class PostService {
     }
 
     public boolean isOwner(String username, Long postId) {
-        // 1. Tìm bài post
+
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
-
-        // 2. Tìm user đang đăng nhập bằng username
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-
-        // 3. So sánh ID của user sở hữu bài post và ID của user đang đăng nhập
         return post.getUser().getId().equals(user.getId());
     }
 
