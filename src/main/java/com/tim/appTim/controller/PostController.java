@@ -122,7 +122,7 @@
         }
 
         @PutMapping("/{postId}")
-        @PreAuthorize("hasAuthority('post:update_all') or @postService.isOwner(authentication, #postId)")
+        @PreAuthorize("hasAuthority('post:update_all') or @postService.isOwner(authentication.name, #postId)")
         public ResponseEntity<PostDTO> updatePost(
                 @PathVariable Long postId,
                 Authentication authentication,
@@ -183,7 +183,7 @@
         }
 
         @DeleteMapping("/{postId}")
-        @PreAuthorize("hasAuthority('post:delete_all') or @postService.isOwner(authentication, #postId)")
+        @PreAuthorize("hasAuthority('post:delete_all') or @postService.isOwner(authentication.name, #postId)")
         public ResponseEntity<String> deletePost(
                 @PathVariable Long postId,
                 Authentication authentication) {

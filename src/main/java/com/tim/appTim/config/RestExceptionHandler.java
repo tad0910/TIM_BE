@@ -1,6 +1,7 @@
 package com.tim.appTim.config;
 
 import com.tim.appTim.dto.ErrorResponse;
+import com.tim.appTim.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,6 +14,20 @@ import java.time.Instant;
 
 @ControllerAdvice
 public class RestExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class) // <-- Bắt exception cụ thể này
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException ex, WebRequest request) {
+
+        ErrorResponse error = new ErrorResponse(
+                Instant.now(),
+                HttpStatus.NOT_FOUND.value(), // <-- Mã lỗi 404
+                "Not Found",                  // <-- Tên lỗi
+                ex.getMessage(),              // <-- Message từ exception
+                request.getDescription(false).replace("uri=", "") // <-- Path
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error); // <-- Trả về response 404
+    }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthException(AuthenticationException ex, WebRequest request) {
