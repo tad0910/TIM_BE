@@ -2,8 +2,8 @@ package com.tim.appTim.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList; // Thêm import
-import java.util.List; // Thêm import
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "comments")
@@ -33,8 +33,10 @@ public class Comment {
     @Column(name = "reaction_id")
     private Long reactionId; // Giữ lại nếu bạn đang dùng, nếu không cũng nên map thành Entity
 
-    // --- SỬA LẠI MAPPING ---
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<File> files = new ArrayList<>();
+
+    @ManyToOne
     @JoinColumn(name = "bai_viet_id", nullable = false)
     private Post post;
 
@@ -89,4 +91,16 @@ public class Comment {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+    public List<File> getFiles() { return files; }
+    public void setFiles(List<File> files) { this.files = files; }
+    public void addFile(File file) {
+        files.add(file);
+        file.setComment(this);
+    }
+
+    public void removeFile(File file) {
+        files.remove(file);
+        file.setComment(null);
+    }
+
 }

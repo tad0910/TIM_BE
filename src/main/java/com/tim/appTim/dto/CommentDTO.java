@@ -12,10 +12,10 @@ public class CommentDTO {
     private String userAvatar ;
     private LocalDateTime createdAt;
     private List<ReplyCommentDTO> replyComments;
-
+    private List<FileDTO> files;
 
     public CommentDTO(Long id, Long userId, String username, String content,String userAvatar, String emotion, Long fileId,
-                      LocalDateTime createdAt, List<ReplyCommentDTO> replyComments) {
+                      LocalDateTime createdAt, List<ReplyCommentDTO> replyComments, List<FileDTO> files) {
         this.id = id;
         this.userId = userId;
         this.username = username;
@@ -25,6 +25,7 @@ public class CommentDTO {
         this.createdAt = createdAt;
         this.replyComments = replyComments;
         this.userAvatar = userAvatar;
+        this.files = files;
     }
 
     public Long getId() { return id; }
@@ -45,4 +46,6 @@ public class CommentDTO {
     public void setReplyComments(List<ReplyCommentDTO> replyComments) { this.replyComments = replyComments; }
     public String getUserAvatar() { return userAvatar; }
     public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
+    public List<FileDTO> getFiles() { return files; }
+    public void setFiles(List<FileDTO> files) { this.files = files; }
 }

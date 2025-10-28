@@ -5,16 +5,24 @@ import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.entity.Comment;
 import com.tim.appTim.entity.ReplyComment;
 import com.tim.appTim.entity.User;
+import com.tim.appTim.entity.File;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.service.CommentService;
 import com.tim.appTim.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.IOException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/comments")
@@ -23,7 +31,10 @@ public class CommentController {
     private final CommentService commentService;
     private final UserService userService;
 
-    @Autowired
+
+    @Value("${upload.folder}")
+    private String uploadFolder;
+    
     public CommentController(CommentService commentService, UserService userService) {
         this.commentService = commentService;
         this.userService = userService;
@@ -36,17 +47,55 @@ public class CommentController {
     @PostMapping("/posts/{postId}")
     @PreAuthorize("hasAuthority('comment:create')")
     public ResponseEntity<CommentDTO> createComment(
-            @PathVariable Long postId,
             Authentication authentication,
-            @RequestParam String content,
-            @RequestParam(required = false) String emotion,
-            @RequestParam(required = false) Long fileId) {
+            @PathVariable Long postId,
+            @RequestParam("content") String content,
+            @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles) throws IOException {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
+        List<File> files = new ArrayList<>();
 
-        CommentDTO comment = commentService.createComment(postId, currentUser.getId(), content, emotionEnum, fileId);
-        return ResponseEntity.ok(comment);
+        if (multipartFiles != null && !multipartFiles.isEmpty()) {
+            for (MultipartFile mf : multipartFiles) {
+                if (mf.isEmpty()) continue;
+
+                String originalName = mf.getOriginalFilename();
+                String fileExt = originalName != null && originalName.contains(".")
+                        ? originalName.substring(originalName.lastIndexOf("."))
+                        : "";
+
+                String uniqueName = UUID.randomUUID().toString() + fileExt;
+                Path uploadPath = Paths.get(uploadFolder, uniqueName);
+                Files.createDirectories(uploadPath.getParent());
+                Files.write(uploadPath, mf.getBytes());
+
+                String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                File.FileType fileType;
+                if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                    fileType = File.FileType.VIDEO;
+                } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                    fileType = File.FileType.DOCUMENT;
+                } else {
+                    fileType = File.FileType.IMAGE;
+                }
+
+                File f = new File();
+                f.setFileUrl("/uploads/" + uniqueName);
+                f.setFileName(originalName);
+                f.setFileSize(mf.getSize());
+                f.setFileType(fileType);
+                files.add(f);
+            }
+        }
+
+        CommentDTO createdComment = commentService.createCommentWithFiles(
+                currentUser.getId(),
+                postId,
+                content,
+                files
+        );
+
+        return ResponseEntity.ok(createdComment);
     }
 
     @GetMapping("/posts/{postId}")
@@ -79,21 +128,58 @@ public class CommentController {
         return ResponseEntity.ok("Comment deleted successfully");
     }
 
-    @PostMapping("/{commentId}/replies")
+    @PostMapping("{commentId}/replies")
     @PreAuthorize("hasAuthority('comment:create')")
-    public ResponseEntity<ReplyCommentDTO> createReplyComment(
-            @PathVariable Long commentId,
+    public ResponseEntity<ReplyCommentDTO> createReply(
             Authentication authentication,
-            @RequestParam String content,
-            @RequestParam(required = false) String emotion,
-            @RequestParam(required = false) Long fileId) {
+            @PathVariable Long commentId,
+            @RequestParam("content") String content,
+            @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles) throws IOException {
 
         User currentUser = getUserFromAuthentication(authentication);
-        ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
+        List<File> files = new ArrayList<>();
 
-        return ResponseEntity.ok(
-                commentService.createReplyComment(commentId, currentUser.getId(), content, emotionEnum, fileId)
+        if (multipartFiles != null && !multipartFiles.isEmpty()) {
+            for (MultipartFile mf : multipartFiles) {
+                if (mf.isEmpty()) continue;
+
+                String originalName = mf.getOriginalFilename();
+                String fileExt = originalName != null && originalName.contains(".")
+                        ? originalName.substring(originalName.lastIndexOf("."))
+                        : "";
+
+                String uniqueName = UUID.randomUUID().toString() + fileExt;
+                Path uploadPath = Paths.get(uploadFolder, uniqueName);
+                Files.createDirectories(uploadPath.getParent());
+                Files.write(uploadPath, mf.getBytes());
+
+                String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                File.FileType fileType;
+                if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                    fileType = File.FileType.VIDEO;
+                } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                    fileType = File.FileType.DOCUMENT;
+                } else {
+                    fileType = File.FileType.IMAGE;
+                }
+
+                File f = new File();
+                f.setFileUrl("/uploads/" + uniqueName);
+                f.setFileName(originalName);
+                f.setFileSize(mf.getSize());
+                f.setFileType(fileType);
+                files.add(f);
+            }
+        }
+
+        ReplyCommentDTO createdReply = commentService.createReplyWithFiles(
+                currentUser.getId(),
+                commentId,
+                content,
+                files
         );
+
+        return ResponseEntity.ok(createdReply);
     }
 
     @GetMapping("/{commentId}/replies")

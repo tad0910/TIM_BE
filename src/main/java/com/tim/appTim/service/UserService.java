@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.CourseDTO;
+import com.tim.appTim.dto.FileDTO;
+import com.tim.appTim.dto.LinkPreviewDTO;
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.ReactionDTO;
@@ -60,7 +62,7 @@ public class UserService implements UserDetailsService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final FileRepository fileRepository;
     private final RoleRepository roleRepository; 
-
+    
 
     public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
                        ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
@@ -210,7 +212,16 @@ public class UserService implements UserDetailsService {
                                 reply.getEmotion(),
                                 reply.getFileId(),
                                 reply.getCreatedAt(),
-                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
+                                reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
+                                reply.getFiles() != null ? reply.getFiles().stream()
+                                        .map(file -> new FileDTO(
+                                                file.getId(),
+                                                file.getFileUrl(),
+                                                file.getFileType().name(),
+                                                file.getFileName(),
+                                                file.getFileSize()
+                                        ))
+                                        .collect(Collectors.toList()) : new java.util.ArrayList<>()
                         ))
                         .collect(Collectors.toList());
                 return new CommentDTO(
@@ -222,7 +233,16 @@ public class UserService implements UserDetailsService {
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
                         comment.getFileId(),
                         comment.getCreatedAt(),
-                        replyComments
+                        replyComments,
+                        comment.getFiles() != null ? comment.getFiles().stream()
+                                .map(file -> new FileDTO(
+                                        file.getId(),
+                                        file.getFileUrl(),
+                                        file.getFileType().name(),
+                                        file.getFileName(),
+                                        file.getFileSize()
+                                ))
+                                .collect(Collectors.toList()) : new java.util.ArrayList<>()
                 );
             }).collect(Collectors.toList());
 
@@ -250,7 +270,7 @@ public class UserService implements UserDetailsService {
                     ))
                     .collect(Collectors.toList());
                     
-            return new PostDTO(
+                return new PostDTO(
                     post.getId(),
                     post.getUser().getId(),
                     post.getContent(),
@@ -264,7 +284,15 @@ public class UserService implements UserDetailsService {
                     fileDTOs,
                     post.getUser().getProfileImage(),
                     post.getUser().getUsername(),
-                    getUserDisplayName(post.getUser())
+                    getUserDisplayName(post.getUser()),
+                    post.hasLinkPreview() ? new LinkPreviewDTO(
+                            post.getLinkUrl(),
+                            post.getLinkTitle(),
+                            post.getLinkDescription(),
+                            post.getLinkImageUrl(),
+                            post.getLinkDomain()
+                    ) : null
+                                        
             );
 
         }).collect(Collectors.toList());
@@ -301,14 +329,31 @@ public class UserService implements UserDetailsService {
                                 reply.getEmotion(),
                                 reply.getFileId(),
                                 reply.getCreatedAt(),
-                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
+                                reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
+                                reply.getFiles() != null ? reply.getFiles().stream()
+                                        .map(file -> new FileDTO(
+                                                file.getId(),
+                                                file.getFileUrl(),
+                                                file.getFileType().name(),
+                                                file.getFileName(),
+                                                file.getFileSize()
+                                        ))
+                                        .collect(Collectors.toList()) : new java.util.ArrayList<>()
                         ))
                         .collect(Collectors.toList());
                 return new CommentDTO(comment.getId(), comment.getUser().getId(), comment.getUser().getUsername(), // Sửa ở đây
                         comment.getContent(),
                         comment.getUser().getProfileImage(),
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                        comment.getFileId(), comment.getCreatedAt(), replyComments);
+                        comment.getFileId(), comment.getCreatedAt(), replyComments, comment.getFiles() != null ? comment.getFiles().stream()
+                                .map(file -> new FileDTO(
+                                        file.getId(),
+                                        file.getFileUrl(),
+                                        file.getFileType().name(),
+                                        file.getFileName(),
+                                        file.getFileSize()
+                                ))
+                                .collect(Collectors.toList()) : new java.util.ArrayList<>());
             }).collect(Collectors.toList());
 
             List<ReactionDTO> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post)
@@ -345,7 +390,15 @@ public class UserService implements UserDetailsService {
                     fileDTOs,
                     post.getUser().getProfileImage(),
                     post.getUser().getUsername(),
-                    getUserDisplayName(post.getUser())
+                    getUserDisplayName(post.getUser()),
+                    post.hasLinkPreview() ? new LinkPreviewDTO(
+                            post.getLinkUrl(),
+                            post.getLinkTitle(),
+                            post.getLinkDescription(),
+                            post.getLinkImageUrl(),
+                            post.getLinkDomain()
+                    ) : null
+                    
             );
 
         }).collect(Collectors.toList());

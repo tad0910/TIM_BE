@@ -30,9 +30,11 @@ public class ReplyComment {
     @Column(name = "files_id")
     private Long fileId;
 
-    // --- SỬA LẠI MAPPING ---
+    @OneToMany(mappedBy = "replyComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<File> files = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "comments_id", nullable = false)
+    @JoinColumn(name = "comments_id",  nullable = false)
     private Comment comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -81,5 +83,15 @@ public class ReplyComment {
     }
     public void setReactions (List<Reaction> reactions) {
         this.reactions = reactions;
+    public List<File> getFiles() { return files; }
+    public void setFiles(List<File> files) { this.files = files; }
+    public void addFile(File file) {
+        files.add(file);
+        file.setReplyComment(this);
+    }
+
+    public void removeFile(File file) {
+        files.remove(file);
+        file.setReplyComment(null);
     }
 }

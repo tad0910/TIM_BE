@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -35,9 +36,19 @@ public class File {
     private Long fileSize;
 
     @ManyToOne
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "post_id", nullable = true)
     @JsonIgnore
     private Post post;
+
+    @ManyToOne
+    @JoinColumn(name = "comment_id", nullable = true)
+    @JsonIgnore
+    private Comment comment;
+
+    @ManyToOne
+    @JoinColumn(name = "reply_comment_id", nullable = true)
+    @JsonIgnore
+    private ReplyComment replyComment;
 
     public enum FileType { IMAGE, VIDEO, DOCUMENT; }
 
@@ -54,6 +65,10 @@ public class File {
     public void setFileName(String fileName) { this.fileName = fileName; }
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
+    public Comment getComment() { return comment; }
+    public void setComment(Comment comment) { this.comment = comment; }
+    public ReplyComment getReplyComment() { return replyComment; }
+    public void setReplyComment(ReplyComment replyComment) { this.replyComment = replyComment; }
 
     @Override
     public boolean equals(Object o) {

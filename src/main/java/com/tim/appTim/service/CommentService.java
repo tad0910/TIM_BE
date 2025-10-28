@@ -5,6 +5,7 @@ import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.entity.Comment;
 import com.tim.appTim.entity.Post;
 import com.tim.appTim.entity.ReplyComment;
+import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.ForbiddenException;
@@ -16,6 +17,8 @@ import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.service.NotificationService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import com.tim.appTim.repository.FileRepository;
+import com.tim.appTim.dto.FileDTO;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Service("commentService")
 @Transactional
@@ -33,20 +37,27 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final UserService userService;
-    private final NotificationService notificationService;
+    private final ReactionRepository reactionRepository;
+    private final FileRepository fileRepository;
+    private NotificationService notificationService;
 
     @Autowired
     public CommentService(CommentRepository commentRepository,
                           ReplyCommentRepository replyCommentRepository,
                           PostRepository postRepository,
                           UserRepository userRepository,
-                          UserService userService, NotificationService notificationService) {
+                          UserService userService,
+                          NotificationService notificationService,
+                          ReactionRepository reactionRepository,
+                          FileRepository fileRepository) {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.userService = userService;
         this.notificationService = notificationService;
+        this.reactionRepository = reactionRepository;
+        this.fileRepository = fileRepository;
     }
 
     @Transactional
@@ -73,6 +84,55 @@ public class CommentService {
         // Tạo thông báo cho chủ bài viết
         try {
 
+            if (post != null && user != null && !post.getUser().getId().equals(userId)) {
+                notificationService.createCommentNotification(
+                    post.getUser().getId(), // postOwnerId
+                    null, // commentOwnerId
+                    userId, // senderId
+                    user.getUsername(), // senderUsername
+                    "POST",
+                    postId
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the comment creation
+            System.err.println("Error creating notification: " + e.getMessage());
+        }
+
+        return convertToDTO(savedComment);
+    }
+
+    public CommentDTO createCommentWithFiles(Long userId, Long postId, String content, List<File> filesFromController) {
+        postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        Comment comment = new Comment();
+        comment.setPostId(postId);
+        comment.setUserId(userId);
+        comment.setContent(content);
+        comment.setEmotion(null); // No emotion on creation
+        comment.setCreatedAt(LocalDateTime.now());
+
+        Comment savedComment = commentRepository.save(comment);
+
+        if (filesFromController != null && !filesFromController.isEmpty()) {
+            for (File file : filesFromController) {
+                savedComment.addFile(file);
+            }
+            savedComment = commentRepository.save(savedComment);
+        }
+
+        // Reload comment from database to fetch files with EAGER loading
+        savedComment = commentRepository.findById(savedComment.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found after save"));
+
+        // Tạo thông báo cho chủ bài viết
+        try {
+            var post = postRepository.findById(postId).orElse(null);
+            var user = userRepository.findById(userId).orElse(null);
             if (post != null && user != null && !post.getUser().getId().equals(userId)) {
                 notificationService.createCommentNotification(
                     post.getUser().getId(), // postOwnerId
@@ -180,6 +240,54 @@ public class CommentService {
         return convertReplyToDTO(savedReplyComment); // Giữ nguyên tên hàm của bạn
     }
 
+    public ReplyCommentDTO createReplyWithFiles(Long userId, Long commentId, String content, List<File> filesFromController) {
+        commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        ReplyComment replyComment = new ReplyComment();
+        replyComment.setCommentId(commentId);
+        replyComment.setUserId(userId);
+        replyComment.setContent(content);
+        replyComment.setEmotion(null); // No emotion on creation
+        replyComment.setCreatedAt(LocalDateTime.now());
+
+        ReplyComment savedReplyComment = replyCommentRepository.save(replyComment);
+
+        if (filesFromController != null && !filesFromController.isEmpty()) {
+            for (File file : filesFromController) {
+                file.setReplyComment(savedReplyComment); 
+            }
+            fileRepository.saveAll(filesFromController);
+        }
+
+        ReplyComment reloadedReply = replyCommentRepository.findById(savedReplyComment.getId())
+        .orElseThrow(() -> new ResourceNotFoundException("Reply not found after save"));
+
+        // Tạo thông báo cho chủ comment
+        try {
+            var comment = commentRepository.findById(commentId).orElse(null);
+            var user = userRepository.findById(userId).orElse(null);
+            if (comment != null && user != null && !comment.getUserId().equals(userId)) {
+                notificationService.createCommentNotification(
+                    null, // postOwnerId
+                    comment.getUserId(), // commentOwnerId
+                    userId, // senderId
+                    user.getUsername(), // senderUsername
+                    "COMMENT",
+                    commentId
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the reply creation
+            System.err.println("Error creating notification: " + e.getMessage());
+        }
+
+
+        return convertReplyToDTO(reloadedReply);
+    }
+
     public List<ReplyCommentDTO> getReplyCommentsByCommentId(Long commentId) {
         return replyCommentRepository.findByCommentId(commentId)
                 .stream()
@@ -239,6 +347,19 @@ public class CommentService {
                 .map(this::convertReplyToDTO)
                 .collect(Collectors.toList());
 
+       List<FileDTO> fileDTOs = new ArrayList<>();
+        if (comment.getFiles() != null && !comment.getFiles().isEmpty()) {
+            fileDTOs = comment.getFiles().stream()
+                    .map(file -> new FileDTO(
+                            file.getId(),
+                            file.getFileUrl(),
+                            file.getFileType().name(),
+                            file.getFileName(),
+                            file.getFileSize()
+                    ))
+                    .collect(Collectors.toList());
+        }
+      
         // SẮP XẾP LẠI TOÀN BỘ THAM SỐ CHO ĐÚNG
         return new CommentDTO(
                 comment.getId(),            // 1. Long id
@@ -249,7 +370,8 @@ public class CommentService {
                 emotionName,                // 6. String emotion
                 comment.getFileId(),        // 7. Long fileId
                 comment.getCreatedAt(),     // 8. LocalDateTime createdAt
-                replies                     // 9. List<ReplyCommentDTO> replyComments
+                replies,
+                fileDTOs// 9. List<ReplyCommentDTO> replyComments
         );
     }
 
@@ -265,7 +387,16 @@ public class CommentService {
                 reply.getEmotion(),
                 reply.getFileId(),
                 reply.getCreatedAt(),
-                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
+                reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
+                reply.getFiles() != null ? reply.getFiles().stream()
+                        .map(file -> new FileDTO(
+                                file.getId(),
+                                file.getFileUrl(),
+                                file.getFileType().name(),
+                                file.getFileName(),
+                                file.getFileSize()
+                        ))
+                        .collect(Collectors.toList()) : new ArrayList<>()
         );
     }
 
