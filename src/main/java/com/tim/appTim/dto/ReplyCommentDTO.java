@@ -7,6 +7,7 @@ import com.tim.appTim.entity.ReplyComment;
 public class ReplyCommentDTO {
     private Long id;
     private Long userId;
+    private Long commentId;
     private String username;
     private String content;
     private String emotion;
@@ -14,8 +15,9 @@ public class ReplyCommentDTO {
     private LocalDateTime createdAt;
     private String userAvatar;
 
-    public ReplyCommentDTO(Long id, Long userId, String username, String content, ReplyComment.Emotion emotion, Long fileId, LocalDateTime createdAt, String userAvatar) {
+    public ReplyCommentDTO(Long id, Long commentId, Long userId, String username, String content, ReplyComment.Emotion emotion, Long fileId, LocalDateTime createdAt, String userAvatar) {
         this.id = id;
+        this.commentId = commentId;
         this.userId = userId;
         this.username = username;
         this.content = content;
@@ -41,4 +43,6 @@ public class ReplyCommentDTO {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public String getUserAvatar() { return userAvatar; }
     public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
+    public Long getCommentId() { return commentId; }
+    public void setCommentId(Long commentId) { this.commentId = commentId; }
 }

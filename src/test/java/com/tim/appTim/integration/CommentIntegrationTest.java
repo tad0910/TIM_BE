@@ -16,11 +16,9 @@ import org.springframework.http.MediaType;
 import java.util.Map;
 import java.util.HashMap;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 
 @SpringBootTest
@@ -152,5 +150,57 @@ public class CommentIntegrationTest {
 
         mockMvc.perform(delete("/comments/" + commentId))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService") // User 1
+    void testCreateReply_WhenUserIsAuthenticated_ShouldReturn200() throws Exception {
+        Long commentId = 20L; // Comment của user 2
+        String replyContent = "User 1 trả lời comment của user 2";
+
+        // Giả định endpoint là POST /comments/replies/{commentId}
+        mockMvc.perform(post("/comments/" + commentId + "/replies")
+                        .param("content", replyContent))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value(replyContent))
+                .andExpect(jsonPath("$.userId").value(1L)); // ID của "post_owner"
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testCreateReply_WhenCommentNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentCommentId = 999L;
+
+        mockMvc.perform(post("/comments/" + nonExistentCommentId + "/replies")
+                        .param("content", "Trả lời comment không tồn tại"))
+                .andExpect(status().isNotFound()); // 404 Not Found
+    }
+
+    // --- TEST CASES CHO LẤY DANH SÁCH ---
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testGetCommentsForPost_ShouldReturn200AndListOfComments() throws Exception {
+        Long postId = 10L; // Bài viết có comment 20L
+
+        // Giả định endpoint là GET /comments/posts/{postId}
+        mockMvc.perform(get("/comments/posts/" + postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].id").value(20L)) // Comment 20L
+                .andExpect(jsonPath("$[0].content").value("Bình luận gốc của user 2"));
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testGetRepliesForComment_ShouldReturn200AndListOfReplies() throws Exception {
+        Long commentId = 20L; // Comment có reply 30L
+
+        // Giả định endpoint là GET /comments/replies/{commentId}
+        mockMvc.perform(get("/comments/" + commentId + "/replies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].id").value(30L)) // Reply 30L
+                .andExpect(jsonPath("$[0].content").value("Reply của user 1"));
     }
 }

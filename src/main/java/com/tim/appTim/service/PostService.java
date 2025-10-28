@@ -17,6 +17,7 @@ import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.CommentRepository;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -125,8 +126,8 @@ public class PostService {
     }
 
     @Transactional
-    public PostDTO updatePostWithFiles(Long userId, Long postId, String content, Post.Privacy privacy,
-                                    List<com.tim.appTim.entity.File> newFiles, List<Integer> fileIdsToDelete) {
+    public PostDTO updatePostWithFiles(User currentUser, Authentication authentication, Long postId, String content, Post.Privacy privacy,
+                                       List<com.tim.appTim.entity.File> newFiles, List<Integer> fileIdsToDelete) {
         if (content == null || content.trim().isEmpty()) {
             throw new UnprocessableException("Content cannot be empty");
         }
@@ -134,8 +135,13 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
-        if (!post.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("User does not have permission to update this post");
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("post:update_all"));
+
+        // Lấy quyền chủ sở hữu
+        boolean isOwner = post.getUser().getId().equals(currentUser.getId());
+        if (!isAdmin && !isOwner) {
+            throw new ForbiddenException("User does not have permission to update this post");
         }
 
         post.setContent(content);
@@ -159,12 +165,16 @@ public class PostService {
 
 
     @Transactional
-    public void deletePost(Long userId, Long postId) {
+    public void deletePost(User currentUser, Authentication authentication, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
-        if (!post.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("User does not have permission to delete this post");
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("post:delete_all")); // Giả sử quyền là 'post:delete_all'
+        boolean isOwner = post.getUser().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new ForbiddenException("User does not have permission to update this post");
         }
 
         postRepository.delete(post);

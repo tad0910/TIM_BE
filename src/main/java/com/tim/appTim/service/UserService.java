@@ -203,7 +203,8 @@ public class UserService implements UserDetailsService {
                 List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
                         .map(reply -> new ReplyCommentDTO(
                                 reply.getId(),
-                                reply.getUserId(),
+                                reply.getComment().getId(),
+                                reply.getUser().getId(),
                                 reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
                                 reply.getContent(),
                                 reply.getEmotion(),
@@ -214,10 +215,10 @@ public class UserService implements UserDetailsService {
                         .collect(Collectors.toList());
                 return new CommentDTO(
                         comment.getId(),
-                        comment.getUserId(),
+                        comment.getUser().getId(),
                         comment.getUser().getUsername(),
-                        comment.getUser().getProfileImage(),
                         comment.getContent(),
+                        comment.getUser().getProfileImage(),
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
                         comment.getFileId(),
                         comment.getCreatedAt(),
@@ -225,12 +226,13 @@ public class UserService implements UserDetailsService {
                 );
             }).collect(Collectors.toList());
 
-            List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
+            List<ReactionDTO> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post)
+                    .stream()
                     .map(reaction -> new ReactionDTO(
                             reaction.getId(),
-                            reaction.getUserId(),
+                            reaction.getUser().getId(), // <-- SỬA Ở ĐÂY
                             reaction.getUser().getUsername(),
-                            reaction.getUser().getProfileImage(), 
+                            reaction.getUser().getProfileImage(),
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
@@ -292,7 +294,8 @@ public class UserService implements UserDetailsService {
                 List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
                         .map(reply -> new ReplyCommentDTO(
                                 reply.getId(),
-                                reply.getUserId(),
+                                reply.getComment().getId(),
+                                reply.getUser().getId(),
                                 reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
                                 reply.getContent(),
                                 reply.getEmotion(),
@@ -301,15 +304,20 @@ public class UserService implements UserDetailsService {
                                 reply.getUser() != null ? reply.getUser().getProfileImage() : " "
                         ))
                         .collect(Collectors.toList());
-                return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây 
+                return new CommentDTO(comment.getId(), comment.getUser().getId(), comment.getUser().getUsername(), // Sửa ở đây
+                        comment.getContent(),
                         comment.getUser().getProfileImage(),
-                        comment.getContent(), comment.getEmotion() != null ? comment.getEmotion().name() : null,
+                        comment.getEmotion() != null ? comment.getEmotion().name() : null,
                         comment.getFileId(), comment.getCreatedAt(), replyComments);
             }).collect(Collectors.toList());
 
-            List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
-                    .map(reaction -> new ReactionDTO(reaction.getId(), reaction.getUserId(), reaction.getUser().getUsername(), // Sửa ở đây
-                            reaction.getUser().getProfileImage(), 
+            List<ReactionDTO> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post)
+                    .stream()
+                    .map(reaction -> new ReactionDTO(
+                            reaction.getId(),
+                            reaction.getUser().getId(), // <-- SỬA Ở ĐÂY
+                            reaction.getUser().getUsername(),
+                            reaction.getUser().getProfileImage(),
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());

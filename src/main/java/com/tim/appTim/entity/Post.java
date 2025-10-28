@@ -2,6 +2,8 @@ package com.tim.appTim.entity;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 
 import jakarta.persistence.*;
 
@@ -38,6 +40,12 @@ public class Post {
     @Column(name = "tong_comments")
     private Integer totalComments;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Reaction> reactions = new ArrayList<>();
+
     public enum Privacy {
         open, friends, only_me
     }
@@ -70,4 +78,16 @@ public class Post {
     public void setTotalReactions(Integer totalReactions) { this.totalReactions = totalReactions; }
     public Integer getTotalComments() { return totalComments; }
     public void setTotalComments(Integer totalComments) { this.totalComments = totalComments; }
+    public List<Comment> getComments() {
+        return comments;
+    }
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
+    }
+    public List<Reaction> getReactions() {
+        return reactions;
+    }
+    public void setReactions (List<Reaction> reactions) {
+        this.reactions = reactions;
+    }
 }

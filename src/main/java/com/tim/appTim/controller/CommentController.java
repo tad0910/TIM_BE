@@ -55,7 +55,7 @@ public class CommentController {
     }
 
     @PutMapping("/{commentId}")
-    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.isOwner(authentication, #commentId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommentDTO> updateComment(
             @PathVariable Long commentId,
             Authentication authentication,
@@ -65,17 +65,17 @@ public class CommentController {
         User currentUser = getUserFromAuthentication(authentication);
         Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
 
-        return ResponseEntity.ok(commentService.updateComment(commentId, currentUser.getId(), content, emotionEnum));
+        return ResponseEntity.ok(commentService.updateComment(commentId, currentUser, authentication, content, emotionEnum));
     }
 
     @DeleteMapping("/{commentId}")
-    @PreAuthorize("hasAuthority('comment:delete_all') or @commentService.isOwner(authentication, #commentId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> deleteComment(
             @PathVariable Long commentId,
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        commentService.deleteComment(commentId, currentUser.getId());
+        commentService.deleteComment(commentId, currentUser, authentication);
         return ResponseEntity.ok("Comment deleted successfully");
     }
 
@@ -102,7 +102,7 @@ public class CommentController {
     }
 
     @PutMapping("/replies/{replyCommentId}")
-    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.isReplyOwner(authentication   , #replyCommentId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
             @RequestParam String content,
@@ -113,15 +113,15 @@ public class CommentController {
         ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
 
         return ResponseEntity.ok(
-                commentService.updateReplyComment(currentUser.getId(), replyCommentId, content, emotionEnum)
+                commentService.updateReplyComment(currentUser, authentication, replyCommentId, content, emotionEnum)
         );
     }
 
     @DeleteMapping("/replies/{replyCommentId}")
-    @PreAuthorize("hasAuthority('comment:delete_all') or @commentService.isReplyOwner(authentication, #replyCommentId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> deleteReplyComment(@PathVariable Long replyCommentId, Authentication authentication) {
         User currentUser = getUserFromAuthentication(authentication);
-        commentService.deleteReplyComment(currentUser.getId(), replyCommentId);
+        commentService.deleteReplyComment(currentUser, authentication, replyCommentId);
         return ResponseEntity.ok("Reply comment deleted successfully");
     }
 
