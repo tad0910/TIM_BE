@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.CourseDTO;
+import com.tim.appTim.dto.FileDTO;
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.ReactionDTO;
@@ -60,7 +61,7 @@ public class UserService implements UserDetailsService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final FileRepository fileRepository;
     private final RoleRepository roleRepository; 
-
+    
 
     public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
                        ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
@@ -209,19 +210,37 @@ public class UserService implements UserDetailsService {
                                 reply.getEmotion(),
                                 reply.getFileId(),
                                 reply.getCreatedAt(),
-                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
+                                reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
+                                reply.getFiles() != null ? reply.getFiles().stream()
+                                        .map(file -> new FileDTO(
+                                                file.getId(),
+                                                file.getFileUrl(),
+                                                file.getFileType().name(),
+                                                file.getFileName(),
+                                                file.getFileSize()
+                                        ))
+                                        .collect(Collectors.toList()) : new java.util.ArrayList<>()
                         ))
                         .collect(Collectors.toList());
                 return new CommentDTO(
                         comment.getId(),
                         comment.getUserId(),
-                        comment.getUser().getUsername(),
-                        comment.getUser().getProfileImage(),
+                        comment.getUser() != null ? comment.getUser().getUsername() : "Unknown",
                         comment.getContent(),
+                        comment.getUser() != null ? comment.getUser().getProfileImage() : " ",
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
                         comment.getFileId(),
                         comment.getCreatedAt(),
-                        replyComments
+                        replyComments,
+                        comment.getFiles() != null ? comment.getFiles().stream()
+                                .map(file -> new FileDTO(
+                                        file.getId(),
+                                        file.getFileUrl(),
+                                        file.getFileType().name(),
+                                        file.getFileName(),
+                                        file.getFileSize()
+                                ))
+                                .collect(Collectors.toList()) : new java.util.ArrayList<>()
                 );
             }).collect(Collectors.toList());
 
@@ -248,7 +267,7 @@ public class UserService implements UserDetailsService {
                     ))
                     .collect(Collectors.toList());
                     
-            return new PostDTO(
+                return new PostDTO(
                     post.getId(),
                     post.getUser().getId(),
                     post.getContent(),
@@ -264,7 +283,7 @@ public class UserService implements UserDetailsService {
                     post.getUser().getUsername(),
                     getUserDisplayName(post.getUser())
             );
-
+            
         }).collect(Collectors.toList());
 
         List<UserImageDTO> images = userImageRepository.findByUserId(user.getId()).stream()
@@ -298,13 +317,38 @@ public class UserService implements UserDetailsService {
                                 reply.getEmotion(),
                                 reply.getFileId(),
                                 reply.getCreatedAt(),
-                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
+                                reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
+                                reply.getFiles() != null ? reply.getFiles().stream()
+                                        .map(file -> new FileDTO(
+                                                file.getId(),
+                                                file.getFileUrl(),
+                                                file.getFileType().name(),
+                                                file.getFileName(),
+                                                file.getFileSize()
+                                        ))
+                                        .collect(Collectors.toList()) : new java.util.ArrayList<>()
                         ))
                         .collect(Collectors.toList());
-                return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây 
-                        comment.getUser().getProfileImage(),
-                        comment.getContent(), comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                        comment.getFileId(), comment.getCreatedAt(), replyComments);
+                return new CommentDTO(
+                        comment.getId(), 
+                        comment.getUserId(), 
+                        comment.getUser() != null ? comment.getUser().getUsername() : "Unknown",
+                        comment.getContent(),
+                        comment.getUser() != null ? comment.getUser().getProfileImage() : " ",
+                        comment.getEmotion() != null ? comment.getEmotion().name() : null,
+                        comment.getFileId(), 
+                        comment.getCreatedAt(), 
+                        replyComments,
+                        comment.getFiles() != null ? comment.getFiles().stream()
+                                .map(file -> new FileDTO(
+                                        file.getId(),
+                                        file.getFileUrl(),
+                                        file.getFileType().name(),
+                                        file.getFileName(),
+                                        file.getFileSize()
+                                ))
+                                .collect(Collectors.toList()) : new java.util.ArrayList<>()
+                );
             }).collect(Collectors.toList());
 
             List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()

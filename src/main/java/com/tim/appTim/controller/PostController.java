@@ -3,7 +3,6 @@ package com.tim.appTim.controller;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
-
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Post;
@@ -48,8 +46,7 @@ public class PostController {
             Authentication authentication,
             @RequestParam("content") String content,
             @RequestParam("privacy") String privacy,
-            @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles
-    ) {
+            @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles) {
         try {
             User currentUser = getUserFromAuthentication(authentication);
             Post.Privacy privacyEnum = Post.Privacy.valueOf(privacy);

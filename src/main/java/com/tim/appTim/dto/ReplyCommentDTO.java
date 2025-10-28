@@ -1,6 +1,7 @@
 package com.tim.appTim.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.tim.appTim.entity.ReplyComment;
 
@@ -13,8 +14,9 @@ public class ReplyCommentDTO {
     private Long fileId;
     private LocalDateTime createdAt;
     private String userAvatar;
+    private List<FileDTO> files;
 
-    public ReplyCommentDTO(Long id, Long userId, String username, String content, ReplyComment.Emotion emotion, Long fileId, LocalDateTime createdAt, String userAvatar) {
+    public ReplyCommentDTO(Long id, Long userId, String username, String content, ReplyComment.Emotion emotion, Long fileId, LocalDateTime createdAt, String userAvatar, List<FileDTO> files) {
         this.id = id;
         this.userId = userId;
         this.username = username;
@@ -23,6 +25,7 @@ public class ReplyCommentDTO {
         this.fileId = fileId;
         this.createdAt = createdAt;
         this.userAvatar = userAvatar;
+        this.files = files;
     }
 
     public Long getId() { return id; }
@@ -41,4 +44,6 @@ public class ReplyCommentDTO {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public String getUserAvatar() { return userAvatar; }
     public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
+    public List<FileDTO> getFiles() { return files; }
+    public void setFiles(List<FileDTO> files) { this.files = files; }
 }

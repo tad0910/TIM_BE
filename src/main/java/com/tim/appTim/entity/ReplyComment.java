@@ -2,6 +2,8 @@ package com.tim.appTim.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "reply_comments")
@@ -28,6 +30,9 @@ public class ReplyComment {
 
     @Column(name = "files_id")
     private Long fileId;
+
+    @OneToMany(mappedBy = "replyComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<File> files = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "comments_id", referencedColumnName = "id", insertable = false, updatable = false)
@@ -59,4 +64,8 @@ public class ReplyComment {
     public void setComment(Comment comment) { this.comment = comment; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+    public List<File> getFiles() { return files; }
+    public void setFiles(List<File> files) { this.files = files; }
+    public void addFile(File file) { files.add(file); file.setReplyCommentId(this.id); }
+    public void removeFile(File file) { files.remove(file); file.setReplyCommentId(null); }
 }
