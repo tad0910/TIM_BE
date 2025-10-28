@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.CourseDTO;
 import com.tim.appTim.dto.FileDTO;
+import com.tim.appTim.dto.LinkPreviewDTO;
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.ReactionDTO;
@@ -281,9 +282,17 @@ public class UserService implements UserDetailsService {
                     fileDTOs,
                     post.getUser().getProfileImage(),
                     post.getUser().getUsername(),
-                    getUserDisplayName(post.getUser())
+                    getUserDisplayName(post.getUser()),
+                    post.hasLinkPreview() ? new LinkPreviewDTO(
+                            post.getLinkUrl(),
+                            post.getLinkTitle(),
+                            post.getLinkDescription(),
+                            post.getLinkImageUrl(),
+                            post.getLinkDomain()
+                    ) : null
+                                        
             );
-            
+
         }).collect(Collectors.toList());
 
         List<UserImageDTO> images = userImageRepository.findByUserId(user.getId()).stream()
@@ -381,7 +390,15 @@ public class UserService implements UserDetailsService {
                     fileDTOs,
                     post.getUser().getProfileImage(),
                     post.getUser().getUsername(),
-                    getUserDisplayName(post.getUser())
+                    getUserDisplayName(post.getUser()),
+                    post.hasLinkPreview() ? new LinkPreviewDTO(
+                            post.getLinkUrl(),
+                            post.getLinkTitle(),
+                            post.getLinkDescription(),
+                            post.getLinkImageUrl(),
+                            post.getLinkDomain()
+                    ) : null
+                    
             );
 
         }).collect(Collectors.toList());

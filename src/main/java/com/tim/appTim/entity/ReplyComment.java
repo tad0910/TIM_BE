@@ -66,6 +66,13 @@ public class ReplyComment {
     public void setUser(User user) { this.user = user; }
     public List<File> getFiles() { return files; }
     public void setFiles(List<File> files) { this.files = files; }
-    public void addFile(File file) { files.add(file); file.setReplyCommentId(this.id); }
-    public void removeFile(File file) { files.remove(file); file.setReplyCommentId(null); }
+    public void addFile(File file) {
+        files.add(file);
+        file.setReplyComment(this);
+    }
+
+    public void removeFile(File file) {
+        files.remove(file);
+        file.setReplyComment(null);
+    }
 }

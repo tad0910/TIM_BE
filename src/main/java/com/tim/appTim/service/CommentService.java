@@ -117,6 +117,10 @@ public class CommentService {
             savedComment = commentRepository.save(savedComment);
         }
 
+        // Reload comment from database to fetch files with EAGER loading
+        savedComment = commentRepository.findById(savedComment.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found after save"));
+
         // Tạo thông báo cho chủ bài viết
         try {
             var post = postRepository.findById(postId).orElse(null);
@@ -233,10 +237,13 @@ public class CommentService {
 
         if (filesFromController != null && !filesFromController.isEmpty()) {
             for (File file : filesFromController) {
-                savedReplyComment.addFile(file);
+                file.setReplyComment(savedReplyComment); 
             }
-            savedReplyComment = replyCommentRepository.save(savedReplyComment);
+            fileRepository.saveAll(filesFromController);
         }
+
+        ReplyComment reloadedReply = replyCommentRepository.findById(savedReplyComment.getId())
+        .orElseThrow(() -> new ResourceNotFoundException("Reply not found after save"));
 
         // Tạo thông báo cho chủ comment
         try {
@@ -257,7 +264,8 @@ public class CommentService {
             System.err.println("Error creating notification: " + e.getMessage());
         }
 
-        return convertReplyToDTO(savedReplyComment);
+
+        return convertReplyToDTO(reloadedReply);
     }
 
     public List<ReplyCommentDTO> getReplyCommentsByCommentId(Long commentId) {

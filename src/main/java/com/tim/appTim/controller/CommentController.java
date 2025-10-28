@@ -44,7 +44,7 @@ public class CommentController {
         return userService.findByUsernameOrEmail(authentication.getName());
     }
 
-    @PostMapping("/posts/{postId}/comments")
+    @PostMapping("/posts/{postId}")
     @PreAuthorize("hasAuthority('comment:create')")
     public ResponseEntity<CommentDTO> createComment(
             Authentication authentication,
@@ -128,8 +128,8 @@ public class CommentController {
         return ResponseEntity.ok("Comment deleted successfully");
     }
 
-    @PostMapping("/comments/{commentId}/replies")
-    @PreAuthorize("hasAuthority('reply:create')")
+    @PostMapping("{commentId}/replies")
+    @PreAuthorize("hasAuthority('comment:create')")
     public ResponseEntity<ReplyCommentDTO> createReply(
             Authentication authentication,
             @PathVariable Long commentId,

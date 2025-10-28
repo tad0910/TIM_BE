@@ -37,7 +37,7 @@ public class LinkPreviewService {
             domain = new URI(url).getHost(); // Lấy domain từ URL
         }
 
-        return new LinkPreviewDTO(title, description, imageUrl, domain);
+        return new LinkPreviewDTO(url, title, description, imageUrl, domain);
     }
 
     // Hàm tiện ích để lấy nội dung thẻ meta

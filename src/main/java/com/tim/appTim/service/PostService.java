@@ -24,6 +24,18 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.tim.appTim.dto.LinkPreviewDTO;
+import org.springframework.scheduling.annotation.Async;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.net.URISyntaxException;
+import java.io.IOException;
+
+
+
+
+
+
 
 @Service
 public class PostService {
@@ -33,14 +45,66 @@ public class PostService {
     private final CommentService commentService;
     private final ReactionService reactionService;
     private final CommentRepository commentRepository;
+    private final LinkPreviewService linkPreviewService;
+
+    private static final Pattern URL_PATTERN = Pattern.compile(
+        "\\b(https?://[\\w.-]+(?:\\:[0-9]+)?(?:/[^\\s]*)?)\\b",
+        Pattern.CASE_INSENSITIVE
+    );
 
     public PostService(PostRepository postRepository, UserRepository userRepository, 
-                       CommentService commentService, ReactionService reactionService, CommentRepository commentRepository) {
+                       CommentService commentService, ReactionService reactionService, CommentRepository commentRepository,
+                       LinkPreviewService linkPreviewService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentService = commentService;
         this.reactionService = reactionService;
         this.commentRepository = commentRepository;
+        this.linkPreviewService = linkPreviewService;
+    }
+
+    private String extractFirstUrl(String content) {
+        if (content == null || content.isEmpty()) {
+            return null;
+        }
+        Matcher matcher = URL_PATTERN.matcher(content);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+    private boolean hasMediaFiles(List<File> files) {
+        if (files == null || files.isEmpty()) {
+            return false;
+        }
+        return files.stream().anyMatch(f ->
+            f.getFileType() == File.FileType.IMAGE ||
+            f.getFileType() == File.FileType.VIDEO
+        );
+    }
+    @Async("linkPreviewTaskExecutor")
+    public void generateLinkPreviewAsync(Long postId, String url) {
+        try {
+            System.out.println("[Async] Generating link preview for post: " + postId + ", URL: " + url);
+            LinkPreviewDTO preview = linkPreviewService.getLinkPreview(url);
+            Post post = postRepository.findById(postId).orElse(null);
+            if (post != null) {
+                post.setLinkTitle(preview.title());
+                post.setLinkDescription(preview.description());
+                post.setLinkImageUrl(preview.imageUrl());
+                post.setLinkDomain(preview.domain());
+                post.setUpdatedAt(LocalDateTime.now());
+                postRepository.save(post);
+                System.out.println("[Async] :white_check_mark: Link preview generated for post: " + postId);
+            } else {
+                System.err.println("[Async] :x: Post not found: " + postId);
+            }
+        } catch (URISyntaxException e) {
+            System.err.println("[Async] :x: Invalid URL: " + url);
+        } catch (IOException e) {
+            System.err.println("[Async] :x: Failed to fetch preview for: " + url);
+            System.err.println("   Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("[Async] :x: Unexpected error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @Transactional
@@ -55,6 +119,8 @@ public class PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User không tồn tại với id: " + userId));
 
+        boolean hasMedia = hasMediaFiles(filesFromController);
+
         Post post = new Post();
         post.setUser(user);
         post.setContent(content);
@@ -64,14 +130,26 @@ public class PostService {
         post.setTotalComments(0);
         post.setTotalReactions(0);
 
+        if (!hasMedia) {
+            String firsturl = extractFirstUrl(content);
+            if (firsturl != null) {
+                post.setLinkUrl(firsturl);
+            }
+        }
+
         if (filesFromController != null && !filesFromController.isEmpty()) {
             for (File file : filesFromController) {
                 post.addFile(file);
             }
         }
 
+        
         Post savedPost = postRepository.save(post);
 
+        if (savedPost.getLinkUrl() != null && !hasMedia) {
+            generateLinkPreviewAsync(savedPost.getId(), savedPost.getLinkUrl());
+        }
+        
         List<com.tim.appTim.dto.FileDTO> fileDTOs = savedPost.getFiles().stream()
                 .map(file -> new com.tim.appTim.dto.FileDTO(
                         file.getId(),
@@ -82,7 +160,18 @@ public class PostService {
                 ))
                 .collect(Collectors.toList());
 
-                String displayName = getUserDisplayName(user);
+        String displayName = getUserDisplayName(user);
+
+        LinkPreviewDTO linkPreview = null;
+        if (savedPost.getLinkUrl() != null && savedPost.hasLinkPreview()) {
+            linkPreview = new LinkPreviewDTO(
+                savedPost.getLinkUrl(),
+                savedPost.getLinkTitle(),
+                savedPost.getLinkDescription(),
+                savedPost.getLinkImageUrl(),
+                savedPost.getLinkDomain()
+            );
+        }
 
         return new PostDTO(
                 savedPost.getId(),
@@ -98,7 +187,8 @@ public class PostService {
                 fileDTOs,
                 user.getProfileImage(),
                 user.getUsername(),
-                displayName
+                displayName,
+                linkPreview
         );
     }
 
@@ -153,6 +243,32 @@ public class PostService {
             }
         }
 
+        boolean hasMedia = hasMediaFiles(post.getFiles());
+        String newUrl = extractFirstUrl(content);
+        String oldUrl = post.getLinkUrl();
+        if (hasMedia) {
+            post.setLinkUrl(null);
+            post.setLinkTitle(null);
+            post.setLinkDescription(null);
+            post.setLinkImageUrl(null);
+            post.setLinkDomain(null);
+        } else if (newUrl != null && !newUrl.equals(oldUrl)) {
+            post.setLinkUrl(newUrl);
+            post.setLinkTitle(null);
+            post.setLinkDescription(null);
+            post.setLinkImageUrl(null);
+            post.setLinkDomain(null);
+            generateLinkPreviewAsync(postId, newUrl);
+        } else if (newUrl == null && oldUrl != null) {
+            post.setLinkUrl(null);
+            post.setLinkTitle(null);
+            post.setLinkDescription(null);
+            post.setLinkImageUrl(null);
+            post.setLinkDomain(null);
+        } else if (newUrl != null && newUrl.equals(oldUrl) && !post.hasLinkPreview()) {
+            generateLinkPreviewAsync(postId, newUrl);
+        }
+
         Post updatedPost = postRepository.save(post);
         return convertToDto(updatedPost);
     }
@@ -196,7 +312,18 @@ public class PostService {
                 ))
                 .collect(Collectors.toList());
 
-                String displayName = getUserDisplayName(post.getUser());
+        String displayName = getUserDisplayName(post.getUser());
+
+        LinkPreviewDTO linkPreview = null;
+        if (post.getLinkUrl() != null && post.hasLinkPreview()) {
+            linkPreview = new LinkPreviewDTO(
+                post.getLinkUrl(),
+                post.getLinkTitle(),
+                post.getLinkDescription(),
+                post.getLinkImageUrl(),
+                post.getLinkDomain()
+            );
+        }
 
         return new PostDTO(
                 post.getId(),
@@ -212,7 +339,8 @@ public class PostService {
                 fileDTOs,
                 post.getUser().getProfileImage(),
                 post.getUser().getUsername(),
-                displayName
+                displayName,
+                linkPreview
         );
     }
 

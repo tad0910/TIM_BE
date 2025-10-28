@@ -40,11 +40,15 @@ public class File {
     @JsonIgnore
     private Post post;
 
-    @Column(name = "comment_id")
-    private Long commentId;
+    @ManyToOne
+    @JoinColumn(name = "comment_id", nullable = true)
+    @JsonIgnore
+    private Comment comment;
 
-    @Column(name = "reply_comment_id")
-    private Long replyCommentId;
+    @ManyToOne
+    @JoinColumn(name = "reply_comment_id", nullable = true)
+    @JsonIgnore
+    private ReplyComment replyComment;
 
     public enum FileType { IMAGE, VIDEO, DOCUMENT; }
 
@@ -61,10 +65,10 @@ public class File {
     public void setFileName(String fileName) { this.fileName = fileName; }
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
-    public Long getCommentId() { return commentId; }
-    public void setCommentId(Long commentId) { this.commentId = commentId; }
-    public Long getReplyCommentId() { return replyCommentId; }
-    public void setReplyCommentId(Long replyCommentId) { this.replyCommentId = replyCommentId; }
+    public Comment getComment() { return comment; }
+    public void setComment(Comment comment) { this.comment = comment; }
+    public ReplyComment getReplyComment() { return replyComment; }
+    public void setReplyComment(ReplyComment replyComment) { this.replyComment = replyComment; }
 
     @Override
     public boolean equals(Object o) {
