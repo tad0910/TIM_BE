@@ -21,9 +21,12 @@ INSERT INTO roles (id, name) VALUES (1, 'ROLE_USER'), (2, 'ROLE_ADMIN');
 
 -- Tạo Permissions
 INSERT INTO permissions (id, name) VALUES
-(3, 'comment:create'),
-(4, 'comment:update_all'),
-(5, 'comment:delete_all');
+(1, 'post:create'),
+(2, 'post:update_all'),
+(3, 'post:delete_all'),
+(4, 'comment:create'),
+(5, 'comment:update_all'),
+(6, 'comment:delete_all');
 
 -- Tạo Users
 INSERT INTO users (id, username, password, email) VALUES
@@ -38,11 +41,13 @@ INSERT INTO user_roles (user_id, role_id) VALUES
 -- Tạo Posts
 INSERT INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES
 (10, 1, 'Bài viết của owner', 'open'),
-(11, 2, 'Bài viết của user khác', 'friends');
+(11, 1, 'Bài viết private của owner', 'only_me'),
+(12, 2, 'Bài viết của user khác', 'friends');
 
 -- Tạo Comments
 INSERT INTO comments (id, bai_viet_id, nguoi_dung_id, noi_dung, thoi_gian_tao) VALUES
-(20, 10, 2, 'Bình luận gốc của user 2', NOW());
+(20, 10, 2, 'Bình luận gốc của user 2', NOW()),
+(21, 12, 1, 'Bình luận của user 1 vào post của user 2', NOW());
 
 -- Tạo Reply Comments
 INSERT INTO reply_comments (id, comments_id, nguoi_dung_id, noi_dung, thoi_gian_tao) VALUES
@@ -50,4 +55,4 @@ INSERT INTO reply_comments (id, comments_id, nguoi_dung_id, noi_dung, thoi_gian_
 
 -- Gán Permissions cho Roles
 INSERT INTO role_permissions (role_id, permission_id) VALUES
-(1, 3), (2, 4), (2, 5);
+(1, 1), (1, 4), (2, 2), (2, 3), (2, 5), (2, 6);

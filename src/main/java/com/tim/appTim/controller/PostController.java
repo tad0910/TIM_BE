@@ -95,8 +95,6 @@ public class PostController {
             return ResponseEntity.badRequest().body(null);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(null);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(null);
         }
     }
 
@@ -115,9 +113,11 @@ public class PostController {
     @GetMapping("/{postId}/user/{userId}")
     public ResponseEntity<PostDTO> getPostByIdForUser(
             @PathVariable Long postId,
-            @PathVariable Long userId
+            @PathVariable Long userId,
+            Authentication authentication
     ) {
-        PostDTO post = postService.getPostByIdForUser(userId, postId);
+        User currentUser = getUserFromAuthentication(authentication);
+        PostDTO post = postService.getPostByIdForUser(currentUser.getId(), postId);
         return ResponseEntity.ok(post);
     }
 
@@ -176,8 +176,6 @@ public class PostController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         } catch (IOException e) {
-            return ResponseEntity.internalServerError().build();
-        } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }

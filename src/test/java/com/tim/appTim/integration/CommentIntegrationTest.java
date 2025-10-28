@@ -153,4 +153,70 @@ public class CommentIntegrationTest {
         mockMvc.perform(delete("/comments/" + commentId))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService") // User 1 là owner của reply 30
+    void testUpdateReply_WhenUserIsOwner_ShouldReturn200AndUpdatedReply() throws Exception {
+        Long replyId = 30L;
+        String updatedContent = "Nội dung reply đã được cập nhật.";
+
+        mockMvc.perform(put("/comments/replies/" + replyId)
+                        .param("content", updatedContent))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(replyId))
+                .andExpect(jsonPath("$.content").value(updatedContent))
+                .andExpect(jsonPath("$.userId").value(1L)); // Vẫn là user 1
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 không phải owner
+    void testUpdateReply_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
+        Long replyId = 30L;
+        String updatedContent = "Cố gắng sửa reply người khác.";
+
+        mockMvc.perform(put("/comments/replies/" + replyId)
+                        .param("content", updatedContent))
+                .andExpect(status().isForbidden()); // Mong đợi 403
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService") // Admin cũng có quyền update_all comment/reply
+    void testUpdateReply_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        Long replyId = 30L;
+        String updatedContent = "Admin cập nhật reply.";
+
+        mockMvc.perform(put("/comments/replies/" + replyId)
+                        .param("content", updatedContent))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value(updatedContent));
+    }
+
+    // --- TEST CASES CHO XÓA REPLY COMMENT ---
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService") // User 1 là owner
+    void testDeleteReply_WhenUserIsOwner_ShouldReturn200() throws Exception {
+        Long replyId = 30L;
+
+        mockMvc.perform(delete("/comments/replies/" + replyId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 không phải owner
+    void testDeleteReply_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
+        Long replyId = 30L;
+
+        mockMvc.perform(delete("/comments/replies/" + replyId))
+                .andExpect(status().isForbidden()); // Mong đợi 403
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService") // Admin có quyền delete_all
+    void testDeleteReply_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        Long replyId = 30L;
+
+        mockMvc.perform(delete("/comments/replies/" + replyId))
+                .andExpect(status().isOk());
+    }
 }

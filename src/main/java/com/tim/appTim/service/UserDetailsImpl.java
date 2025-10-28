@@ -28,7 +28,7 @@ public class UserDetailsImpl implements UserDetails {
 
         // 2. (Tùy chọn) Thêm cả tên Role vào danh sách
         user.getRoles().forEach(role ->
-                authorities.add(new SimpleGrantedAuthority(role.getName())) // Thêm "ROLE_ADMIN", "ROLE_USER"
+                authorities.add(new SimpleGrantedAuthority(role.getName()))
         );
 
         return authorities;

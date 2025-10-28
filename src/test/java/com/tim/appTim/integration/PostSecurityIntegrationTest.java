@@ -147,4 +147,55 @@ public class PostSecurityIntegrationTest {
                         .param("privacy", invalidPrivacy))
                 .andExpect(status().isBadRequest()); // Kiểm tra status 400 Bad Request
     }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testCreatePost_WhenUserIsAuthenticated_ShouldReturn200() throws Exception {
+        String content = "Một bài viết mới toanh.";
+        String privacy = "open";
+
+        mockMvc.perform(post("/posts/create") // Đã sửa endpoint từ /posts thành /posts/create
+                        .param("content", content)
+                        .param("privacy", privacy))
+                .andExpect(status().isOk()) // Hoặc isCreated() tùy vào Controller
+                .andExpect(jsonPath("$.content").value(content))
+                .andExpect(jsonPath("$.privacy").value(privacy))
+                .andExpect(jsonPath("$.userId").value(1L)); // ID của "post_owner"
+    }
+
+    @Test
+    void testCreatePost_WhenUserIsAnonymous_ShouldReturn401() throws Exception {
+        mockMvc.perform(post("/posts/create") // Đã sửa endpoint từ /posts thành /posts/create
+                        .param("content", "Nội dung ẩn danh")
+                        .param("privacy", "open"))
+                .andExpect(status().isUnauthorized()); // 401 Chưa đăng nhập
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testCreatePost_WhenInvalidInput_ShouldReturn400() throws Exception {
+        // Test tạo post với nội dung rỗng
+        mockMvc.perform(post("/posts/create") // Đã sửa endpoint từ /posts thành /posts/create
+                        .param("content", "") // Nội dung rỗng
+                        .param("privacy", "open"))
+                .andExpect(status().isBadRequest()); // 400 Bad Request
+    }
+
+    // --- TEST CASE CHO QUYỀN RIÊNG TƯ (PRIVACY) ---
+
+    /**
+     * Test case quan trọng:
+     * Bài viết 11L trong test-data.sql được set là "only_me" (chỉ mình tôi)
+     * và thuộc về user 1 ("post_owner").
+     * User 2 ("another_user") không có quyền xem.
+     */
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testGetPostById_WhenPostIsPrivateAndUserIsNotOwner_ShouldReturn403() throws Exception {
+        Long privatePostId = 11L; // ID bài viết private của user 1
+        Long ownerUserId = 1L;
+
+        mockMvc.perform(get("/posts/" + privatePostId + "/user/" + ownerUserId))
+                .andExpect(status().isForbidden()); // Mong đợi 403 Forbidden
+    }
 }

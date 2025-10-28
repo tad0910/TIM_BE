@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +32,27 @@ public class CommentController {
 
     private User getUserFromAuthentication(Authentication authentication) {
         return userService.findByUsernameOrEmail(authentication.getName());
+    }
+
+    private boolean hasAdminAuthority(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("comment:update_all") || a.getAuthority().equals("comment:delete_all"));
+    }
+
+    private Long getEffectiveUserId(Long commentId, Long currentUserId, Authentication authentication) {
+        if (hasAdminAuthority(authentication)) {
+            Comment comment = commentService.getCommentById(commentId);
+            return comment.getUserId();
+        }
+        return currentUserId;
+    }
+
+    private Long getEffectiveUserIdForReply(Long replyCommentId, Long currentUserId, Authentication authentication) {
+        if (hasAdminAuthority(authentication)) {
+            ReplyComment reply = commentService.getReplyCommentById(replyCommentId);
+            return reply.getUserId();
+        }
+        return currentUserId;
     }
 
     @PostMapping("/posts/{postId}")
@@ -64,8 +86,10 @@ public class CommentController {
 
         User currentUser = getUserFromAuthentication(authentication);
         Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
+        
+        Long effectiveUserId = getEffectiveUserId(commentId, currentUser.getId(), authentication);
 
-        return ResponseEntity.ok(commentService.updateComment(commentId, currentUser.getId(), content, emotionEnum));
+        return ResponseEntity.ok(commentService.updateComment(commentId, effectiveUserId, content, emotionEnum));
     }
 
     @DeleteMapping("/{commentId}")
@@ -75,7 +99,9 @@ public class CommentController {
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        commentService.deleteComment(commentId, currentUser.getId());
+        Long effectiveUserId = getEffectiveUserId(commentId, currentUser.getId(), authentication);
+        
+        commentService.deleteComment(commentId, effectiveUserId);
         return ResponseEntity.ok("Comment deleted successfully");
     }
 
@@ -102,7 +128,7 @@ public class CommentController {
     }
 
     @PutMapping("/replies/{replyCommentId}")
-    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.isReplyOwner(authentication   , #replyCommentId)")
+    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.isReplyOwner(authentication, #replyCommentId)")
     public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
             @RequestParam String content,
@@ -111,9 +137,11 @@ public class CommentController {
 
         User currentUser = getUserFromAuthentication(authentication);
         ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
+        
+        Long effectiveUserId = getEffectiveUserIdForReply(replyCommentId, currentUser.getId(), authentication);
 
         return ResponseEntity.ok(
-                commentService.updateReplyComment(currentUser.getId(), replyCommentId, content, emotionEnum)
+                commentService.updateReplyComment(effectiveUserId, replyCommentId, content, emotionEnum)
         );
     }
 
@@ -121,7 +149,9 @@ public class CommentController {
     @PreAuthorize("hasAuthority('comment:delete_all') or @commentService.isReplyOwner(authentication, #replyCommentId)")
     public ResponseEntity<String> deleteReplyComment(@PathVariable Long replyCommentId, Authentication authentication) {
         User currentUser = getUserFromAuthentication(authentication);
-        commentService.deleteReplyComment(currentUser.getId(), replyCommentId);
+        Long effectiveUserId = getEffectiveUserIdForReply(replyCommentId, currentUser.getId(), authentication);
+        
+        commentService.deleteReplyComment(effectiveUserId, replyCommentId);
         return ResponseEntity.ok("Reply comment deleted successfully");
     }
 

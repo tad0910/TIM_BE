@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.tim.appTim.exception.*;
+import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Post;
@@ -121,7 +122,7 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         if (!post.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("User does not have permission to update this post");
+            throw new ForbiddenException("User does not have permission to update this post");
         }
 
         post.setContent(content);
@@ -149,7 +150,7 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         if (!post.getUser().getId().equals(userId)) {
-            throw new UnauthorizedException("User does not have permission to delete this post");
+            throw new ForbiddenException("User does not have permission to delete this post");
         }
 
         postRepository.delete(post);
@@ -211,17 +212,36 @@ public class PostService {
     }
 
 
-    public PostDTO getPostByIdForUser(Long userId, Long postId) {
-        if (!userRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found with id: " + userId);
-        }
+    public PostDTO getPostByIdForUser(Long requestingUserId, Long postId) {
+        User requestingUser = userRepository.findById(requestingUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + requestingUserId));
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
-        if (!post.getUser().getId().equals(userId)) {
-            throw new ResourceNotFoundException("User does not have permission to access this post");
+        Long postOwnerId = post.getUser().getId();
+        
+        // If the requesting user is the owner, always allow access
+        if (requestingUserId.equals(postOwnerId)) {
+            return convertToDto(post);
         }
-        return convertToDto(post);
+
+        // Check privacy settings for non-owners
+        Post.Privacy privacy = post.getPrivacy();
+        
+        switch (privacy) {
+            case only_me:
+                // Only owner can see
+                throw new ForbiddenException("You do not have permission to access this post");
+            case friends:
+                // TODO: Implement friendship check
+                // For now, allow access but should check friendship status
+                return convertToDto(post);
+            case open:
+                // Public post, anyone can see
+                return convertToDto(post);
+            default:
+                throw new ForbiddenException("You do not have permission to access this post");
+        }
     }
 }

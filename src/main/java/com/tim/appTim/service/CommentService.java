@@ -95,6 +95,16 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
+    public Comment getCommentById(Long commentId) {
+        return commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
+    }
+
+    public ReplyComment getReplyCommentById(Long replyCommentId) {
+        return replyCommentRepository.findById(replyCommentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
+    }
+
     public CommentDTO updateComment(Long commentId, Long userId, String content, Comment.Emotion emotion) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
