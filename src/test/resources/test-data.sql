@@ -2,12 +2,12 @@
 DELETE FROM role_permissions; -- Xóa bảng trung gian trước
 DELETE FROM user_roles;     -- Xóa bảng trung gian trước
 
-DELETE FROM reply_comments; -- Xóa reply trước comment
-DELETE FROM comments;       -- Xóa comment trước post
+DELETE FROM reactions;      -- **1. Xóa reactions trước**
+DELETE FROM files;          -- **2. Xóa files trước** (vì nó tham chiếu đến post, comment, reply)
+DELETE FROM notifications;  -- **3. Xóa notifications trước**
 
-DELETE FROM files;          -- (Nếu có khóa ngoại đến post, xóa trước post)
-DELETE FROM notifications;  -- (Nếu có khóa ngoại đến user/post, xóa trước)
-DELETE FROM reactions;      -- (Nếu có khóa ngoại, xóa trước)
+DELETE FROM reply_comments; -- **4. Giờ mới xóa replies** (sau khi reactions đã xóa)
+DELETE FROM comments;      -- (Nếu có khóa ngoại, xóa trước)
 -- Xóa các bảng con khác có khóa ngoại...
 
 DELETE FROM posts;          -- Giờ mới xóa post
@@ -56,3 +56,7 @@ INSERT INTO reply_comments (id, comments_id, nguoi_dung_id, noi_dung, thoi_gian_
 -- Gán Permissions cho Roles
 INSERT INTO role_permissions (role_id, permission_id) VALUES
 (1, 1), (1, 4), (2, 2), (2, 3), (2, 5), (2, 6);
+
+INSERT INTO notifications (id, receiver_id, sender_id, notification_type, title, content, created_at, is_read, read_at, target_type, target_id) VALUES
+(50, 1, 2, 'POST_COMMENT', 'Thông báo mới', 'User 2 đã bình luận bài viết của bạn', NOW(), false, null, 'POST', 10),
+(51, 1, 3, 'SYSTEM_ANNOUNCEMENT', 'Thông báo hệ thống', 'Chào mừng bạn đến với hệ thống', DATEADD('DAY', -1, NOW()), true, DATEADD('HOUR', -12, NOW()), null, null);

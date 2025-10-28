@@ -1,5 +1,7 @@
 package com.tim.appTim.service;
 
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.dto.NotificationDTO;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
@@ -75,12 +77,12 @@ public class NotificationService {
     }
 
     // Đánh dấu một thông báo cụ thể là đã đọc
-    public void markAsRead(Long notificationId, Long currentUserId) {
+    public void markAsRead(Long notificationId, Long currentUserId, Authentication authentication) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Thông báo không tồn tại với ID: " + notificationId));
 
         if (!notification.getReceiver().getId().equals(currentUserId)) {
-            throw new SecurityException("User not authorized to mark this notification as read");
+            throw new ForbiddenException("User not authorized to mark this notification as read");
         }
 
         // Use the exact setter name from your entity: setIsRead
@@ -179,7 +181,7 @@ public class NotificationService {
 
         if (notification.getSender() != null) {
             senderUsername = notification.getSender().getUsername();
-            // Có thể thêm logic lấy avatar từ User entity
+            senderAvatar = notification.getSender().getProfileImage();
         }
 
         String actionUrl = generateActionUrl(notification);

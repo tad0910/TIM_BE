@@ -2,9 +2,12 @@ package com.tim.appTim.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import com.tim.appTim.exception.UnprocessableException;
+import com.tim.appTim.exception.ForbiddenException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -23,6 +26,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException ex) {
         return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        // Bạn có thể dùng message "Access Denied" của Spring, hoặc message tùy chỉnh
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện hành động này.");
     }
 
     // 401 - Chưa đăng nhập hoặc không xác thực
@@ -62,6 +71,26 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống: " + ex.getMessage());
     }
+
+    // 400 - Bắt các lỗi chuyển đổi kiểu dữ liệu (như Enum)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        String message = ex.getMessage();
+        if (message.contains("No enum constant")) {
+            message = "Giá trị cung cấp không hợp lệ. " + message;
+        }
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
+    }
+
+    // 422 - Dữ liệu không hợp lệ về mặt ngữ nghĩa (vd: content rỗng)
+    @ExceptionHandler(UnprocessableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnprocessableEntity(UnprocessableException ex) {
+        // Lấy message từ exception (vd: "Nội dung bài viết không được để trống")
+        return buildErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+
 
     /**
      * Hàm tiện ích để tạo response JSON thống nhất.

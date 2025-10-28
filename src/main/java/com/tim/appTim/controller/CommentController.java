@@ -3,19 +3,27 @@ package com.tim.appTim.controller;
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.entity.Comment;
+import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.ReplyComment;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.service.CommentService;
 import com.tim.appTim.service.UserService;
+import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/comments")
@@ -23,6 +31,9 @@ public class CommentController {
 
     private final CommentService commentService;
     private final UserService userService;
+
+    @Value("${upload.folder}")
+    private String uploadFolder;
 
     @Autowired
     public CommentController(CommentService commentService, UserService userService) {
@@ -42,7 +53,7 @@ public class CommentController {
     private Long getEffectiveUserId(Long commentId, Long currentUserId, Authentication authentication) {
         if (hasAdminAuthority(authentication)) {
             Comment comment = commentService.getCommentById(commentId);
-            return comment.getUserId();
+            return comment.getUser().getId();
         }
         return currentUserId;
     }
@@ -50,7 +61,7 @@ public class CommentController {
     private Long getEffectiveUserIdForReply(Long replyCommentId, Long currentUserId, Authentication authentication) {
         if (hasAdminAuthority(authentication)) {
             ReplyComment reply = commentService.getReplyCommentById(replyCommentId);
-            return reply.getUserId();
+            return reply.getUser().getId();
         }
         return currentUserId;
     }
@@ -62,13 +73,52 @@ public class CommentController {
             Authentication authentication,
             @RequestParam String content,
             @RequestParam(required = false) String emotion,
-            @RequestParam(required = false) Long fileId) {
+            @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles) throws IOException {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
+        List<File> files = new ArrayList<>();
 
-        CommentDTO comment = commentService.createComment(postId, currentUser.getId(), content, emotionEnum, fileId);
-        return ResponseEntity.ok(comment);
+        if (multipartFiles != null && !multipartFiles.isEmpty()) {
+            for (MultipartFile mf : multipartFiles) {
+                if (mf.isEmpty()) continue;
+
+                String originalName = mf.getOriginalFilename();
+                String fileExt = originalName != null && originalName.contains(".")
+                        ? originalName.substring(originalName.lastIndexOf("."))
+                        : "";
+
+                String uniqueName = UUID.randomUUID().toString() + fileExt;
+                Path uploadPath = Paths.get(uploadFolder, uniqueName);
+                Files.createDirectories(uploadPath.getParent());
+                Files.write(uploadPath, mf.getBytes());
+
+                String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                File.FileType fileType;
+                if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                    fileType = File.FileType.VIDEO;
+                } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                    fileType = File.FileType.DOCUMENT;
+                } else {
+                    fileType = File.FileType.IMAGE;
+                }
+
+                File f = new File();
+                f.setFileUrl("/uploads/" + uniqueName);
+                f.setFileName(originalName);
+                f.setFileSize(mf.getSize());
+                f.setFileType(fileType);
+                files.add(f);
+            }
+        }
+        Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
+        CommentDTO createdComment = commentService.createComment(
+                postId,
+                currentUser.getId(),
+                content,
+                emotionEnum,
+                files
+        );
+        return ResponseEntity.ok(createdComment);
     }
 
     @GetMapping("/posts/{postId}")
@@ -77,7 +127,7 @@ public class CommentController {
     }
 
     @PutMapping("/{commentId}")
-    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.isOwner(authentication, #commentId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommentDTO> updateComment(
             @PathVariable Long commentId,
             Authentication authentication,
@@ -86,22 +136,18 @@ public class CommentController {
 
         User currentUser = getUserFromAuthentication(authentication);
         Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
-        
-        Long effectiveUserId = getEffectiveUserId(commentId, currentUser.getId(), authentication);
 
-        return ResponseEntity.ok(commentService.updateComment(commentId, effectiveUserId, content, emotionEnum));
+        return ResponseEntity.ok(commentService.updateComment(commentId, currentUser, authentication, content, emotionEnum));
     }
 
     @DeleteMapping("/{commentId}")
-    @PreAuthorize("hasAuthority('comment:delete_all') or @commentService.isOwner(authentication, #commentId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> deleteComment(
             @PathVariable Long commentId,
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Long effectiveUserId = getEffectiveUserId(commentId, currentUser.getId(), authentication);
-        
-        commentService.deleteComment(commentId, effectiveUserId);
+        commentService.deleteComment(commentId, currentUser, authentication);
         return ResponseEntity.ok("Comment deleted successfully");
     }
 
@@ -112,14 +158,53 @@ public class CommentController {
             Authentication authentication,
             @RequestParam String content,
             @RequestParam(required = false) String emotion,
-            @RequestParam(required = false) Long fileId) {
+            @RequestParam(value = "files", required = false)  List<MultipartFile> multipartFiles) throws IOException {
 
         User currentUser = getUserFromAuthentication(authentication);
-        ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
+        List<File> files = new ArrayList<>();
 
-        return ResponseEntity.ok(
-                commentService.createReplyComment(commentId, currentUser.getId(), content, emotionEnum, fileId)
+        if (multipartFiles != null && !multipartFiles.isEmpty()) {
+            for (MultipartFile mf : multipartFiles) {
+                if (mf.isEmpty()) continue;
+
+                String originalName = mf.getOriginalFilename();
+                String fileExt = originalName != null && originalName.contains(".")
+                        ? originalName.substring(originalName.lastIndexOf("."))
+                        : "";
+
+                String uniqueName = UUID.randomUUID().toString() + fileExt;
+                Path uploadPath = Paths.get(uploadFolder, uniqueName);
+                Files.createDirectories(uploadPath.getParent());
+                Files.write(uploadPath, mf.getBytes());
+
+                String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                File.FileType fileType;
+                if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                    fileType = File.FileType.VIDEO;
+                } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                    fileType = File.FileType.DOCUMENT;
+                } else {
+                    fileType = File.FileType.IMAGE;
+                }
+
+                File f = new File();
+                f.setFileUrl("/uploads/" + uniqueName);
+                f.setFileName(originalName);
+                f.setFileSize(mf.getSize());
+                f.setFileType(fileType);
+                files.add(f);
+            }
+        }
+        ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
+        ReplyCommentDTO createdReply = commentService.createReplyComment(
+                currentUser.getId(),
+                commentId,
+                content,
+                emotionEnum,
+                files
         );
+
+        return ResponseEntity.ok(createdReply);
     }
 
     @GetMapping("/{commentId}/replies")
@@ -128,7 +213,7 @@ public class CommentController {
     }
 
     @PutMapping("/replies/{replyCommentId}")
-    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.isReplyOwner(authentication, #replyCommentId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
             @RequestParam String content,
@@ -137,21 +222,17 @@ public class CommentController {
 
         User currentUser = getUserFromAuthentication(authentication);
         ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
-        
-        Long effectiveUserId = getEffectiveUserIdForReply(replyCommentId, currentUser.getId(), authentication);
 
         return ResponseEntity.ok(
-                commentService.updateReplyComment(effectiveUserId, replyCommentId, content, emotionEnum)
+                commentService.updateReplyComment(currentUser, authentication, replyCommentId, content, emotionEnum)
         );
     }
 
     @DeleteMapping("/replies/{replyCommentId}")
-    @PreAuthorize("hasAuthority('comment:delete_all') or @commentService.isReplyOwner(authentication, #replyCommentId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> deleteReplyComment(@PathVariable Long replyCommentId, Authentication authentication) {
         User currentUser = getUserFromAuthentication(authentication);
-        Long effectiveUserId = getEffectiveUserIdForReply(replyCommentId, currentUser.getId(), authentication);
-        
-        commentService.deleteReplyComment(effectiveUserId, replyCommentId);
+        commentService.deleteReplyComment(currentUser, authentication, replyCommentId);
         return ResponseEntity.ok("Reply comment deleted successfully");
     }
 

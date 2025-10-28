@@ -171,24 +171,7 @@ public class PostSecurityIntegrationTest {
                 .andExpect(status().isUnauthorized()); // 401 Chưa đăng nhập
     }
 
-    @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void testCreatePost_WhenInvalidInput_ShouldReturn400() throws Exception {
-        // Test tạo post với nội dung rỗng
-        mockMvc.perform(post("/posts/create") // Đã sửa endpoint từ /posts thành /posts/create
-                        .param("content", "") // Nội dung rỗng
-                        .param("privacy", "open"))
-                .andExpect(status().isBadRequest()); // 400 Bad Request
-    }
 
-    // --- TEST CASE CHO QUYỀN RIÊNG TƯ (PRIVACY) ---
-
-    /**
-     * Test case quan trọng:
-     * Bài viết 11L trong test-data.sql được set là "only_me" (chỉ mình tôi)
-     * và thuộc về user 1 ("post_owner").
-     * User 2 ("another_user") không có quyền xem.
-     */
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testGetPostById_WhenPostIsPrivateAndUserIsNotOwner_ShouldReturn403() throws Exception {

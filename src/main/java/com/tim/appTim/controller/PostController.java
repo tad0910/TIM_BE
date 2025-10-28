@@ -5,9 +5,12 @@ import java.nio.file.*;
 import java.util.*;
 
 import com.tim.appTim.entity.User;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.UnauthorizedException;
 import com.tim.appTim.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -95,6 +98,8 @@ public class PostController {
             return ResponseEntity.badRequest().body(null);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(null);
         }
     }
 
@@ -122,7 +127,7 @@ public class PostController {
     }
 
     @PutMapping("/{postId}")
-    @PreAuthorize("hasAuthority('post:update_all') or @postService.isOwner(authentication, #postId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PostDTO> updatePost(
             @PathVariable Long postId,
             Authentication authentication,
@@ -130,7 +135,7 @@ public class PostController {
             @RequestParam("privacy") String privacy,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles,
             @RequestParam(value = "fileIdsToDelete", required = false) List<Integer> fileIdsToDelete
-    ) {
+    ) throws IOException{
         System.out.println("File IDs to delete received from request: " + fileIdsToDelete);
         try {
             User currentUser = getUserFromAuthentication(authentication);
@@ -170,7 +175,15 @@ public class PostController {
                 }
             }
 
-            PostDTO updatedPost = postService.updatePostWithFiles(currentUser.getId(), postId, content, privacyEnum, files, fileIdsToDelete);
+            PostDTO updatedPost = postService.updatePostWithFiles(
+                    currentUser,
+                    authentication, // Thêm tham số này
+                    postId,
+                    content,
+                    privacyEnum,
+                    files,
+                    fileIdsToDelete
+            );
             return ResponseEntity.ok(updatedPost);
 
         } catch (IllegalArgumentException e) {
@@ -181,12 +194,12 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    @PreAuthorize("hasAuthority('post:delete_all') or @postService.isOwner(authentication.name, #postId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> deletePost(
             @PathVariable Long postId,
             Authentication authentication) {
         User currentUser = getUserFromAuthentication(authentication);
-        postService.deletePost(currentUser.getId(), postId);
+        postService.deletePost(currentUser, authentication, postId);
         return ResponseEntity.ok("Post with id " + postId + " deleted successfully.");
     }
 }

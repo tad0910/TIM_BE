@@ -32,7 +32,7 @@ public class ReactionController {
     }
 
     @PostMapping("/posts/{postId}")
-    @PreAuthorize("hasAuthority('reaction:create')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ReactionDTO> createOrUpdateReaction(
             @PathVariable Long postId,
             Authentication authentication,
@@ -57,7 +57,7 @@ public class ReactionController {
     }
 
     @DeleteMapping("/posts/{postId}")
-    @PreAuthorize("hasAuthority('reaction:delete')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteReaction(
             @PathVariable Long postId,
             Authentication authentication) {
@@ -83,7 +83,7 @@ public class ReactionController {
     }
 
     @PostMapping("/comments/{commentId}")
-    @PreAuthorize("hasAuthority('reaction:create')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ReactionDTO> createOrUpdateCommentReaction(
             @PathVariable Long commentId,
             Authentication authentication,
@@ -131,7 +131,7 @@ public class ReactionController {
     }
 
     @PostMapping("/replies/{replyCommentId}")
-    @PreAuthorize("hasAuthority('reaction:create')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ReactionDTO> createOrUpdateReplyCommentReaction(
             @PathVariable Long replyCommentId,
             Authentication authentication,

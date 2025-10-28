@@ -18,7 +18,7 @@ public class AuthService {
         this.invalidatedTokenRepository = invalidatedTokenRepository;
         this.jwtUtil = jwtUtil;
     }
-
+ 
     public void logout(String token) {
         if (!jwtUtil.isTokenValid(token)) {
             throw new IllegalArgumentException("Token không hợp lệ.");
@@ -31,4 +31,6 @@ public class AuthService {
         InvalidatedToken invalidatedToken = new InvalidatedToken(jti, expiryDate.toInstant());
             invalidatedTokenRepository.saveAndFlush(invalidatedToken);
     }
+
+
 }

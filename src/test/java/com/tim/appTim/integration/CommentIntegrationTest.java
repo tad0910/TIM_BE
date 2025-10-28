@@ -74,7 +74,6 @@ public class CommentIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // --- TEST CASES CHO SỬA COMMENT ---
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 là owner của comment 20

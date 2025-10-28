@@ -2,27 +2,29 @@ package com.tim.appTim.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set; // *** THÊM IMPORT NÀY ***
+import java.util.Set; 
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication; // *** THÊM IMPORT NÀY ***
+import org.springframework.security.core.Authentication; 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt; // *** THÊM IMPORT NÀY ***
+import org.springframework.security.oauth2.jwt.Jwt; 
 import org.springframework.stereotype.Service;
 
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.CourseDTO;
+import com.tim.appTim.dto.FileDTO;
+import com.tim.appTim.dto.LinkPreviewDTO;
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.dto.UserImageDTO;
-import com.tim.appTim.entity.Role; // *** THÊM IMPORT NÀY ***
+import com.tim.appTim.entity.Role;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
 import com.tim.appTim.exception.BadRequestException;
@@ -30,13 +32,14 @@ import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.InternalServerErrorException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.UnauthorizedException;
+import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.CourseRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
-import com.tim.appTim.repository.RoleRepository; // *** THÊM IMPORT NÀY ***
+import com.tim.appTim.repository.RoleRepository; 
 import com.tim.appTim.repository.UserImageRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.FileRepository;
@@ -58,14 +61,14 @@ public class UserService implements UserDetailsService {
     private final CourseRepository courseRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final FileRepository fileRepository;
-    private final RoleRepository roleRepository; // *** THÊM REPO NÀY ***
-
+    private final RoleRepository roleRepository; 
+    
 
     public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
                        ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
                        UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
                        CourseRepository courseRepository,@Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository,
-                       RoleRepository roleRepository // *** THÊM VÀO CONSTRUCTOR ***
+                       RoleRepository roleRepository 
     ) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
@@ -77,38 +80,32 @@ public class UserService implements UserDetailsService {
         this.courseRepository = courseRepository;
         this.passwordEncoder = passwordEncoder;
         this.fileRepository = fileRepository;
-        this.roleRepository = roleRepository; // *** THÊM VÀO CONSTRUCTOR ***
+        this.roleRepository = roleRepository; 
     }
 
-    // *** THAY ĐỔI 2: SỬA LẠI HOÀN TOÀN PHƯƠNG THỨC 'register' ***
     public void register(User user) {
         if (user.getUsername() == null || user.getUsername().isEmpty()) {
-            throw new IllegalArgumentException("Username is required");
+            throw new UnprocessableException("Username is required");
         }
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new ConflictException("Username already exists");
         }
 
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
-            throw new IllegalArgumentException("Email is required");
+            throw new UnprocessableException("Email is required");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new ConflictException("Email already exists");
         }
 
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            throw new IllegalArgumentException("Password is required");
+            throw new UnprocessableException("Password is required");
         }
 
-        // --- BẮT ĐẦU LOGIC MỚI ---
-        // Gán vai trò mặc định cho user mới
-        // Đảm bảo bạn đã có "ROLE_SINH_VIEN" trong bảng 'roles' của DB
         Role defaultRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
 
         user.setRoles(Set.of(defaultRole));
-        // --- KẾT THÚC LOGIC MỚI ---
-
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         userRepository.save(user);
@@ -205,36 +202,47 @@ public class UserService implements UserDetailsService {
         List<PostDTO> posts = postRepository.findByUserId(user.getId()).stream().map(post -> {
             List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
                 List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
-                        .map(reply -> new ReplyCommentDTO(
-                                reply.getId(),
-                                reply.getUserId(),
-                                reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
-                                reply.getContent(),
-                                reply.getEmotion(),
-                                reply.getFileId(),
-                                reply.getCreatedAt(),
-                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
-                        ))
+                        .map(reply -> { // Thêm {} để tạo biến tạm
+                            String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null; // Tạo biến String
+                            return new ReplyCommentDTO(
+                                    reply.getId(),
+                                    reply.getComment().getId(),
+                                    reply.getUser().getId(),
+                                    reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
+                                    reply.getContent(),
+                                    emotionName, // <-- SỬA: Dùng biến String
+                                    // reply.getFileId(), // <-- XÓA DÒNG NÀY
+                                    reply.getCreatedAt(),
+                                    reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
+                                    reply.getFiles() != null ? reply.getFiles().stream()
+                                            .map(file -> new FileDTO(/*...*/))
+                                            .collect(Collectors.toList()) : new java.util.ArrayList<FileDTO>()
+                            );
+                        })
                         .collect(Collectors.toList());
                 return new CommentDTO(
                         comment.getId(),
-                        comment.getUserId(),
+                        comment.getUser().getId(),
                         comment.getUser().getUsername(),
-                        comment.getUser().getProfileImage(),
                         comment.getContent(),
+                        comment.getUser().getProfileImage(),
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                        comment.getFileId(),
+                        // comment.getFileId(), // <-- XÓA DÒNG NÀY
                         comment.getCreatedAt(),
-                        replyComments
+                        replyComments,
+                        comment.getFiles() != null ? comment.getFiles().stream()
+                                .map(file -> new FileDTO(/*...*/))
+                                .collect(Collectors.toList()) : new java.util.ArrayList<FileDTO>()
                 );
             }).collect(Collectors.toList());
 
-            List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
+            List<ReactionDTO> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post)
+                    .stream()
                     .map(reaction -> new ReactionDTO(
                             reaction.getId(),
-                            reaction.getUserId(),
+                            reaction.getUser().getId(), // <-- SỬA Ở ĐÂY
                             reaction.getUser().getUsername(),
-                            reaction.getUser().getProfileImage(), 
+                            reaction.getUser().getProfileImage(),
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
@@ -252,17 +260,31 @@ public class UserService implements UserDetailsService {
                     ))
                     .collect(Collectors.toList());
                     
-            return new PostDTO(
+                return new PostDTO(
                     post.getId(),
                     post.getUser().getId(),
                     post.getContent(),
                     post.getPrivacy() != null ? post.getPrivacy().name() : null,
                     post.getCreatedAt(),
                     post.getUpdatedAt(),
+                    reactions != null ? reactions.size() : 0,
+                    comments != null ? comments.size() : 0,
                     comments,
                     reactions,
-                    fileDTOs
+                    fileDTOs,
+                    post.getUser().getProfileImage(),
+                    post.getUser().getUsername(),
+                    getUserDisplayName(post.getUser()),
+                    post.hasLinkPreview() ? new LinkPreviewDTO(
+                            post.getLinkUrl(),
+                            post.getLinkTitle(),
+                            post.getLinkDescription(),
+                            post.getLinkImageUrl(),
+                            post.getLinkDomain()
+                    ) : null
+                                        
             );
+
         }).collect(Collectors.toList());
 
         List<UserImageDTO> images = userImageRepository.findByUserId(user.getId()).stream()
@@ -288,26 +310,47 @@ public class UserService implements UserDetailsService {
         List<PostDTO> posts = postRepository.findByUserId(userId).stream().map(post -> {
             List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
                 List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
-                        .map(reply -> new ReplyCommentDTO(
-                                reply.getId(),
-                                reply.getUserId(),
-                                reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
-                                reply.getContent(),
-                                reply.getEmotion(),
-                                reply.getFileId(),
-                                reply.getCreatedAt(),
-                                reply.getUser() != null ? reply.getUser().getProfileImage() : " "
-                        ))
+                        .map(reply -> { // Thêm {} để tạo biến tạm
+                            String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null; // Tạo biến String
+                            return new ReplyCommentDTO(
+                                    reply.getId(),
+                                    reply.getComment().getId(),
+                                    reply.getUser().getId(),
+                                    reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
+                                    reply.getContent(),
+                                    emotionName, // <-- SỬA: Dùng biến String
+                                    // reply.getFileId(), // <-- XÓA DÒNG NÀY
+                                    reply.getCreatedAt(),
+                                    reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
+                                    reply.getFiles() != null ? reply.getFiles().stream()
+                                            .map(file -> new FileDTO(/*...*/))
+                                            .collect(Collectors.toList()) : new java.util.ArrayList<FileDTO>()
+                            );
+                        })
                         .collect(Collectors.toList());
-                return new CommentDTO(comment.getId(), comment.getUserId(), comment.getUser().getUsername(), // Sửa ở đây 
+                return new CommentDTO(
+                        comment.getId(),
+                        comment.getUser().getId(),
+                        comment.getUser().getUsername(),
+                        comment.getContent(),
                         comment.getUser().getProfileImage(),
-                        comment.getContent(), comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                        comment.getFileId(), comment.getCreatedAt(), replyComments);
+                        comment.getEmotion() != null ? comment.getEmotion().name() : null,
+                        // comment.getFileId(), // <-- XÓA DÒNG NÀY
+                        comment.getCreatedAt(),
+                        replyComments,
+                        comment.getFiles() != null ? comment.getFiles().stream()
+                                .map(file -> new FileDTO(/*...*/))
+                                .collect(Collectors.toList()) : new java.util.ArrayList<FileDTO>()
+                );
             }).collect(Collectors.toList());
 
-            List<ReactionDTO> reactions = reactionRepository.findByPostId(post.getId()).stream()
-                    .map(reaction -> new ReactionDTO(reaction.getId(), reaction.getUserId(), reaction.getUser().getUsername(), // Sửa ở đây
-                            reaction.getUser().getProfileImage(), 
+            List<ReactionDTO> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post)
+                    .stream()
+                    .map(reaction -> new ReactionDTO(
+                            reaction.getId(),
+                            reaction.getUser().getId(), // <-- SỬA Ở ĐÂY
+                            reaction.getUser().getUsername(),
+                            reaction.getUser().getProfileImage(),
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
@@ -328,10 +371,24 @@ public class UserService implements UserDetailsService {
                     post.getPrivacy() != null ? post.getPrivacy().name() : null,
                     post.getCreatedAt(),
                     post.getUpdatedAt(),
+                    reactions != null ? reactions.size() : 0,
+                    comments != null ? comments.size() : 0,
                     comments,
                     reactions,
-                    fileDTOs
+                    fileDTOs,
+                    post.getUser().getProfileImage(),
+                    post.getUser().getUsername(),
+                    getUserDisplayName(post.getUser()),
+                    post.hasLinkPreview() ? new LinkPreviewDTO(
+                            post.getLinkUrl(),
+                            post.getLinkTitle(),
+                            post.getLinkDescription(),
+                            post.getLinkImageUrl(),
+                            post.getLinkDomain()
+                    ) : null
+                    
             );
+
         }).collect(Collectors.toList());
 
         List<UserImageDTO> images = userImageRepository.findByUserId(userId).stream()
@@ -433,7 +490,7 @@ public class UserService implements UserDetailsService {
         } catch (ConflictException e) {
             throw e;
         } catch (Exception e) {
-            throw new InternalServerErrorException("Không thể cập nhật ảnh đại diện: " + e.getMessage());
+            throw new UnprocessableException("Không thể cập nhật ảnh đại diện: " + e.getMessage());
         }
     }
 
@@ -459,7 +516,7 @@ public class UserService implements UserDetailsService {
         } catch (ConflictException e) {
             throw e;
         } catch (Exception e) {
-            throw new InternalServerErrorException("Không thể cập nhật ảnh bìa: " + e.getMessage());
+            throw new UnprocessableException("Không thể cập nhật ảnh bìa: " + e.getMessage());
         }
     }
 
@@ -543,5 +600,34 @@ public class UserService implements UserDetailsService {
         }
         String[] parts = fileUrl.split("/");
         return parts[parts.length - 1];
+    }
+
+    private String getUserDisplayName(User user) {
+        if (user == null) {
+            return "Người dùng";
+        }
+        
+        String firstName = user.getFirstName();
+        String lastName = user.getLastName();
+        String username = user.getUsername();
+        
+        if (firstName != null && !firstName.trim().isEmpty() && 
+            lastName != null && !lastName.trim().isEmpty()) {
+            return firstName + " " + lastName;
+        }
+        
+        if (firstName != null && !firstName.trim().isEmpty()) {
+            return firstName;
+        }
+        
+        if (lastName != null && !lastName.trim().isEmpty()) {
+            return lastName;
+        }
+        
+        if (username != null && !username.trim().isEmpty()) {
+            return username;
+        }
+        
+        return "Người dùng";
     }
 }

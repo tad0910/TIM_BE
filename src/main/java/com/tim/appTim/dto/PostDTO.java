@@ -16,12 +16,15 @@ public class PostDTO {
     private List<FileDTO> files;
     private String userAvatar;
     private String username;
+    private String fullName;
+    private LinkPreviewDTO linkPreview;
       
 
 
     public PostDTO(Long id,Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
                    Integer totalReactions, Integer totalComments,
-                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<FileDTO> files, String userAvatar, String username) {
+                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<FileDTO> files, String userAvatar, String username, String fullName,
+                   LinkPreviewDTO linkPreview) {
         this.id = id;
         this.userId = userId;
         this.content = content;
@@ -35,14 +38,17 @@ public class PostDTO {
         this.files = files;
         this.userAvatar = userAvatar;
         this.username = username;
+        this.fullName = fullName;
+        this.linkPreview = linkPreview;
     }
+
 
     public PostDTO(Long id, Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
                    List<CommentDTO> comments, List<ReactionDTO> reactions, List<com.tim.appTim.dto.FileDTO> files) {
         this(id, userId, content, privacy, createdAt, updatedAt,
                 reactions != null ? reactions.size() : 0,
                 comments != null ? comments.size() : 0,
-                comments, reactions, files, null, null);
+                comments, reactions, files, null, null, null, null);
     }
 
     public Long getId() { return id; }
@@ -71,4 +77,8 @@ public class PostDTO {
     public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public LinkPreviewDTO getLinkPreview() { return linkPreview; }
+    public void setLinkPreview(LinkPreviewDTO linkPreview) { this.linkPreview = linkPreview; }
 }
