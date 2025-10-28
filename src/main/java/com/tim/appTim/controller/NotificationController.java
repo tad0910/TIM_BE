@@ -71,13 +71,13 @@ public class NotificationController {
     }
 
     @PutMapping("/{notificationId}/mark-read")
-    @PreAuthorize("@notificationService.isReceiver(authentication, #notificationId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> markAsRead(
             @PathVariable Long notificationId,
             Authentication authentication
     ) {
         User currentUser = getUserFromAuthentication(authentication);
-        notificationService.markAsRead(notificationId, currentUser.getId());
+        notificationService.markAsRead(notificationId, currentUser.getId(), authentication);
         return ResponseEntity.ok("Notification marked as read");
     }
 

@@ -3,6 +3,7 @@ package com.tim.appTim.service;
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.entity.Comment;
+import com.tim.appTim.entity.Post;
 import com.tim.appTim.entity.ReplyComment;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.User;
@@ -13,6 +14,9 @@ import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.ReactionRepository;
+import com.tim.appTim.service.NotificationService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import com.tim.appTim.repository.FileRepository;
 import com.tim.appTim.dto.FileDTO;
 import org.springframework.security.core.Authentication;
@@ -37,45 +41,49 @@ public class CommentService {
     private final FileRepository fileRepository;
     private NotificationService notificationService;
 
+    @Autowired
     public CommentService(CommentRepository commentRepository,
                           ReplyCommentRepository replyCommentRepository,
-                          UserService userService,
                           PostRepository postRepository,
                           UserRepository userRepository,
+                          UserService userService,
                           NotificationService notificationService,
                           ReactionRepository reactionRepository,
                           FileRepository fileRepository) {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
-        this.userService = userService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.userService = userService;
         this.notificationService = notificationService;
         this.reactionRepository = reactionRepository;
         this.fileRepository = fileRepository;
     }
 
+    @Transactional
     public CommentDTO createComment(Long postId, Long userId, String content, Comment.Emotion emotion, Long fileId) {
-        postRepository.findById(postId)
+        Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
-
-        userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         Comment comment = new Comment();
-        comment.setPostId(postId);
-        comment.setUserId(userId);
+        comment.setPost(post);
+        comment.setUser(user);
         comment.setContent(content);
         comment.setEmotion(emotion);
         comment.setFileId(fileId);
         comment.setCreatedAt(LocalDateTime.now());
 
         Comment savedComment = commentRepository.save(comment);
-        
+
+        Integer currentTotal = post.getTotalComments();
+        post.setTotalComments(currentTotal == null ? 1 : currentTotal + 1);
+        postRepository.save(post);
+
         // Tạo thông báo cho chủ bài viết
         try {
-            var post = postRepository.findById(postId).orElse(null);
-            var user = userRepository.findById(userId).orElse(null);
+
             if (post != null && user != null && !post.getUser().getId().equals(userId)) {
                 notificationService.createCommentNotification(
                     post.getUser().getId(), // postOwnerId
@@ -90,7 +98,7 @@ public class CommentService {
             // Log error but don't fail the comment creation
             System.err.println("Error creating notification: " + e.getMessage());
         }
-        
+
         return convertToDTO(savedComment);
     }
 
@@ -144,80 +152,92 @@ public class CommentService {
     }
 
     public List<CommentDTO> getCommentsByPostId(Long postId) {
-        return commentRepository.findByPostId(postId)
-                .stream()
+        return commentRepository.findByPostId(postId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public CommentDTO updateComment(Long commentId, Long userId, String content, Comment.Emotion emotion) {
+    public CommentDTO updateComment(Long commentId, User currentUser, Authentication authentication, String content, Comment.Emotion emotion) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
 
-        if (!comment.getUserId().equals(userId)) {
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("comment:update_all"));
+        boolean isOwner = comment.getUser().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
             throw new ForbiddenException("Bạn không có quyền sửa bình luận này");
         }
 
         comment.setContent(content);
         comment.setEmotion(emotion);
-        comment.setCreatedAt(LocalDateTime.now());
+        comment.setUpdatedAt(LocalDateTime.now());
 
-        return convertToDTO(commentRepository.save(comment));
+        Comment updatedComment = commentRepository.save(comment);
+        return convertToDTO(updatedComment);
     }
 
-    public void deleteComment(Long commentId, Long userId) {
+    public void deleteComment(Long commentId, User currentUser, Authentication authentication) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("comment:delete_all"));
+        boolean isOwner = comment.getUser().getId().equals(currentUser.getId());
 
-        if (!comment.getUserId().equals(userId)) {
+        if (!isAdmin && !isOwner) {
             throw new ForbiddenException("Bạn không có quyền xóa bình luận này");
         }
-
-        List<ReplyComment> replyComments = replyCommentRepository.findByCommentId(commentId);
-        for (ReplyComment reply : replyComments) {
-            reactionRepository.deleteByReplyCommentId(reply.getId());
+        Post post = comment.getPost();
+        if (post != null) {
+            Integer currentTotal = post.getTotalComments();
+            // Đảm bảo không bị âm
+            post.setTotalComments(currentTotal == null || currentTotal <= 0 ? 0 : currentTotal - 1);
+            postRepository.save(post);
         }
-        replyCommentRepository.deleteAll(replyComments);
-        reactionRepository.deleteByCommentId(commentId);
         commentRepository.delete(comment);
     }
 
+    @Transactional
     public ReplyCommentDTO createReplyComment(Long commentId, Long userId, String content, ReplyComment.Emotion emotion, Long fileId) {
-        commentRepository.findById(commentId)
+
+        // Bước 1: Lấy các đối tượng cha từ DB và gán vào biến
+        Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
-        userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        ReplyComment replyComment = new ReplyComment();
-        replyComment.setCommentId(commentId);
-        replyComment.setUserId(userId);
-        replyComment.setContent(content);
-        replyComment.setEmotion(emotion);
-        replyComment.setFileId(fileId);
-        replyComment.setCreatedAt(LocalDateTime.now());
+        // Bước 2: Tạo Reply và set đối tượng
+        ReplyComment reply = new ReplyComment();
+        reply.setComment(comment); // Dùng biến 'comment' đã lấy ở trên
+        reply.setUser(user);       // Dùng biến 'user' đã lấy ở trên
+        reply.setContent(content);
+        reply.setEmotion(emotion);
+        reply.setFileId(fileId);
+        reply.setCreatedAt(LocalDateTime.now());
 
-        ReplyComment savedReplyComment = replyCommentRepository.save(replyComment);
-        
-        // Tạo thông báo cho chủ comment
+        ReplyComment savedReplyComment = replyCommentRepository.save(reply); // Sửa 'replyComment' thành 'reply'
+
+        // Bước 3: Tạo thông báo (Đã sửa logic)
         try {
-            var comment = commentRepository.findById(commentId).orElse(null);
-            var user = userRepository.findById(userId).orElse(null);
-            if (comment != null && user != null && !comment.getUserId().equals(userId)) {
+            // Không cần fetch lại 'comment' và 'user', chúng ta đã có sẵn
+
+            // Sửa logic check: dùng 'comment.getUser().getId()' thay vì 'comment.getUserId()'
+            if (!comment.getUser().getId().equals(userId)) {
                 notificationService.createCommentNotification(
-                    null, // postOwnerId
-                    comment.getUserId(), // commentOwnerId
-                    userId, // senderId
-                    user.getUsername(), // senderUsername
-                    "COMMENT",
-                    commentId
+                        null, // postOwnerId
+                        comment.getUser().getId(), // commentOwnerId (SỬA Ở ĐÂY)
+                        userId, // senderId
+                        user.getUsername(), // senderUsername
+                        "COMMENT",
+                        commentId
                 );
             }
         } catch (Exception e) {
             // Log error but don't fail the reply creation
             System.err.println("Error creating notification: " + e.getMessage());
         }
-        
-        return convertReplyToDTO(savedReplyComment);
+
+        return convertReplyToDTO(savedReplyComment); // Giữ nguyên tên hàm của bạn
     }
 
     public ReplyCommentDTO createReplyWithFiles(Long userId, Long commentId, String content, List<File> filesFromController) {
@@ -275,40 +295,59 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
-    public ReplyCommentDTO updateReplyComment(Long userId, Long replyCommentId, String content, ReplyComment.Emotion emotion) {
-        ReplyComment replyComment = replyCommentRepository.findById(replyCommentId)
+    public ReplyCommentDTO updateReplyComment(User currentUser, Authentication authentication, Long replyCommentId, String content, ReplyComment.Emotion emotion) {
+        ReplyComment reply = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
-        if (!replyComment.getUserId().equals(userId)) {
-            throw new ForbiddenException("Bạn không có quyền sửa phản hồi này");
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("comment:update_all"));
+        boolean isOwner = reply.getUser().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new ForbiddenException("Bạn không có quyền sửa trả lời này");
         }
 
-        replyComment.setContent(content);
-        replyComment.setEmotion(emotion);
-        replyComment.setCreatedAt(LocalDateTime.now());
+        reply.setContent(content);
+        reply.setEmotion(emotion);
+        reply.setUpdatedAt(LocalDateTime.now());
 
-        return convertReplyToDTO(replyCommentRepository.save(replyComment));
+        ReplyComment updatedReply = replyCommentRepository.save(reply);
+        return convertReplyToDTO(updatedReply);
     }
 
-    public void deleteReplyComment(Long userId, Long replyCommentId) {
+    public void deleteReplyComment(User currentUser, Authentication authentication, Long replyCommentId) {
         ReplyComment replyComment = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
-        if (!replyComment.getUserId().equals(userId)) {
-            throw new ForbiddenException("Bạn không có quyền xóa phản hồi này");
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("comment:delete_all"));
+        boolean isOwner = replyComment.getUser().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new ForbiddenException("Bạn không có quyền xóa trả lời này");
         }
 
         replyCommentRepository.delete(replyComment);
     }
 
+    private User getUserFromAuthentication(Authentication authentication) {
+        // Lấy user entity từ logic của bạn (ví dụ: qua UserService)
+        return userService.findByUsernameOrEmail(authentication.getName());
+    }
+
     private CommentDTO convertToDTO(Comment comment) {
         User user = comment.getUser();
-        String username = comment.getUser() != null ? comment.getUser().getUsername() : "Unknown";
-        String userAvatar = user != null ? user.getProfileImage() : " ";
-        List<ReplyCommentDTO> replies = replyCommentRepository.findByCommentId(comment.getId())
-                .stream().map(this::convertReplyToDTO).collect(Collectors.toList());
+        String username = (user != null) ? user.getUsername() : "Unknown";
+        String userAvatar = (user != null) ? user.getProfileImage() : " ";
+        String emotionName = (comment.getEmotion() != null) ? comment.getEmotion().name() : null;
 
-        List<FileDTO> fileDTOs = new ArrayList<>();
+        // Sửa lỗi tên hàm (Lỗi 3, 5): phải là 'convertReplyToDTO'
+        List<ReplyCommentDTO> replies = comment.getReplies()
+                .stream()
+                .map(this::convertReplyToDTO)
+                .collect(Collectors.toList());
+
+       List<FileDTO> fileDTOs = new ArrayList<>();
         if (comment.getFiles() != null && !comment.getFiles().isEmpty()) {
             fileDTOs = comment.getFiles().stream()
                     .map(file -> new FileDTO(
@@ -320,26 +359,29 @@ public class CommentService {
                     ))
                     .collect(Collectors.toList());
         }
-
+      
+        // SẮP XẾP LẠI TOÀN BỘ THAM SỐ CHO ĐÚNG
         return new CommentDTO(
-                comment.getId(),
-                comment.getUserId(),
-                username,
-                comment.getContent(),
-                userAvatar,
-                comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                comment.getFileId(),
-                comment.getCreatedAt(),
+                comment.getId(),            // 1. Long id
+                comment.getUser().getId(),  // 2. Long userId
+                username,                   // 3. String username
+                comment.getContent(),       // 4. String content
+                userAvatar,                 // 5. String userAvatar
+                emotionName,                // 6. String emotion
+                comment.getFileId(),        // 7. Long fileId
+                comment.getCreatedAt(),     // 8. LocalDateTime createdAt
                 replies,
-                fileDTOs
+                fileDTOs// 9. List<ReplyCommentDTO> replyComments
         );
     }
 
     private ReplyCommentDTO convertReplyToDTO(ReplyComment reply) {
         String username = reply.getUser() != null ? reply.getUser().getUsername() : "Unknown";
+        String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null;
         return new ReplyCommentDTO(
                 reply.getId(),
-                reply.getUserId(),
+                reply.getComment().getId(),
+                reply.getUser().getId(),
                 username,
                 reply.getContent(),
                 reply.getEmotion(),
@@ -359,23 +401,17 @@ public class CommentService {
     }
 
     public boolean isOwner(Authentication authentication, Long commentId) {
-        if (authentication == null || !authentication.isAuthenticated()) return false;
-        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
-        if (currentUser == null) return false;
-
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Comment: " + commentId));
-        return comment.getUser().getId().equals(currentUser.getId());
+        User currentUser = getUserFromAuthentication(authentication);
+        return commentRepository.findById(commentId)
+                .map(comment -> comment.getUser().getId().equals(currentUser.getId()))
+                .orElse(false); // <-- Sửa: Nếu không tìm thấy, trả về false (không phải là owner)
     }
 
     public boolean isReplyOwner(Authentication authentication, Long replyCommentId) {
-        if (authentication == null || !authentication.isAuthenticated()) return false;
-        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
-        if (currentUser == null) return false;
-
-        ReplyComment reply = replyCommentRepository.findById(replyCommentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Reply Comment: " + replyCommentId));
-        return reply.getUser().getId().equals(currentUser.getId());
+        User currentUser = getUserFromAuthentication(authentication);
+        return replyCommentRepository.findById(replyCommentId)
+                .map(reply -> reply.getUser().getId().equals(currentUser.getId()))
+                .orElse(false); // <-- Sửa: Nếu không tìm thấy, trả về false
     }
 
     public long countCommentsByPostId(Long postId) {

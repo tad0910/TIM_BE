@@ -50,4 +50,8 @@ INSERT INTO reply_comments (id, comments_id, nguoi_dung_id, noi_dung, thoi_gian_
 
 -- Gán Permissions cho Roles
 INSERT INTO role_permissions (role_id, permission_id) VALUES
-(1, 3), (2, 4), (2, 5);
+(1, 3), (2, 4), (2, 5) ;
+
+INSERT INTO notifications (id, receiver_id, sender_id, notification_type, title, content, created_at, is_read, read_at, target_type, target_id) VALUES
+(50, 1, 2, 'POST_COMMENT', 'Thông báo mới', 'User 2 đã bình luận bài viết của bạn', NOW(), false, null, 'POST', 10),
+(51, 1, 3, 'SYSTEM_ANNOUNCEMENT', 'Thông báo hệ thống', 'Chào mừng bạn đến với hệ thống', DATEADD('DAY', -1, NOW()), true, DATEADD('HOUR', -12, NOW()), null, null);
