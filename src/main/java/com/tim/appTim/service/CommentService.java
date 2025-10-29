@@ -118,7 +118,7 @@ public class CommentService {
     }
 
     @Transactional // Thêm @Transactional nếu chưa có
-    public CommentDTO updateComment(Long commentId, User currentUser, Authentication authentication, String content, Comment.Emotion emotion) {
+    public CommentDTO updateComment(Long commentId, User currentUser, Authentication authentication, String content, Comment.Emotion emotion, List<File> newFilesFromController) {
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
@@ -133,6 +133,20 @@ public class CommentService {
 
         comment.setContent(content);
         comment.setEmotion(emotion);
+
+        if (comment.getFiles() != null) {
+            // Xóa các file cũ liên kết với comment này khỏi FileRepository
+            fileRepository.deleteAll(comment.getFiles());
+            comment.getFiles().clear(); // Xóa khỏi danh sách của Comment Entity
+        }
+
+        // 2. Thêm files mới
+        if (newFilesFromController != null && !newFilesFromController.isEmpty()) {
+            for (File file : newFilesFromController) {
+                comment.addFile(file); // Dùng hàm addFile đã có trong Comment entity
+            }
+        }
+
         comment.setUpdatedAt(LocalDateTime.now()); // Sửa thành updatedAt
 
         Comment updatedComment = commentRepository.save(comment);
@@ -210,7 +224,7 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
-    public ReplyCommentDTO updateReplyComment(User currentUser, Authentication authentication, Long replyCommentId, String content, ReplyComment.Emotion emotion) {
+    public ReplyCommentDTO updateReplyComment(User currentUser, Authentication authentication, Long replyCommentId, String content, ReplyComment.Emotion emotion, List<File> newFilesFromController) {
         ReplyComment reply = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
@@ -224,6 +238,18 @@ public class CommentService {
 
         reply.setContent(content);
         reply.setEmotion(emotion);
+
+        if (reply.getFiles() != null) {
+            fileRepository.deleteAll(reply.getFiles());
+            reply.getFiles().clear();
+        }
+
+        // 2. Thêm files mới
+        if (newFilesFromController != null && !newFilesFromController.isEmpty()) {
+            for (File file : newFilesFromController) {
+                reply.addFile(file); // Dùng hàm addFile đã có trong ReplyComment entity
+            }
+        }
         reply.setUpdatedAt(LocalDateTime.now());
 
         ReplyComment updatedReply = replyCommentRepository.save(reply);
