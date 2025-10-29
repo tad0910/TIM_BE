@@ -5,6 +5,8 @@ import com.tim.appTim.dto.ModuleSessionDTO;
 import com.tim.appTim.dto.UpdateModuleSessionRequest;
 import com.tim.appTim.service.ModuleSessionService;
 import org.springframework.http.ResponseEntity;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,27 +22,18 @@ public class ModuleSessionController {
         this.moduleSessionService = moduleSessionService;
     }
 
-    /**
-     * Lấy danh sách tất cả buổi học của một module
-     */
     @GetMapping("/{moduleId}/sessions")
     public ResponseEntity<List<ModuleSessionDTO>> getSessionsByModule(@PathVariable Integer moduleId) {
         List<ModuleSessionDTO> sessions = moduleSessionService.getSessionsByModule(moduleId);
         return ResponseEntity.ok(sessions);
     }
 
-    /**
-     * Lấy chi tiết một buổi học
-     */
     @GetMapping("/sessions/{sessionId}")
     public ResponseEntity<ModuleSessionDTO> getSessionById(@PathVariable Long sessionId) {
         ModuleSessionDTO session = moduleSessionService.getSessionById(sessionId);
         return ResponseEntity.ok(session);
     }
 
-    /**
-     * Tạo buổi học mới
-     */
     @PostMapping("/{moduleId}/sessions")
     @PreAuthorize("hasAuthority('module:create')")
     public ResponseEntity<ModuleSessionDTO> createSession(
@@ -50,9 +43,6 @@ public class ModuleSessionController {
         return ResponseEntity.ok(session);
     }
 
-    /**
-     * Cập nhật buổi học
-     */
     @PutMapping("/sessions/{sessionId}")
     @PreAuthorize("hasAuthority('module:update')")
     public ResponseEntity<ModuleSessionDTO> updateSession(
@@ -62,13 +52,13 @@ public class ModuleSessionController {
         return ResponseEntity.ok(session);
     }
 
-    /**
-     * Xóa buổi học
-     */
     @DeleteMapping("/sessions/{sessionId}")
     @PreAuthorize("hasAuthority('module:delete')")
-    public ResponseEntity<Void> deleteSession(@PathVariable Long sessionId) {
+    public ResponseEntity<Map<String, Object>> deleteSession(@PathVariable Long sessionId) {
         moduleSessionService.deleteSession(sessionId);
-        return ResponseEntity.noContent().build();
+        Map<String, Object> body = new HashMap<String, Object>();
+        body.put("message", "Delete session successfully");
+        body.put("sessionId", sessionId);
+        return ResponseEntity.ok().body(body);
     }
 }
