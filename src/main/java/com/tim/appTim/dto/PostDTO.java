@@ -1,8 +1,6 @@
 package com.tim.appTim.dto;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.tim.appTim.entity.File;
-
 
 public class PostDTO {
     private Long id;
@@ -15,12 +13,18 @@ public class PostDTO {
     private Integer totalComments;
     private List<CommentDTO> comments;
     private List<ReactionDTO> reactions;
-    private List<File> files;
+    private List<FileDTO> files;
+    private String userAvatar;
+    private String username;
+    private String fullName;
+    private LinkPreviewDTO linkPreview;
+      
 
 
     public PostDTO(Long id,Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
                    Integer totalReactions, Integer totalComments,
-                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<File> files ) {
+                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<FileDTO> files, String userAvatar, String username, String fullName,
+                   LinkPreviewDTO linkPreview) {
         this.id = id;
         this.userId = userId;
         this.content = content;
@@ -32,14 +36,19 @@ public class PostDTO {
         this.comments = comments;
         this.reactions = reactions;
         this.files = files;
+        this.userAvatar = userAvatar;
+        this.username = username;
+        this.fullName = fullName;
+        this.linkPreview = linkPreview;
     }
 
+
     public PostDTO(Long id, Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
-                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<File> files) {
+                   List<CommentDTO> comments, List<ReactionDTO> reactions, List<com.tim.appTim.dto.FileDTO> files) {
         this(id, userId, content, privacy, createdAt, updatedAt,
                 reactions != null ? reactions.size() : 0,
                 comments != null ? comments.size() : 0,
-                comments, reactions, files);
+                comments, reactions, files, null, null, null, null);
     }
 
     public Long getId() { return id; }
@@ -58,10 +67,18 @@ public class PostDTO {
     public void setComments(List<CommentDTO> comments) { this.comments = comments; }
     public List<ReactionDTO> getReactions() { return reactions; }
     public void setReactions(List<ReactionDTO> reactions) { this.reactions = reactions; }
-    public List<File> getFiles() { return files; }
-    public void setFiles(List<File> files) { this.files = files; }
+    public List<FileDTO> getFiles() { return files; }
+    public void setFiles(List<FileDTO> files) { this.files = files; }
     public Integer getTotalReactions() { return totalReactions; }
     public void setTotalReactions(Integer totalReactions) { this.totalReactions = totalReactions; }
     public Integer getTotalComments() { return totalComments; }
     public void setTotalComments(Integer totalComments) { this.totalComments = totalComments; }
+    public String getUserAvatar() { return userAvatar; }
+    public void setUserAvatar(String userAvatar) { this.userAvatar = userAvatar; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public LinkPreviewDTO getLinkPreview() { return linkPreview; }
+    public void setLinkPreview(LinkPreviewDTO linkPreview) { this.linkPreview = linkPreview; }
 }

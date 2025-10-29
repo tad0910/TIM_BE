@@ -6,31 +6,22 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.UserService;
+import com.tim.appTim.service.ClassService;
 import com.tim.appTim.dto.ProfileResponse;
+import com.tim.appTim.dto.UserClassDTO;
+import com.tim.appTim.entity.ClassMember;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.tim.appTim.service.UserImageService;
-
+import com.tim.appTim.exception.*; // << Thêm dòng này
 
 @RestController
 @RequestMapping("/users")
@@ -38,238 +29,213 @@ public class UserController {
 
     private final UserService userService;
     private final UserImageService userImageService;
+    private final ClassService classService;
 
     @Value("${upload.folder}")
     private String uploadFolder;
-    
-    public UserController(UserService userService, UserImageService userImageService) {
+
+    public UserController(UserService userService, UserImageService userImageService, ClassService classService) {
         this.userService = userService;
         this.userImageService = userImageService;
+        this.classService = classService;
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('user:read_all')")
     public ResponseEntity<List<User>> getAll() {
         return ResponseEntity.ok(userService.findAll());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('SINH_VIEN')")
+    @PreAuthorize("hasAuthority('user:read_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<User> getById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.findById(id));
     }
 
     @GetMapping("/profile/{email}")
     public ResponseEntity<ProfileResponse> getUserProfileByEmail(@PathVariable String email) {
-        ProfileResponse profile = userService.getUserProfileByEmail(email);
-        return ResponseEntity.ok(profile);
+        return ResponseEntity.ok(userService.getUserProfileByEmail(email));
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('user:create')")
     public ResponseEntity<User> create(@RequestBody User user) {
         User created = userService.create(user);
         return ResponseEntity.created(URI.create("/users/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
         return ResponseEntity.ok(userService.update(id, user));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:delete')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
     @PostMapping("/{id}/profile-image")
-    public ResponseEntity<?> uploadProfileImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
+    public ResponseEntity<?> uploadProfileImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
         if (file.isEmpty()) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "File không được để trống");
-            return ResponseEntity.badRequest().body(error);
+            throw new BadRequestException("File không được để trống");
         }
 
-        try {
-            User user = userService.findById(id);
-            if (user == null) {
-                Map<String, String> error = new HashMap<>();
-                error.put("error", "User không tồn tại");
-                return ResponseEntity.notFound().build();
-            }
+        User user = userService.findById(id);
+        if (user == null) throw new ResourceNotFoundException("User không tồn tại");
 
-            File uploadDir = new File(uploadFolder);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
+        File uploadDir = new File(uploadFolder);
+        if (!uploadDir.exists()) uploadDir.mkdirs();
 
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = (originalFilename != null && originalFilename.contains("."))
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : ".jpg" ;
-            String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
+        String originalFilename = file.getOriginalFilename();
+        String fileExtension = (originalFilename != null && originalFilename.contains("."))
+                ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                : ".jpg";
+        String uniqueFilename = UUID.randomUUID() + fileExtension;
 
-            Path filePath = Paths.get(uploadFolder + File.separator + uniqueFilename);
-            Files.write(filePath, file.getBytes());
+        Path filePath = Paths.get(uploadFolder + File.separator + uniqueFilename);
+        Files.write(filePath, file.getBytes());
 
-            String imageUrl = "/uploads/" + uniqueFilename;
+        String imageUrl = "/uploads/" + uniqueFilename;
 
-            com.tim.appTim.entity.UserImage userImage = new com.tim.appTim.entity.UserImage();
-            userImage.setUserId(id);
-            userImage.setImageUrl(imageUrl);
-            userImage.setCreatedAt(java.time.LocalDateTime.now());
-            userImageService.save(userImage);
+        com.tim.appTim.entity.UserImage userImage = new com.tim.appTim.entity.UserImage();
+        userImage.setUserId(id);
+        userImage.setImageUrl(imageUrl);
+        userImage.setCreatedAt(java.time.LocalDateTime.now());
+        userImageService.save(userImage);
 
-            User updatedUser = userService.updateProfileImage(id, imageUrl);
+        User updatedUser = userService.updateProfileImage(id, imageUrl);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Ảnh đại diện đã được cập nhật thành công");
-            response.put("imageUrl", imageUrl);
-            response.put("user", updatedUser);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Ảnh đại diện đã được cập nhật thành công");
+        response.put("imageUrl", imageUrl);
+        response.put("user", updatedUser);
 
-            return ResponseEntity.ok(response);
-
-        } catch (IOException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Lỗi khi upload file: " + e.getMessage());
-            return ResponseEntity.status(500).body(error);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(error);
-        }
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/profile-image")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<?> getProfileImage(@PathVariable Long id) {
-        try {
-            User user = userService.findById(id);
-            Map<String, Object> response = new HashMap<>();
-            response.put("userId", id);
-            response.put("profileImage", user.getProfileImage());
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.notFound().build();
+        User user = userService.findById(id);
+        if (user == null) {
+            throw new ResourceNotFoundException("User không tồn tại");
         }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", id);
+        response.put("profileImage", user.getProfileImage());
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}/profile-image")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<?> updateProfileImage(@PathVariable Long id, @RequestBody Map<String, String> request) {
-        try {
-            String imageUrl = request.get("imageUrl");
-            if (imageUrl == null || imageUrl.trim().isEmpty()) {
-                Map<String, String> error = new HashMap<>();
-                error.put("error", "imageUrl không được để trống");
-                return ResponseEntity.badRequest().body(error);
-            }
-
-            User updatedUser = userService.updateProfileImage(id, imageUrl);
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Ảnh đại diện đã được cập nhật thành công");
-            response.put("user", updatedUser);
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.notFound().build();
+        String imageUrl = request.get("imageUrl");
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            throw new BadRequestException("imageUrl không được để trống");
         }
+
+        User updatedUser = userService.updateProfileImage(id, imageUrl);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Ảnh đại diện đã được cập nhật thành công");
+        response.put("user", updatedUser);
+        return ResponseEntity.ok(response);
     }
+
     @PostMapping("/{id}/cover-image")
-    public ResponseEntity<?> uploadCoverImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
+    public ResponseEntity<?> uploadCoverImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
         if (file.isEmpty()) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "File không được để trống");
-            return ResponseEntity.badRequest().body(error);
+            throw new BadRequestException("File không được để trống");
         }
 
-        try {
-            User user = userService.findById(id);
-            if (user == null) {
-                Map<String, String> error = new HashMap<>();
-                error.put("error", "User không tồn tại");
-                return ResponseEntity.notFound().build();
-            }
-
-            File uploadDir = new File(uploadFolder);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = (originalFilename != null && originalFilename.contains("."))
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : ".jpg" ;
-            String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
-
-            Path filePath = Paths.get(uploadFolder + File.separator + uniqueFilename);
-            Files.write(filePath, file.getBytes());
-
-            String imageUrl = "/uploads/" + uniqueFilename;
-
-            com.tim.appTim.entity.UserImage userImage = new com.tim.appTim.entity.UserImage();
-            userImage.setUserId(id);
-            userImage.setImageUrl(imageUrl);
-            userImage.setCreatedAt(java.time.LocalDateTime.now());
-            userImageService.save(userImage);
-
-            User updatedUser = userService.updateCoverImage(id, imageUrl);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Ảnh bìa đã được cập nhật thành công");
-            response.put("imageUrl", imageUrl);
-            response.put("user", updatedUser);
-
-            return ResponseEntity.ok(response);
-
-        } catch (IOException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Lỗi khi upload file: " + e.getMessage());
-            return ResponseEntity.status(500).body(error);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(error);
+        User user = userService.findById(id);
+        if (user == null) {
+            throw new ResourceNotFoundException("User không tồn tại");
         }
+
+        File uploadDir = new File(uploadFolder);
+        if (!uploadDir.exists()) uploadDir.mkdirs();
+
+        String originalFilename = file.getOriginalFilename();
+        String fileExtension = (originalFilename != null && originalFilename.contains(".")) ?
+                originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
+        String uniqueFilename = UUID.randomUUID() + fileExtension;
+
+        Path filePath = Paths.get(uploadFolder + File.separator + uniqueFilename);
+        Files.write(filePath, file.getBytes());
+
+        String imageUrl = "/uploads/" + uniqueFilename;
+
+        com.tim.appTim.entity.UserImage userImage = new com.tim.appTim.entity.UserImage();
+        userImage.setUserId(id);
+        userImage.setImageUrl(imageUrl);
+        userImage.setCreatedAt(java.time.LocalDateTime.now());
+        userImageService.save(userImage);
+
+        User updatedUser = userService.updateCoverImage(id, imageUrl);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Ảnh bìa đã được cập nhật thành công");
+        response.put("imageUrl", imageUrl);
+        response.put("user", updatedUser);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/cover-image")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<?> getCoverImage(@PathVariable Long id) {
-        try {
-            User user = userService.findById(id);
-            Map<String, Object> response = new HashMap<>();
-            response.put("userId", id);
-            response.put("coverImage", user.getCoverImage());
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.notFound().build();
+        User user = userService.findById(id);
+        if (user == null) {
+            throw new ResourceNotFoundException("User không tồn tại");
         }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", id);
+        response.put("coverImage", user.getCoverImage());
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}/cover-image")
+    @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
     public ResponseEntity<?> updateCoverImage(@PathVariable Long id, @RequestBody Map<String, String> request) {
-        try {
-            String imageUrl = request.get("imageUrl");
-            if (imageUrl == null || imageUrl.trim().isEmpty()) {
-                Map<String, String> error = new HashMap<>();
-                error.put("error", "imageUrl không được để trống");
-                return ResponseEntity.badRequest().body(error);
-            }
-
-            User updatedUser = userService.updateCoverImage(id, imageUrl);
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Ảnh bìa đã được cập nhật thành công");
-            response.put("user", updatedUser);
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.notFound().build();
+        String imageUrl = request.get("imageUrl");
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            throw new BadRequestException("imageUrl không được để trống");
         }
+
+        User updatedUser = userService.updateCoverImage(id, imageUrl);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Ảnh bìa đã được cập nhật thành công");
+        response.put("user", updatedUser);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/{id}/classes")
+    public ResponseEntity<?> getUserClasses(@PathVariable Long id) {
+        List<ClassMember> userClasses = classService.getUserClasses(id);
+        List<UserClassDTO> classDTOs = userClasses.stream()
+                .map(c -> new UserClassDTO(
+                        c.getClassId(),
+                        c.getClassEntity() != null ? c.getClassEntity().getClassName() : "N/A",
+                        c.getClassEntity() != null ? c.getClassEntity().getDescription() : "N/A",
+                        c.getRole().name(),
+                        c.getJoinDate()
+                )).toList();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", id);
+        response.put("classes", classDTOs);
+        response.put("totalClasses", classDTOs.size());
+
+        return ResponseEntity.ok(response);
     }
 }
