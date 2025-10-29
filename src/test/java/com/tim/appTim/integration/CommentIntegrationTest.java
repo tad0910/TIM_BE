@@ -11,7 +11,9 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles; // Import này
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
-
+import org.springframework.mock.web.MockMultipartFile;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import java.util.Map;
 import java.util.HashMap;
@@ -217,5 +219,62 @@ public class CommentIntegrationTest {
 
         mockMvc.perform(delete("/comments/replies/" + replyId))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 là owner của comment 20
+    void testUpdateComment_ReplaceFiles_ShouldReturn200AndNewFiles() throws Exception {
+        Long commentId = 20L; // Giả sử comment 20 đã có files cũ
+        String updatedContent = "Nội dung đã được cập nhật và thay ảnh.";
+
+        // 1. Tạo File Giả Lập MỚI
+        MockMultipartFile newMockFile = new MockMultipartFile(
+                "files",
+                "new_image.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "nội dung file ảnh mới".getBytes()
+        );
+
+        // 2. Sử dụng multipart() với phương thức HTTP.PUT
+        mockMvc.perform(multipart(HttpMethod.PUT, "/comments/" + commentId)
+                        .file(newMockFile) // Gửi files mới
+                        .param("content", updatedContent)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(commentId))
+                .andExpect(jsonPath("$.content").value(updatedContent))
+                // 3. Kiểm tra file mới đã thay thế
+                .andExpect(jsonPath("$.files").isArray())
+                .andExpect(jsonPath("$.files[0].fileType").value("IMAGE"))
+                .andExpect(jsonPath("$.files[0].fileName").value("new_image.png"));
+        // Giả định logic của bạn là thay thế (xóa files cũ, thêm files mới)
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testUpdateReply_ReplaceFiles_ShouldReturn200AndNewFiles() throws Exception {
+        Long replyId = 30L;
+        String updatedContent = "Reply đã được cập nhật và thay ảnh.";
+
+        // 1. Tạo File Giả Lập MỚI (File Type: TEXT/PLAIN)
+        MockMultipartFile newMockFile = new MockMultipartFile(
+                "files",
+                "reply_file.txt",
+                MediaType.TEXT_PLAIN_VALUE, // ContentType này dẫn đến DOCUMENT
+                "nội dung file text mới".getBytes()
+        );
+
+        // 2. Gọi API
+        mockMvc.perform(multipart(HttpMethod.PUT, "/comments/replies/" + replyId)
+                        .file(newMockFile)
+                        .param("content", updatedContent))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(replyId))
+                .andExpect(jsonPath("$.content").value(updatedContent))
+
+                // 3. SỬA ĐỔI ASSERTION TỪ 'OTHER' SANG 'DOCUMENT'
+                .andExpect(jsonPath("$.files").isArray())
+                .andExpect(jsonPath("$.files[0].fileType").value("DOCUMENT")) // ⬅️ SỬA LẠI ĐÂY!
+                .andExpect(jsonPath("$.files[0].fileName").value("reply_file.txt"));
     }
 }
