@@ -197,8 +197,8 @@ public class CommentController {
         }
         ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
         ReplyCommentDTO createdReply = commentService.createReplyComment(
-                currentUser.getId(),
                 commentId,
+                currentUser.getId(),
                 content,
                 emotionEnum,
                 files

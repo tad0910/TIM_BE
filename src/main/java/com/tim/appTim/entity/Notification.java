@@ -42,11 +42,11 @@ public class Notification {
     private LocalDateTime readAt;
 
     // Relations
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "receiver_id", referencedColumnName = "id", insertable = false, updatable = false)
     private User receiver;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sender_id", referencedColumnName = "id", insertable = false, updatable = false)
     private User sender;
 

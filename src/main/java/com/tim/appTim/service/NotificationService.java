@@ -24,15 +24,16 @@ import java.util.NoSuchElementException;
 @Transactional
 public class NotificationService {
 
-
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final SseService sseService;
 
-    public NotificationService(NotificationRepository notificationRepository, UserService userService, UserRepository userRepository) {
+    public NotificationService(NotificationRepository notificationRepository, UserService userService, UserRepository userRepository, SseService sseService) {
         this.notificationRepository = notificationRepository;
         this.userService = userService;
         this.userRepository = userRepository;
+        this.sseService = sseService;
     }
 
     // Tạo thông báo mới
@@ -51,7 +52,11 @@ public class NotificationService {
                 targetType, targetId, title, content);
 
         Notification savedNotification = notificationRepository.save(notification);
-        return convertToDTO(savedNotification);
+        NotificationDTO notificationDTO = convertToDTO(savedNotification);
+
+        sseService.sendNotification(receiverId, notificationDTO);
+
+        return notificationDTO;
     }
 
     // Lấy danh sách thông báo của user với phân trang
@@ -179,6 +184,11 @@ public class NotificationService {
         String senderUsername = "Hệ thống";
         String senderAvatar = null;
 
+        if (notification.getSender() == null && notification.getSenderId() != null) {
+            User senderUser = userRepository.findById(notification.getSenderId()).orElse(null);
+            notification.setSender(senderUser);
+        }
+
         if (notification.getSender() != null) {
             senderUsername = notification.getSender().getUsername();
             senderAvatar = notification.getSender().getProfileImage();
@@ -224,16 +234,11 @@ public class NotificationService {
         }
     }
 
-    // Helper methods để lấy postId từ commentId hoặc replyId
     private Long getPostIdFromComment(Long commentId) {
-        // Cần implement logic để lấy postId từ commentId
-        // Có thể inject CommentRepository và query
         return null; // Placeholder
     }
 
     private Long getPostIdFromReply(Long replyId) {
-        // Cần implement logic để lấy postId từ replyId
-        // Có thể inject ReplyCommentRepository và query
         return null; // Placeholder
     }
 
@@ -246,7 +251,6 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NoSuchElementException("Không tìm thấy Notification: " + notificationId));
 
-        // So sánh ID của người nhận trong thông báo với ID của người đang đăng nhập
         return notification.getReceiver().getId().equals(currentUser.getId());
     }
 }

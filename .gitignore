@@ -44,3 +44,5 @@ buildNumber.properties
 *.jar
 *.war
 *.ear
+
+uploads/

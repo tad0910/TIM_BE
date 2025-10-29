@@ -82,7 +82,8 @@ public class ReplyComment {
         return reactions;
     }
     public void setReactions (List<Reaction> reactions) {
-        this.reactions = reactions;}
+        this.reactions = reactions;
+    }
 
     public List<File> getFiles() { return files; }
     public void setFiles(List<File> files) { this.files = files; }
@@ -90,10 +91,21 @@ public class ReplyComment {
     public void addFile(File file) {
         files.add(file);
         file.setReplyComment(this);
+        Comment parentComment = this.getComment();
+        if (parentComment != null) {
+            file.setComment(parentComment);
+
+            // 3. Gán Post cha (Lấy từ Comment)
+            if (parentComment.getPost() != null) {
+                file.setPost(parentComment.getPost());
+            }
+        }
     }
 
     public void removeFile(File file) {
         files.remove(file);
         file.setReplyComment(null);
+        file.setComment(null);
+        file.setPost(null);
     }
 }
