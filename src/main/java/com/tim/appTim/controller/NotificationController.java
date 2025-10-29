@@ -11,6 +11,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.tim.appTim.service.SseService;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,15 +24,28 @@ public class NotificationController {
 
     private NotificationService notificationService;
     private final UserService userService;
+    private final SseService sseService;
 
     @Autowired
-    public NotificationController(NotificationService notificationService, UserService userService) {
+    public NotificationController(NotificationService notificationService, UserService userService, SseService sseService) {
         this.notificationService = notificationService;
         this.userService = userService;
+        this.sseService = sseService;
     }
 
     private User getUserFromAuthentication(Authentication authentication) {
         return userService.findByUsernameOrEmail(authentication.getName());
+    }
+
+    @GetMapping("/subscribe")
+    @PreAuthorize("isAuthenticated()") // Yêu cầu User đã đăng nhập
+    public SseEmitter subscribe(Authentication authentication) {
+        User currentUser = getUserFromAuthentication(authentication);
+        // Lấy ID của người dùng đã xác thực
+        Long userId = currentUser.getId();
+
+        // Gán kết nối Emitter với User ID
+        return sseService.addEmitter(userId);
     }
 
     @GetMapping("/user/{userId}")
