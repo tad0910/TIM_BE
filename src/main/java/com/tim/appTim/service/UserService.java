@@ -1,7 +1,10 @@
 package com.tim.appTim.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set; 
 import java.util.stream.Collectors;
 
@@ -16,7 +19,12 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import com.tim.appTim.dto.CommentDTO;
-import com.tim.appTim.dto.CourseDTO;
+import com.tim.appTim.dto.ProgramsDTO;
+import com.tim.appTim.repository.ProgramsRepository;
+import com.tim.appTim.repository.ProgramModuleRepository;
+import com.tim.appTim.repository.ClassRepository;
+import com.tim.appTim.entity.Programs;
+import com.tim.appTim.entity.ProgramModule;
 import com.tim.appTim.dto.FileDTO;
 import com.tim.appTim.dto.LinkPreviewDTO;
 import com.tim.appTim.dto.PostDTO;
@@ -24,6 +32,7 @@ import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.dto.ReplyCommentDTO;
 import com.tim.appTim.dto.UserImageDTO;
+import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.Role;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
@@ -35,7 +44,6 @@ import com.tim.appTim.exception.UnauthorizedException;
 import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.CommentRepository;
-import com.tim.appTim.repository.CourseRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
@@ -45,7 +53,7 @@ import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.FileRepository;
 
 
-@Service("userService") // <-- THAY ĐỔI 1: Đặt tên cho bean
+@Service("userService") 
 public class UserService implements UserDetailsService {
 
     @Value("${upload.folder}")
@@ -58,7 +66,9 @@ public class UserService implements UserDetailsService {
     private final ReactionRepository reactionRepository;
     private final UserImageRepository userImageRepository;
     private final ClassMemberRepository classMemberRepository;
-    private final CourseRepository courseRepository;
+    private final ProgramsRepository programsRepository;
+    private final ProgramModuleRepository programModuleRepository;
+    private final ClassRepository classRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final FileRepository fileRepository;
     private final RoleRepository roleRepository; 
@@ -67,7 +77,8 @@ public class UserService implements UserDetailsService {
     public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
                        ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
                        UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
-                       CourseRepository courseRepository,@Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository,
+                       ProgramsRepository programsRepository, ProgramModuleRepository programModuleRepository,
+                       ClassRepository classRepository, @Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository,
                        RoleRepository roleRepository 
     ) {
         this.userRepository = userRepository;
@@ -77,7 +88,9 @@ public class UserService implements UserDetailsService {
         this.reactionRepository = reactionRepository;
         this.userImageRepository = userImageRepository;
         this.classMemberRepository = classMemberRepository;
-        this.courseRepository = courseRepository;
+        this.programsRepository = programsRepository;
+        this.programModuleRepository = programModuleRepository;
+        this.classRepository = classRepository;
         this.passwordEncoder = passwordEncoder;
         this.fileRepository = fileRepository;
         this.roleRepository = roleRepository; 
@@ -139,7 +152,6 @@ public class UserService implements UserDetailsService {
             throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + id);
         }
 
-        // Kiểm tra trùng email hoặc username (nếu có thay đổi)
         if (!existingUser.getEmail().equals(user.getEmail())
                 && userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new ConflictException("Email đã tồn tại");
@@ -202,16 +214,16 @@ public class UserService implements UserDetailsService {
         List<PostDTO> posts = postRepository.findByUserId(user.getId()).stream().map(post -> {
             List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
                 List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
-                        .map(reply -> { // Thêm {} để tạo biến tạm
-                            String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null; // Tạo biến String
+                        .map(reply -> { 
+                            String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null; 
                             return new ReplyCommentDTO(
                                     reply.getId(),
                                     reply.getComment().getId(),
                                     reply.getUser().getId(),
                                     reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
                                     reply.getContent(),
-                                    emotionName, // <-- SỬA: Dùng biến String
-                                    // reply.getFileId(), // <-- XÓA DÒNG NÀY
+                                    emotionName, 
+                                    // reply.getFileId(),
                                     reply.getCreatedAt(),
                                     reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
                                     reply.getFiles() != null ? reply.getFiles().stream()
@@ -227,7 +239,7 @@ public class UserService implements UserDetailsService {
                         comment.getContent(),
                         comment.getUser().getProfileImage(),
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                        // comment.getFileId(), // <-- XÓA DÒNG NÀY
+                        // comment.getFileId(), 
                         comment.getCreatedAt(),
                         replyComments,
                         comment.getFiles() != null ? comment.getFiles().stream()
@@ -240,16 +252,13 @@ public class UserService implements UserDetailsService {
                     .stream()
                     .map(reaction -> new ReactionDTO(
                             reaction.getId(),
-                            reaction.getUser().getId(), // <-- SỬA Ở ĐÂY
+                            reaction.getUser().getId(), 
                             reaction.getUser().getUsername(),
                             reaction.getUser().getProfileImage(),
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
                             reaction.getCreatedAt()))
                     .collect(Collectors.toList());
 
-                    // Convert files to FileDTO
-
-            // Convert files to FileDTO
             List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
                     .map(file -> new com.tim.appTim.dto.FileDTO(
                             file.getId(),
@@ -291,15 +300,9 @@ public class UserService implements UserDetailsService {
                 .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
                 .collect(Collectors.toList());
 
-        List<CourseDTO> courses = classMemberRepository.findByClassId(user.getId()).stream()
-                .map(classMember -> courseRepository.findById(classMember.getClassId())
-                        .map(course -> new CourseDTO(course.getId(), course.getCourseName(), course.getDescription(),
-                                course.getStartDate(), course.getTuitionFee()))
-                        .orElse(null))
-                .filter(course -> course != null)
-                .collect(Collectors.toList());
+        List<ProgramsDTO> programs = getUserPrograms(user.getId());
 
-        return new ProfileResponse(user, posts, images, courses);
+        return new ProfileResponse(user, posts, images, programs);
     }
 
 
@@ -310,16 +313,16 @@ public class UserService implements UserDetailsService {
         List<PostDTO> posts = postRepository.findByUserId(userId).stream().map(post -> {
             List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
                 List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
-                        .map(reply -> { // Thêm {} để tạo biến tạm
-                            String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null; // Tạo biến String
+                        .map(reply -> {
+                            String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null; 
                             return new ReplyCommentDTO(
                                     reply.getId(),
                                     reply.getComment().getId(),
                                     reply.getUser().getId(),
                                     reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
                                     reply.getContent(),
-                                    emotionName, // <-- SỬA: Dùng biến String
-                                    // reply.getFileId(), // <-- XÓA DÒNG NÀY
+                                    emotionName, 
+                                    // reply.getFileId(), 
                                     reply.getCreatedAt(),
                                     reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
                                     reply.getFiles() != null ? reply.getFiles().stream()
@@ -335,7 +338,7 @@ public class UserService implements UserDetailsService {
                         comment.getContent(),
                         comment.getUser().getProfileImage(),
                         comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                        // comment.getFileId(), // <-- XÓA DÒNG NÀY
+                        // comment.getFileId(), 
                         comment.getCreatedAt(),
                         replyComments,
                         comment.getFiles() != null ? comment.getFiles().stream()
@@ -348,7 +351,7 @@ public class UserService implements UserDetailsService {
                     .stream()
                     .map(reaction -> new ReactionDTO(
                             reaction.getId(),
-                            reaction.getUser().getId(), // <-- SỬA Ở ĐÂY
+                            reaction.getUser().getId(), 
                             reaction.getUser().getUsername(),
                             reaction.getUser().getProfileImage(),
                             reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
@@ -395,15 +398,9 @@ public class UserService implements UserDetailsService {
                 .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
                 .collect(Collectors.toList());
 
-        List<CourseDTO> courses = classMemberRepository.findByClassId(userId).stream()
-                .map(classMember -> courseRepository.findById(classMember.getClassId())
-                        .map(course -> new CourseDTO(course.getId(), course.getCourseName(), course.getDescription(),
-                                course.getStartDate(), course.getTuitionFee()))
-                        .orElse(null))
-                .filter(course -> course != null)
-                .collect(Collectors.toList());
+        List<ProgramsDTO> programs = getUserPrograms(userId);
 
-        return new ProfileResponse(user, posts, images, courses);
+        return new ProfileResponse(user, posts, images, programs);
     }
 
     public List<UserImageDTO> getUserImages(Long userId) {
@@ -479,7 +476,7 @@ public class UserService implements UserDetailsService {
         }
 
         try {
-            // Nếu có ảnh cũ thì xóa trước
+
             if (user.getProfileImage() != null && !user.getProfileImage().trim().isEmpty()) {
                 deleteOldProfileImage(userId, user.getProfileImage());
             }
@@ -505,7 +502,6 @@ public class UserService implements UserDetailsService {
         }
 
         try {
-            // Nếu có ảnh cũ thì xóa trước
             if (user.getCoverImage() != null && !user.getCoverImage().trim().isEmpty()) {
                 deleteOldCoverImage(userId, user.getCoverImage());
             }
@@ -629,5 +625,49 @@ public class UserService implements UserDetailsService {
         }
         
         return "Người dùng";
+    }
+
+
+    private List<ProgramsDTO> getUserPrograms(Long userId) {
+        List<ClassMember> classMembers = classMemberRepository.findByUserId(userId);
+
+        Set<Long> classIds = classMembers.stream()
+                .map(ClassMember::getClassId)
+                .collect(Collectors.toSet());
+
+        Set<Integer> programIds = new HashSet<>();
+        
+        for (Long classId : classIds) {
+            classRepository.findById(classId).ifPresent(classEntity -> {
+                if (classEntity.getSchedules() != null) {
+                    classEntity.getSchedules().forEach(schedule -> {
+                        if (schedule.getModuleId() != null) {
+                            List<ProgramModule> programModules = programModuleRepository
+                                    .findByModuleId(schedule.getModuleId().intValue());
+                            programModules.forEach(pm -> {
+                                if (pm.getProgram() != null && pm.getProgram().getId() != null) {
+                                    programIds.add(pm.getProgram().getId());
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        return programIds.stream()
+                .map(id -> programsRepository.findById(id))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(this::programToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private ProgramsDTO programToDTO(Programs program) {
+        ProgramsDTO dto = new ProgramsDTO();
+        dto.setId(program.getId());
+        dto.setName(program.getName());
+        dto.setDescription(program.getDescription());
+        return dto;
     }
 }

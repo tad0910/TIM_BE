@@ -74,8 +74,7 @@ public class CommentController {
             @RequestParam String content,
             @RequestParam(required = false) String emotion,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles) throws IOException {
-
-        User currentUser = getUserFromAuthentication(authentication);
+User currentUser = getUserFromAuthentication(authentication);
         List<File> files = new ArrayList<>();
 
         if (multipartFiles != null && !multipartFiles.isEmpty()) {
@@ -145,8 +144,7 @@ public class CommentController {
     public ResponseEntity<String> deleteComment(
             @PathVariable Long commentId,
             Authentication authentication) {
-
-        User currentUser = getUserFromAuthentication(authentication);
+User currentUser = getUserFromAuthentication(authentication);
         commentService.deleteComment(commentId, currentUser, authentication);
         return ResponseEntity.ok("Comment deleted successfully");
     }
@@ -197,8 +195,8 @@ public class CommentController {
         }
         ReplyComment.Emotion emotionEnum = parseEmotion(emotion, ReplyComment.Emotion.class);
         ReplyCommentDTO createdReply = commentService.createReplyComment(
-                currentUser.getId(),
                 commentId,
+                currentUser.getId(),
                 content,
                 emotionEnum,
                 files
@@ -214,7 +212,7 @@ public class CommentController {
 
     @PutMapping("/replies/{replyCommentId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ReplyCommentDTO> updateReplyComment(
+public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
             @RequestParam String content,
             @RequestParam(required = false) String emotion,

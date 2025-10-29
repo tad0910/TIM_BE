@@ -66,7 +66,7 @@ public class CommentService {
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
-        User user = userRepository.findById(userId)
+User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         Comment comment = new Comment();
@@ -136,7 +136,7 @@ public class CommentService {
         comment.setUpdatedAt(LocalDateTime.now()); // Sửa thành updatedAt
 
         Comment updatedComment = commentRepository.save(comment);
-        return convertToDTO(updatedComment);
+return convertToDTO(updatedComment);
     }
 
     @Transactional // Thêm @Transactional nếu chưa có
@@ -201,7 +201,7 @@ public class CommentService {
         } catch (Exception e) { System.err.println("Error creating notification: " + e.getMessage()); }
 
         return convertReplyToDTO(savedReplyComment);
-    }
+}
 
     public List<ReplyCommentDTO> getReplyCommentsByCommentId(Long commentId) {
         return replyCommentRepository.findByCommentId(commentId)
@@ -264,7 +264,7 @@ public class CommentService {
 
        List<FileDTO> fileDTOs = new ArrayList<>();
         if (comment.getFiles() != null && !comment.getFiles().isEmpty()) {
-            fileDTOs = comment.getFiles().stream()
+fileDTOs = comment.getFiles().stream()
                     .map(file -> new FileDTO(
                             file.getId(),
                             file.getFileUrl(),
@@ -325,7 +325,7 @@ public class CommentService {
     public boolean isReplyOwner(Authentication authentication, Long replyCommentId) {
         User currentUser = getUserFromAuthentication(authentication);
         return replyCommentRepository.findById(replyCommentId)
-                .map(reply -> reply.getUser().getId().equals(currentUser.getId()))
+.map(reply -> reply.getUser().getId().equals(currentUser.getId()))
                 .orElse(false); // <-- Sửa: Nếu không tìm thấy, trả về false
     }
 

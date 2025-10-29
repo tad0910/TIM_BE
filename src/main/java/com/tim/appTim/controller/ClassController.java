@@ -33,23 +33,7 @@ public class ClassController {
     @GetMapping("/{classId}")
     @PreAuthorize("hasAuthority('class:read_all') or @classService.isClassMember(authentication, #classId)")
     public ResponseEntity<ClassDTO> getClassInfo(@PathVariable Long classId, Authentication authentication) {
-        Class classInfo = classService.getClassById(classId)
-                .orElseThrow(() -> new RuntimeException("Class not found with id: " + classId));
-
-        List<ClassMember> members = classService.getClassMembersByClassId(classId);
-
-        ClassDTO classDTO = new ClassDTO(
-                classInfo.getClassName(),
-                classInfo.getDescription(),
-                members.stream()
-                        .map(member -> new ClassDTO.MemberDTO(
-                                member.getUserId(),
-                                member.getRole().name(),
-                                member.getJoinDate()
-                        ))
-                        .collect(Collectors.toList())
-        );
-
+        ClassDTO classDTO = classService.getClassDTOById(classId);
         return ResponseEntity.ok(classDTO);
     }
 

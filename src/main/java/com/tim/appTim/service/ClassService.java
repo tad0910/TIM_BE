@@ -3,38 +3,40 @@ package com.tim.appTim.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.tim.appTim.dto.ClassDTO;
+import com.tim.appTim.dto.ProgramsDTO;
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.ClassRepository;
+import com.tim.appTim.service.ProgramsService;
 import com.tim.appTim.service.UserService;
-import com.tim.appTim.entity.ClassMember;
-import org.springframework.security.core.Authentication;
-import com.tim.appTim.dto.ClassDTO;
-import com.tim.appTim.dto.AddMemberDTO;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.BadRequestException;
+import org.springframework.security.core.Authentication;
+import com.tim.appTim.dto.AddMemberDTO;
 
 @Service("classService")
 public class ClassService {
 
     private final UserService userService;
-    private ClassRepository classRepository;
-    private ClassMemberRepository classMemberRepository;
+    private final ClassRepository classRepository;
+    private final ClassMemberRepository classMemberRepository;
+    private final ProgramsService programsService;
 
-    @Autowired
     public ClassService(UserService userService,
                         ClassRepository classRepository,
-                        ClassMemberRepository classMemberRepository) {
+                        ClassMemberRepository classMemberRepository,
+                        ProgramsService programsService) {
         this.userService = userService;
         this.classRepository = classRepository;
         this.classMemberRepository = classMemberRepository;
+        this.programsService = programsService;
     }
 
     public Optional<Class> getClassById(Long id) {
@@ -127,5 +129,40 @@ public class ClassService {
 
     public List<ClassMember> getUserClasses(Long userId) {
         return classMemberRepository.findByUserId(userId);
+    }
+
+    /**
+     * Lấy thông tin chi tiết lớp học bao gồm members và program (với modules)
+     */
+    public ClassDTO getClassDTOById(Long classId) {
+        Class classInfo = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với id = " + classId));
+
+        List<ClassMember> members = classMemberRepository.findByClassId(classId);
+        
+        List<ClassDTO.MemberDTO> memberDTOs = members.stream()
+                .map(member -> new ClassDTO.MemberDTO(
+                        member.getUserId(),
+                        member.getRole().name(),
+                        member.getJoinDate()
+                ))
+                .collect(Collectors.toList());
+
+        // Lấy program nếu có
+        ProgramsDTO programDTO = null;
+        if (classInfo.getProgramId() != null) {
+            try {
+                programDTO = programsService.getProgramById(classInfo.getProgramId());
+            } catch (ResourceNotFoundException e) {
+                // Program không tồn tại, bỏ qua
+            }
+        }
+
+        return new ClassDTO(
+                classInfo.getClassName(),
+                classInfo.getDescription(),
+                memberDTOs,
+                programDTO
+        );
     }
 }

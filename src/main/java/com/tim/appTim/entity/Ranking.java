@@ -34,8 +34,8 @@ public class Ranking {
     private Class classEntity;
 
     @ManyToOne
-    @JoinColumn(name = "courses_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private Course course;
+    @JoinColumn(name = "program_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Programs programs;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -53,6 +53,6 @@ public class Ranking {
     public void setUser(User user) { this.user = user; }
     public Class getClassEntity() { return classEntity; }
     public void setClassEntity(Class classEntity) { this.classEntity = classEntity; }
-    public Course getCourse() { return course; }
-    public void setCourse(Course course) { this.course = course; }
+    public Programs getPrograms() { return programs; }
+    public void setPrograms(Programs programs) { this.programs = programs; }    
 }
