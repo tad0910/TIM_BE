@@ -7,6 +7,7 @@ import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.entity.ProgramModule;
 import com.tim.appTim.entity.Programs;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.repository.ModuleSessionRepository;
 import com.tim.appTim.repository.ProgramModuleRepository;
@@ -48,7 +49,7 @@ public class ProgramsService {
     @Transactional
     public ProgramsDTO createProgram(Programs program) {
         if (program.getName() == null || program.getName().isBlank()) {
-            throw new BadRequestException("Tên chương trình không được để trống");
+            throw new UnprocessableException("Tên chương trình không được để trống");
         }
         Programs savedProgram = programsRepository.save(program);
         return toDTO(savedProgram);
@@ -58,6 +59,10 @@ public class ProgramsService {
     public ProgramsDTO updateProgram(Integer id, Programs updatedProgram) {
         Programs existingProgram = programsRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chương trình với id = " + id));
+
+        if (updatedProgram.getName() != null && updatedProgram.getName().isBlank()) {
+            throw new UnprocessableException("Tên chương trình (name) không được để trống");
+        }
 
         if (updatedProgram.getName() != null && !updatedProgram.getName().isBlank()) {
             existingProgram.setName(updatedProgram.getName());
@@ -83,7 +88,6 @@ public class ProgramsService {
         Programs program = programsRepository.findById(programId)
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chương trình với id = " + programId));
 
-        // Kiểm tra trùng lặp module trong program
         List<ProgramModule> currentList = programModuleRepository.findByProgramId(programId);
         java.util.Set<Integer> currentModuleIds = currentList.stream()
                 .map(pm -> pm.getModule().getId())
@@ -103,7 +107,6 @@ public class ProgramsService {
                 programModuleRepository.save(pm);
             }
         }
-        // Trả về chương trình đã cập nhật
         return toDTO(programsRepository.findById(programId).orElseThrow());
     }
 
@@ -112,9 +115,7 @@ public class ProgramsService {
         dto.setId(program.getId());
         dto.setName(program.getName());
         dto.setDescription(program.getDescription());
-        
-        // Load modules từ program_modules và map sang ModuleDTO
-        // Sử dụng query với JOIN FETCH để tối ưu hiệu suất
+
         List<ModuleDTO> modules = programModuleRepository
                 .findByProgramIdWithModule(program.getId())
                 .stream()
@@ -124,8 +125,7 @@ public class ProgramsService {
                         moduleDTO.setId(pm.getModule().getId());
                         moduleDTO.setName(pm.getModule().getName());
                         moduleDTO.setDescription(pm.getModule().getDescription());
-                        
-                        // Load sessions của module
+
                         List<ModuleSessionDTO> sessions = moduleSessionRepository
                                 .findByModuleIdOrderBySessionNumberAsc(pm.getModule().getId())
                                 .stream()

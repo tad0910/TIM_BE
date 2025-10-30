@@ -18,7 +18,10 @@ import com.tim.appTim.repository.ClassRepository;
 import com.tim.appTim.service.ProgramsService;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.exception.BadRequestException;
+import com.tim.appTim.exception.ConflictException;
+
 import org.springframework.security.core.Authentication;
 import com.tim.appTim.dto.AddMemberDTO;
 
@@ -84,6 +87,9 @@ public class ClassService {
             throw new BadRequestException("Không tìm thấy thông tin người dùng hiện tại");
         }
 
+        if (classDTO.getClassName() == null || classDTO.getClassName().trim().isEmpty()) {
+            throw new UnprocessableException("Tên lớp học (className) là bắt buộc");
+        }
 
         Class newClass = new Class();
         newClass.setClassName(classDTO.getClassName());
@@ -114,6 +120,17 @@ public class ClassService {
         Class existingClass = classRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + id));
 
+        if (classDTO.getClassName() == null || classDTO.getClassName().trim().isEmpty()) {
+            throw new UnprocessableException("Tên lớp học (className) là bắt buộc");
+        }
+
+        boolean nameConflict = classRepository.findAll().stream()
+            .anyMatch(c -> !c.getId().equals(id) && 
+                        c.getClassName().equalsIgnoreCase(classDTO.getClassName()));
+        if (nameConflict) {
+            throw new ConflictException("Tên lớp học '" + classDTO.getClassName() + "' đã tồn tại");
+        }
+        
         if (classDTO.getClassName() != null) {
             existingClass.setClassName(classDTO.getClassName());
         }
@@ -190,19 +207,15 @@ public class ClassService {
         Class existingClass = classRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với id: " + classId));
 
-        // 🔹 Kiểm tra user có tồn tại không
         User user = userService.findById(addMemberDTO.getUserId());
         if (user == null) {
             throw new ResourceNotFoundException("Người dùng không tồn tại với id: " + addMemberDTO.getUserId());
         }
-
-        // 🔹 Kiểm tra xem user đã trong lớp chưa
         boolean exists = classMemberRepository.existsByClassIdAndUserId(classId, addMemberDTO.getUserId());
         if (exists) {
             throw new BadRequestException("Người dùng đã là thành viên của lớp này");
         }
 
-        // 🔹 Tạo mới thành viên
         ClassMember member = new ClassMember();
         member.setClassId(classId);
         member.setUserId(addMemberDTO.getUserId());

@@ -6,11 +6,11 @@ import com.tim.appTim.dto.UpdateModuleSessionRequest;
 import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.BadRequestException;
+import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.repository.ModuleRepository;
 import com.tim.appTim.repository.ModuleSessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import com.tim.appTim.dto.ModuleDTO;
@@ -92,7 +92,7 @@ public class ModuleSessionService {
             boolean exists = moduleSessionRepository.findByModuleId(session.getModuleId()).stream()
                     .anyMatch(s -> !s.getId().equals(sessionId) && s.getSessionNumber().equals(request.getSessionNumber()));
             if (exists) {
-                throw new BadRequestException("Buổi học " + request.getSessionNumber() + " đã tồn tại trong module này");
+                throw new ConflictException("Buổi học " + request.getSessionNumber() + " đã tồn tại trong module này");
             }
             session.setSessionNumber(request.getSessionNumber());
         }
