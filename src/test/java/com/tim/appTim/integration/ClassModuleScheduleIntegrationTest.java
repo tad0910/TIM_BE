@@ -48,7 +48,6 @@ public class ClassModuleScheduleIntegrationTest {
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void createSchedule_WhenValidData_ShouldReturn201Created() throws Exception {
-        // DTO sẽ dùng Module ID 202 (chưa được lập lịch cho Class 10)
         ClassModuleScheduleDTO inputDto = createBaseDto(5L, LocalDate.of(2025, 12, 1));
 
         mockMvc.perform(post(BASE_URL)
@@ -56,7 +55,7 @@ public class ClassModuleScheduleIntegrationTest {
                         .content(objectMapper.writeValueAsString(inputDto)))
                 .andExpect(status().isCreated()) // Mong đợi 201
                 .andExpect(jsonPath("$.classId").value(10L))
-                .andExpect(jsonPath("$.moduleId").value(202L)); // ⬅️ KIỂM TRA MODULE MỚI
+                .andExpect(jsonPath("$.moduleId").value(202L));
     }
 
     @Test

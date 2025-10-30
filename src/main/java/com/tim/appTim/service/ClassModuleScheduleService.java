@@ -177,4 +177,38 @@ public class ClassModuleScheduleService {
         }
         scheduleRepository.deleteById(scheduleId);
     }
+
+    public List<ClassModuleScheduleDTO> getSchedulesByClass(Long classId, LocalDate startDate, LocalDate endDate) {
+        List<ClassModuleSchedule> entities;
+
+        if (startDate != null && endDate != null) {
+            // Lọc theo khoảng ngày (khi FE gửi tham số)
+            entities = scheduleRepository.findByClassIdAndStartDateBetween(classId, startDate, endDate);
+        } else {
+            // Lấy tất cả lịch học của lớp (khi FE không gửi tham số, mặc định)
+            entities = scheduleRepository.findByClassId(classId);
+        }
+
+        return entities.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ClassModuleScheduleDTO> getSchedulesByInstructor(Long instructorId, LocalDate startDate, LocalDate endDate) {
+        if (!userRepository.existsById(instructorId)) {
+            throw new ResourceNotFoundException("Giảng viên không tồn tại với ID: " + instructorId);
+        }
+
+        List<ClassModuleSchedule> entities;
+
+        if (startDate != null && endDate != null) {
+            entities = scheduleRepository.findByInstructorIdAndStartDateBetween(instructorId, startDate, endDate);
+        } else {
+            entities = scheduleRepository.findByInstructorId(instructorId);
+        }
+
+        return entities.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 }
