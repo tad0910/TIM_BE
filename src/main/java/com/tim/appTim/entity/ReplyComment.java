@@ -88,11 +88,6 @@ public class ReplyComment {
     public void addFile(File file) {
         files.add(file);
         file.setReplyComment(this);
-        Comment parentComment = this.getComment();
-        if (parentComment != null) {
-            file.setComment(parentComment);
-
-        }
     }
 
     public void removeFile(File file) {

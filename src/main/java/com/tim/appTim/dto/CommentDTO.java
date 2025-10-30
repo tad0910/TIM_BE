@@ -24,7 +24,6 @@ public class CommentDTO {
         this.emotion = emotion;
         this.createdAt = createdAt;
         this.replyComments = replyComments;
-        this.userAvatar = userAvatar;
         this.files = files;
     }
 

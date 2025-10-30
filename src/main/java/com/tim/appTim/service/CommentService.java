@@ -108,9 +108,11 @@ public class CommentService {
         return convertToDTO(savedComment);
     }
 
+    @Transactional(readOnly = true)
     public List<CommentDTO> getCommentsByPostId(Long postId) {
-        return commentRepository.findByPostId(postId)
-                .stream()
+        List<Comment> comments = commentRepository.findByPostId(postId);
+
+        return comments.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -227,7 +229,7 @@ return convertToDTO(updatedComment);
 
         return convertReplyToDTO(savedReplyComment);
 }
-
+    @Transactional(readOnly = true)
     public List<ReplyCommentDTO> getReplyCommentsByCommentId(Long commentId) {
         return replyCommentRepository.findByCommentId(commentId)
                 .stream()

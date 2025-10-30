@@ -97,7 +97,7 @@ public class Comment {
 
     public void addFile(File file) {
         files.add(file);
-
+        file.setComment(this);
     }
 
     public void removeFile(File file) {
