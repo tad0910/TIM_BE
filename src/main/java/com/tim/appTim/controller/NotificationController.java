@@ -38,13 +38,11 @@ public class NotificationController {
     }
 
     @GetMapping("/subscribe")
-    @PreAuthorize("isAuthenticated()") // Yêu cầu User đã đăng nhập
+    @PreAuthorize("isAuthenticated()")
     public SseEmitter subscribe(Authentication authentication) {
         User currentUser = getUserFromAuthentication(authentication);
-        // Lấy ID của người dùng đã xác thực
         Long userId = currentUser.getId();
 
-        // Gán kết nối Emitter với User ID
         return sseService.addEmitter(userId);
     }
 

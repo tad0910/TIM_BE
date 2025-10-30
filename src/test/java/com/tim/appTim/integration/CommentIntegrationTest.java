@@ -8,27 +8,23 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.test.context.ActiveProfiles; // Import này
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockMultipartFile;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import java.util.Map;
-import java.util.HashMap;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-
 @SpringBootTest
 @AutoConfigureMockMvc
 @Sql("/test-data.sql")
-@ActiveProfiles("test") // Thêm dòng này
+@ActiveProfiles("test")
 public class CommentIntegrationTest {
 
     @Autowired
@@ -42,43 +38,29 @@ public class CommentIntegrationTest {
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void createComment_WhenUserIsAuthenticated_ShouldReturnCorrectStatus() throws Exception { // Đổi tên test nếu cần
-
+    void createComment_WhenUserIsAuthenticated_ShouldReturnCorrectStatus() throws Exception {
         Long postId = 10L;
         String noiDungBinhLuan = "Đây là một bình luận test tuyệt vời!";
 
-        // Test này sẽ gọi URL: /comments/posts/10?content=...
-        mockMvc.perform(post("/comments/posts/" + postId) // <-- Sửa URL
-                                .param("content", noiDungBinhLuan) // <-- Gửi như RequestParam
-                        // .param("emotion", "LIKE") // Thêm nếu cần test emotion
-                        // .param("fileId", "123") // Thêm nếu cần test fileId
-                ) // Không cần contentType hay content() nữa
-                .andExpect(status().isOk()) // <-- Controller hiện đang trả về OK (200), không phải Created (201)
+        mockMvc.perform(post("/comments/posts/" + postId)
+                        .param("content", noiDungBinhLuan))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value(noiDungBinhLuan))
-                .andExpect(jsonPath("$.userId").value(2L)); // ID của "another_user"
-
+                .andExpect(jsonPath("$.userId").value(2L));
     }
 
     @Test
     void createComment_WhenUserIsAnonymous_ShouldReturn401() throws Exception {
-        // --- Chuẩn bị dữ liệu ---
-        // Long userId = 2L; // Không cần userId trong URL nữa
         Long postId = 10L;
         String noiDungBinhLuan = "Bình luận này sẽ thất bại";
 
-        // --- Gọi API và Kiểm tra ---
-        // Lần này chúng ta KHÔNG dùng @WithUserDetails
-        mockMvc.perform(post("/comments/posts/" + postId) // <-- Sửa URL
-                        .param("content", noiDungBinhLuan)) // <-- Gửi như RequestParam thay vì JSON Body
-
-                // --- Kiểm tra dữ liệu trả về ---
-                // Kỳ vọng lỗi 401 Unauthorized (Chưa đăng nhập)
+        mockMvc.perform(post("/comments/posts/" + postId)
+                        .param("content", noiDungBinhLuan))
                 .andExpect(status().isUnauthorized());
     }
 
-
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 là owner của comment 20
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testUpdateComment_WhenUserIsOwner_ShouldReturn200AndUpdatedComment() throws Exception {
         Long commentId = 20L;
         String updatedContent = "Nội dung comment đã được cập nhật.";
@@ -88,22 +70,22 @@ public class CommentIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(commentId))
                 .andExpect(jsonPath("$.content").value(updatedContent))
-                .andExpect(jsonPath("$.userId").value(2L)); // Vẫn là user 2
+                .andExpect(jsonPath("$.userId").value(2L));
     }
 
     @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService") // User 1 không phải owner
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testUpdateComment_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
         Long commentId = 20L;
         String updatedContent = "Cố gắng sửa comment người khác.";
 
         mockMvc.perform(put("/comments/" + commentId)
                         .param("content", updatedContent))
-                .andExpect(status().isForbidden()); // Mong đợi 403
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService") // Admin có quyền update_all
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void testUpdateComment_WhenUserIsAdmin_ShouldReturn200() throws Exception {
         Long commentId = 20L;
         String updatedContent = "Admin cập nhật comment.";
@@ -122,32 +104,29 @@ public class CommentIntegrationTest {
 
         mockMvc.perform(put("/comments/" + nonExistentCommentId)
                         .param("content", updatedContent))
-                .andExpect(status().isNotFound()); // Mong đợi 404
+                .andExpect(status().isNotFound());
     }
 
-    // --- TEST CASES CHO XÓA COMMENT ---
-
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 là owner
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testDeleteComment_WhenUserIsOwner_ShouldReturn200() throws Exception {
         Long commentId = 20L;
 
         mockMvc.perform(delete("/comments/" + commentId))
                 .andExpect(status().isOk());
-        // Có thể thêm kiểm tra xem comment có thực sự bị xóa không bằng cách gọi API GET sau đó
     }
 
     @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService") // User 1 không phải owner
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testDeleteComment_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
         Long commentId = 20L;
 
         mockMvc.perform(delete("/comments/" + commentId))
-                .andExpect(status().isForbidden()); // Mong đợi 403
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService") // Admin có quyền delete_all
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void testDeleteComment_WhenUserIsAdmin_ShouldReturn200() throws Exception {
         Long commentId = 20L;
 
@@ -156,7 +135,7 @@ public class CommentIntegrationTest {
     }
 
     @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService") // User 1 là owner của reply 30
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testUpdateReply_WhenUserIsOwner_ShouldReturn200AndUpdatedReply() throws Exception {
         Long replyId = 30L;
         String updatedContent = "Nội dung reply đã được cập nhật.";
@@ -166,22 +145,22 @@ public class CommentIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(replyId))
                 .andExpect(jsonPath("$.content").value(updatedContent))
-                .andExpect(jsonPath("$.userId").value(1L)); // Vẫn là user 1
+                .andExpect(jsonPath("$.userId").value(1L));
     }
 
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 không phải owner
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testUpdateReply_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
         Long replyId = 30L;
         String updatedContent = "Cố gắng sửa reply người khác.";
 
         mockMvc.perform(put("/comments/replies/" + replyId)
                         .param("content", updatedContent))
-                .andExpect(status().isForbidden()); // Mong đợi 403
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService") // Admin cũng có quyền update_all comment/reply
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void testUpdateReply_WhenUserIsAdmin_ShouldReturn200() throws Exception {
         Long replyId = 30L;
         String updatedContent = "Admin cập nhật reply.";
@@ -192,10 +171,8 @@ public class CommentIntegrationTest {
                 .andExpect(jsonPath("$.content").value(updatedContent));
     }
 
-    // --- TEST CASES CHO XÓA REPLY COMMENT ---
-
     @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService") // User 1 là owner
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testDeleteReply_WhenUserIsOwner_ShouldReturn200() throws Exception {
         Long replyId = 30L;
 
@@ -204,16 +181,16 @@ public class CommentIntegrationTest {
     }
 
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 không phải owner
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testDeleteReply_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
         Long replyId = 30L;
 
         mockMvc.perform(delete("/comments/replies/" + replyId))
-                .andExpect(status().isForbidden()); // Mong đợi 403
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService") // Admin có quyền delete_all
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void testDeleteReply_WhenUserIsAdmin_ShouldReturn200() throws Exception {
         Long replyId = 30L;
 
@@ -222,12 +199,11 @@ public class CommentIntegrationTest {
     }
 
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService") // User 2 là owner của comment 20
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testUpdateComment_ReplaceFiles_ShouldReturn200AndNewFiles() throws Exception {
-        Long commentId = 20L; // Giả sử comment 20 đã có files cũ
+        Long commentId = 20L;
         String updatedContent = "Nội dung đã được cập nhật và thay ảnh.";
 
-        // 1. Tạo File Giả Lập MỚI
         MockMultipartFile newMockFile = new MockMultipartFile(
                 "files",
                 "new_image.png",
@@ -235,19 +211,15 @@ public class CommentIntegrationTest {
                 "nội dung file ảnh mới".getBytes()
         );
 
-        // 2. Sử dụng multipart() với phương thức HTTP.PUT
         mockMvc.perform(multipart(HttpMethod.PUT, "/comments/" + commentId)
-                        .file(newMockFile) // Gửi files mới
-                        .param("content", updatedContent)
-                )
+                        .file(newMockFile)
+                        .param("content", updatedContent))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(commentId))
                 .andExpect(jsonPath("$.content").value(updatedContent))
-                // 3. Kiểm tra file mới đã thay thế
                 .andExpect(jsonPath("$.files").isArray())
                 .andExpect(jsonPath("$.files[0].fileType").value("IMAGE"))
                 .andExpect(jsonPath("$.files[0].fileName").value("new_image.png"));
-        // Giả định logic của bạn là thay thế (xóa files cũ, thêm files mới)
     }
 
     @Test
@@ -256,25 +228,21 @@ public class CommentIntegrationTest {
         Long replyId = 30L;
         String updatedContent = "Reply đã được cập nhật và thay ảnh.";
 
-        // 1. Tạo File Giả Lập MỚI (File Type: TEXT/PLAIN)
         MockMultipartFile newMockFile = new MockMultipartFile(
                 "files",
                 "reply_file.txt",
-                MediaType.TEXT_PLAIN_VALUE, // ContentType này dẫn đến DOCUMENT
+                MediaType.TEXT_PLAIN_VALUE,
                 "nội dung file text mới".getBytes()
         );
 
-        // 2. Gọi API
         mockMvc.perform(multipart(HttpMethod.PUT, "/comments/replies/" + replyId)
                         .file(newMockFile)
                         .param("content", updatedContent))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(replyId))
                 .andExpect(jsonPath("$.content").value(updatedContent))
-
-                // 3. SỬA ĐỔI ASSERTION TỪ 'OTHER' SANG 'DOCUMENT'
                 .andExpect(jsonPath("$.files").isArray())
-                .andExpect(jsonPath("$.files[0].fileType").value("DOCUMENT")) // ⬅️ SỬA LẠI ĐÂY!
+                .andExpect(jsonPath("$.files[0].fileType").value("DOCUMENT"))
                 .andExpect(jsonPath("$.files[0].fileName").value("reply_file.txt"));
     }
 }

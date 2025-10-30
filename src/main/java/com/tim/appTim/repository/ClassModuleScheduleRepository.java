@@ -13,6 +13,13 @@ import java.util.Optional;
 @Repository
 public interface ClassModuleScheduleRepository extends JpaRepository<ClassModuleSchedule, Long> {
 
+    List<ClassModuleSchedule> findByClassIdAndStartDateBetween(
+            Long classId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
+
+
     @Query("SELECT s FROM ClassModuleSchedule s " +
             "WHERE s.instructorId = :instructorId " +
             "AND s.id != :scheduleId " + //

@@ -113,7 +113,7 @@ public class CommentController {
     public ResponseEntity<CommentDTO> createComment(
             @PathVariable Long postId,
             Authentication authentication,
-            @RequestParam String content,
+            @RequestParam(required = false) String content,
             @RequestParam(required = false) String emotion,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles) throws IOException {
 User currentUser = getUserFromAuthentication(authentication);
@@ -172,7 +172,7 @@ User currentUser = getUserFromAuthentication(authentication);
     public ResponseEntity<CommentDTO> updateComment(
             @PathVariable Long commentId,
             Authentication authentication,
-            @RequestParam String content,
+            @RequestParam(required = false) String content,
             @RequestParam(required = false) String emotion,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
@@ -199,7 +199,7 @@ User currentUser = getUserFromAuthentication(authentication);
     public ResponseEntity<ReplyCommentDTO> createReplyComment(
             @PathVariable Long commentId,
             Authentication authentication,
-            @RequestParam String content,
+            @RequestParam(required = false) String content,
             @RequestParam(required = false) String emotion,
             @RequestParam(value = "files", required = false)  List<MultipartFile> multipartFiles) throws IOException {
 
@@ -259,7 +259,7 @@ User currentUser = getUserFromAuthentication(authentication);
     @PreAuthorize("isAuthenticated()")
 public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
-            @RequestParam String content,
+            @RequestParam(required = false) String content,
             @RequestParam(required = false) String emotion,
             Authentication authentication,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {

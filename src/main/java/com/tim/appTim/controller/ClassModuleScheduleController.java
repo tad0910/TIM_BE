@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -47,15 +48,23 @@ public class ClassModuleScheduleController {
 
     @GetMapping("/class/{classId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<ClassModuleScheduleDTO>> getSchedulesByClass(@PathVariable Long classId) {
-        List<ClassModuleScheduleDTO> schedules = scheduleService.getSchedulesByClass(classId);
+    public ResponseEntity<List<ClassModuleScheduleDTO>> getSchedulesByClass(
+            @PathVariable Long classId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+
+        List<ClassModuleScheduleDTO> schedules = scheduleService.getSchedulesByClass(classId, startDate, endDate);
         return ResponseEntity.ok(schedules);
     }
 
     @GetMapping("/instructor/{instructorId}")
     @PreAuthorize("hasAuthority('schedule:read_all') or @userService.isSelf(authentication, #instructorId)")
-    public ResponseEntity<List<ClassModuleScheduleDTO>> getSchedulesByInstructor(@PathVariable Long instructorId) {
-        List<ClassModuleScheduleDTO> schedules = scheduleService.getSchedulesByInstructor(instructorId);
+    public ResponseEntity<List<ClassModuleScheduleDTO>> getSchedulesByInstructor(
+            @PathVariable Long instructorId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+
+        List<ClassModuleScheduleDTO> schedules = scheduleService.getSchedulesByInstructor(instructorId, startDate, endDate);
         return ResponseEntity.ok(schedules);
     }
 
@@ -65,4 +74,6 @@ public class ClassModuleScheduleController {
         scheduleService.deleteSchedule(scheduleId);
         return ResponseEntity.ok().build();
     }
+
+
 }
