@@ -7,20 +7,17 @@ public class ClassDTO {
     private String className;
     private String description;
     private List<MemberDTO> members;
-    private ProgramsDTO program;
+    private Integer programId;
+    
 
-    public ClassDTO(String className, String description, List<MemberDTO> members) {
+    public ClassDTO(String className, String description, List<MemberDTO> members, Integer programId) {
         this.className = className;
         this.description = description;
         this.members = members;
+        this.programId = programId;
     }
 
-    public ClassDTO(String className, String description, List<MemberDTO> members, ProgramsDTO program) {
-        this.className = className;
-        this.description = description;
-        this.members = members;
-        this.program = program;
-    }
+    
 
     public String getClassName() { return className; }
     public void setClassName(String className) { this.className = className; }
@@ -31,8 +28,8 @@ public class ClassDTO {
     public List<MemberDTO> getMembers() { return members; }
     public void setMembers(List<MemberDTO> members) { this.members = members; }
     
-    public ProgramsDTO getProgram() { return program; }
-    public void setProgram(ProgramsDTO program) { this.program = program; }
+    public Integer getProgramId() {return programId;}
+    public void setProgramId(Integer programId) {this.programId = programId;}
 
     public static class MemberDTO {
         private Long userId;

@@ -76,28 +76,129 @@ public class ClassService {
         ClassMember member = memberOpt.get();
         return member.getRole() == ClassMember.Role.giao_vien;
     }
+
     public ClassDTO createClass(ClassDTO classDTO, Authentication authentication) {
-        throw new UnsupportedOperationException("Chưa implement logic createClass");
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) {
+            throw new BadRequestException("Không tìm thấy thông tin người dùng hiện tại");
+        }
+
+        if (classDTO.getProgramId() == null) {
+            throw new BadRequestException("ProgramId không được để trống");
+        }
+
+        Class newClass = new Class();
+        newClass.setClassName(classDTO.getClassName());
+        newClass.setDescription(classDTO.getDescription());
+        newClass.setProgramId(classDTO.getProgramId());
+
+        Class savedClass = classRepository.save(newClass);
+
+        ClassMember teacher = new ClassMember();
+        teacher.setClassId(savedClass.getId());
+        teacher.setUserId(currentUser.getId());
+        teacher.setRole(ClassMember.Role.giao_vien);
+        teacher.setJoinDate(LocalDateTime.now());
+        classMemberRepository.save(teacher);
+
+        ClassDTO.MemberDTO memberDTO = new ClassDTO.MemberDTO(
+                teacher.getUserId(),
+                teacher.getRole().name(),
+                teacher.getJoinDate()
+        );
+
+        return new ClassDTO(
+                savedClass.getClassName(),
+                savedClass.getDescription(),
+                List.of(memberDTO),
+                classDTO.getProgramId()
+        );
     }
+
 
     public ClassDTO updateClass(Long id, ClassDTO classDTO) {
-        throw new UnsupportedOperationException("Chưa implement logic updateClass");
+        Class existingClass = classRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + id));
+
+        if (classDTO.getClassName() != null) {
+            existingClass.setClassName(classDTO.getClassName());
+        }
+        if (classDTO.getDescription() != null) {
+            existingClass.setDescription(classDTO.getDescription());
+        }
+        if (classDTO.getProgramId() != null) {
+            existingClass.setProgramId(classDTO.getProgramId());
+        }
+
+        Class saved = classRepository.save(existingClass);
+
+        List<ClassMember> members = classMemberRepository.findByClassId(saved.getId());
+        List<ClassDTO.MemberDTO> memberDTOs = members.stream()
+                .map(m -> new ClassDTO.MemberDTO(
+                        m.getUserId(),
+                        m.getRole().name(),
+                        m.getJoinDate()
+                ))
+                .toList();
+
+        return new ClassDTO(
+                saved.getClassName(),
+                saved.getDescription(),
+                memberDTOs,
+                saved.getProgramId()
+        );
     }
+
 
     public void deleteClass(Long id) {
-        throw new UnsupportedOperationException("Chưa implement logic deleteClass");
+
+        Class existingClass = classRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + id));
+            
+        classMemberRepository.deleteById(id);
+        classRepository.delete(existingClass);
     }
+
 
     public ClassMember addMember(Long classId, AddMemberDTO addMemberDTO) {
-        throw new UnsupportedOperationException("Chưa implement logic addMember");
+        Class existingClass = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với id: " + classId));
+
+        // 🔹 Kiểm tra user có tồn tại không
+        User user = userService.findById(addMemberDTO.getUserId());
+        if (user == null) {
+            throw new ResourceNotFoundException("Người dùng không tồn tại với id: " + addMemberDTO.getUserId());
+        }
+
+        // 🔹 Kiểm tra xem user đã trong lớp chưa
+        boolean exists = classMemberRepository.existsByClassIdAndUserId(classId, addMemberDTO.getUserId());
+        if (exists) {
+            throw new BadRequestException("Người dùng đã là thành viên của lớp này");
+        }
+
+        // 🔹 Tạo mới thành viên
+        ClassMember member = new ClassMember();
+        member.setClassId(classId);
+        member.setUserId(addMemberDTO.getUserId());
+        member.setRole(ClassMember.Role.valueOf(addMemberDTO.getRole()));
+        member.setJoinDate(LocalDateTime.now());
+
+        return classMemberRepository.save(member);
     }
+
 
     public void removeMember(Long classId, Long userIdToRemove) {
-        throw new UnsupportedOperationException("Chưa implement logic removeMember");
-    }
+        classRepository.findById(classId)
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp với id: " + classId));
+
+    ClassMember member = classMemberRepository.findByClassIdAndUserId(classId, userIdToRemove)
+            .orElseThrow(() -> new ResourceNotFoundException("Người dùng không thuộc lớp này"));
+
+    classMemberRepository.delete(member);
+}
+
 
     public ClassMember addMemberToClass(Long classId, Long userId, ClassMember.Role role) {
-        // Kiểm tra xem user đã tham gia class chưa
         Optional<ClassMember> existingMember = classMemberRepository.findByClassIdAndUserId(classId, userId);
         if (existingMember.isPresent()) {
             throw new BadRequestException("User đã tham gia lớp học này rồi");
@@ -131,9 +232,6 @@ public class ClassService {
         return classMemberRepository.findByUserId(userId);
     }
 
-    /**
-     * Lấy thông tin chi tiết lớp học bao gồm members và program (với modules)
-     */
     public ClassDTO getClassDTOById(Long classId) {
         Class classInfo = classRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với id = " + classId));
@@ -148,13 +246,11 @@ public class ClassService {
                 ))
                 .collect(Collectors.toList());
 
-        // Lấy program nếu có
         ProgramsDTO programDTO = null;
         if (classInfo.getProgramId() != null) {
             try {
                 programDTO = programsService.getProgramById(classInfo.getProgramId());
             } catch (ResourceNotFoundException e) {
-                // Program không tồn tại, bỏ qua
             }
         }
 
@@ -162,7 +258,7 @@ public class ClassService {
                 classInfo.getClassName(),
                 classInfo.getDescription(),
                 memberDTOs,
-                programDTO
+                classInfo.getProgramId()
         );
     }
 }

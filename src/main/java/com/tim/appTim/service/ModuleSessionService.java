@@ -27,7 +27,6 @@ public class ModuleSessionService {
 
     @Transactional(readOnly = true)
     public List<ModuleSessionDTO> getSessionsByModule(Integer moduleId) {
-        // Kiểm tra module có tồn tại không
         if (!moduleRepository.existsById(moduleId)) {
             throw new ResourceNotFoundException("Không tìm thấy module với id = " + moduleId);
         }
@@ -47,21 +46,18 @@ public class ModuleSessionService {
 
     @Transactional
     public ModuleSessionDTO createSession(Integer moduleId, CreateModuleSessionRequest request) {
-        // Kiểm tra module có tồn tại không
         if (!moduleRepository.existsById(moduleId)) {
             throw new ResourceNotFoundException("Không tìm thấy module với id = " + moduleId);
         }
 
-        // Validation
         if (request.getSessionNumber() == null) {
-            throw new BadRequestException("Số buổi học không được để trống");
+            throw new BadRequestException("Thứ tự buổi học không được để trống");
         }
 
-        // Kiểm tra session number đã tồn tại trong module chưa
         boolean exists = moduleSessionRepository.findByModuleId(moduleId).stream()
                 .anyMatch(s -> s.getSessionNumber().equals(request.getSessionNumber()));
         if (exists) {
-            throw new BadRequestException("Số buổi học " + request.getSessionNumber() + " đã tồn tại trong module này");
+            throw new BadRequestException("Buổi học " + request.getSessionNumber() + " đã tồn tại trong module này");
         }
 
         ModuleSession session = new ModuleSession();
@@ -71,8 +67,7 @@ public class ModuleSessionService {
         session.setContent(request.getContent());
         session.setScheduledAt(request.getScheduledAt());
         session.setEndDate(request.getEndDate());
-        
-        // Set status, mặc định là 'planned' nếu không có
+
         if (request.getStatus() != null && !request.getStatus().isEmpty()) {
             try {
                 session.setStatus(ModuleSession.SessionStatus.valueOf(request.getStatus()));
@@ -92,13 +87,11 @@ public class ModuleSessionService {
         ModuleSession session = moduleSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy buổi học với id = " + sessionId));
 
-        // Cập nhật các trường
         if (request.getSessionNumber() != null) {
-            // Kiểm tra session number mới có trùng không
             boolean exists = moduleSessionRepository.findByModuleId(session.getModuleId()).stream()
                     .anyMatch(s -> !s.getId().equals(sessionId) && s.getSessionNumber().equals(request.getSessionNumber()));
             if (exists) {
-                throw new BadRequestException("Số buổi học " + request.getSessionNumber() + " đã tồn tại trong module này");
+                throw new BadRequestException("Buổi học " + request.getSessionNumber() + " đã tồn tại trong module này");
             }
             session.setSessionNumber(request.getSessionNumber());
         }

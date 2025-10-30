@@ -182,10 +182,8 @@ public class ClassModuleScheduleService {
         List<ClassModuleSchedule> entities;
 
         if (startDate != null && endDate != null) {
-            // Lọc theo khoảng ngày (khi FE gửi tham số)
             entities = scheduleRepository.findByClassIdAndStartDateBetween(classId, startDate, endDate);
         } else {
-            // Lấy tất cả lịch học của lớp (khi FE không gửi tham số, mặc định)
             entities = scheduleRepository.findByClassId(classId);
         }
 

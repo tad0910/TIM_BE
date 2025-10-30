@@ -13,4 +13,5 @@ public interface ClassMemberRepository extends JpaRepository<ClassMember, Long> 
     Optional<ClassMember> findByUserIdAndClassId(Long userId, Long classId);
     List<ClassMember> findByUserId(Long userId);
     Optional<ClassMember> findByClassIdAndUserId(Long classId, Long userId);
+    boolean existsByClassIdAndUserId(Long classId, Long userId);
 }
