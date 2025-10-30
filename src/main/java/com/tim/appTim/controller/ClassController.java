@@ -58,6 +58,13 @@ public class ClassController {
         return ResponseEntity.ok(updatedClass);
     }
 
+    @PutMapping("/{classId}/program")
+    @PreAuthorize("hasAuthority('class:update_all') or @classService.isClassTeacher(authentication, #classId)")
+    public ResponseEntity<ClassDTO> updateClassProgram(@PathVariable Long classId, @RequestBody Integer programId) {
+        ClassDTO updated = classService.updateClassProgram(classId, programId);
+        return ResponseEntity.ok(updated);
+    }
+
     @DeleteMapping("/{classId}")
     @PreAuthorize("hasAuthority('class:delete_all') or @classService.isClassTeacher(authentication, #classId)")
     public ResponseEntity<Void> deleteClass(

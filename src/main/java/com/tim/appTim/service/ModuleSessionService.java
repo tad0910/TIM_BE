@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import com.tim.appTim.dto.ModuleDTO;
 
 @Service
 public class ModuleSessionService {
@@ -126,6 +127,31 @@ public class ModuleSessionService {
             throw new ResourceNotFoundException("Không tìm thấy buổi học với id = " + sessionId);
         }
         moduleSessionRepository.deleteById(sessionId);
+    }
+
+    @Transactional
+    public ModuleDTO addSessionsToModule(Integer moduleId, List<Long> sessionIds) {
+        com.tim.appTim.entity.Module module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy module với id = " + moduleId));
+        List<ModuleSession> sessionsToAdd = moduleSessionRepository.findAllById(sessionIds);
+        if (module.getModuleSessions() == null) {
+            module.setModuleSessions(new java.util.ArrayList<>());
+        }
+        java.util.Set<Long> existingIds = module.getModuleSessions().stream().map(ModuleSession::getId).collect(java.util.stream.Collectors.toSet());
+        for (ModuleSession s : sessionsToAdd) {
+            if (!existingIds.contains(s.getId())) {
+                s.setModuleId(moduleId);
+                module.getModuleSessions().add(s);
+                moduleSessionRepository.save(s);
+            }
+        }
+        // Tạo ModuleDTO trả về
+        ModuleDTO dto = new ModuleDTO();
+        dto.setId(module.getId());
+        dto.setName(module.getName());
+        dto.setDescription(module.getDescription());
+        dto.setSessions(module.getModuleSessions().stream().map(this::toDTO).collect(java.util.stream.Collectors.toList()));
+        return dto;
     }
 
     private ModuleSessionDTO toDTO(ModuleSession session) {

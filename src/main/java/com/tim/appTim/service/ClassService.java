@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tim.appTim.dto.ClassDTO;
 import com.tim.appTim.dto.ProgramsDTO;
@@ -83,9 +84,6 @@ public class ClassService {
             throw new BadRequestException("Không tìm thấy thông tin người dùng hiện tại");
         }
 
-        if (classDTO.getProgramId() == null) {
-            throw new BadRequestException("ProgramId không được để trống");
-        }
 
         Class newClass = new Class();
         newClass.setClassName(classDTO.getClassName());
@@ -94,24 +92,20 @@ public class ClassService {
 
         Class savedClass = classRepository.save(newClass);
 
-        ClassMember teacher = new ClassMember();
-        teacher.setClassId(savedClass.getId());
-        teacher.setUserId(currentUser.getId());
-        teacher.setRole(ClassMember.Role.giao_vien);
-        teacher.setJoinDate(LocalDateTime.now());
-        classMemberRepository.save(teacher);
-
-        ClassDTO.MemberDTO memberDTO = new ClassDTO.MemberDTO(
-                teacher.getUserId(),
-                teacher.getRole().name(),
-                teacher.getJoinDate()
-        );
+        ProgramsDTO programDTO = null;
+        if (savedClass.getProgramId() != null) {
+            try {
+                programDTO = programsService.getProgramById(savedClass.getProgramId());
+            } catch (ResourceNotFoundException e) {
+            }
+        }
 
         return new ClassDTO(
                 savedClass.getClassName(),
                 savedClass.getDescription(),
-                List.of(memberDTO),
-                classDTO.getProgramId()
+                List.of(), 
+                classDTO.getProgramId(),
+                programDTO
         );
     }
 
@@ -141,11 +135,43 @@ public class ClassService {
                 ))
                 .toList();
 
+        
+
         return new ClassDTO(
                 saved.getClassName(),
                 saved.getDescription(),
                 memberDTOs,
-                saved.getProgramId()
+                saved.getProgramId(),
+                null
+        );
+    }
+
+    @Transactional
+    public ClassDTO updateClassProgram(Long classId, Integer programId) {
+        Class existingClass = classRepository.findById(classId)
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + classId));
+        existingClass.setProgramId(programId);
+        Class saved = classRepository.save(existingClass);
+        ProgramsDTO programDTO = null;
+        if (programId != null) {
+            try {
+                programDTO = programsService.getProgramById(programId);
+            } catch (ResourceNotFoundException ignored) {}
+        }
+        List<ClassMember> members = classMemberRepository.findByClassId(classId);
+        List<ClassDTO.MemberDTO> memberDTOs = members.stream()
+                .map(m -> new ClassDTO.MemberDTO(
+                        m.getUserId(),
+                        m.getRole().name(),
+                        m.getJoinDate()
+                ))
+                .toList();
+        return new ClassDTO(
+                saved.getClassName(),
+                saved.getDescription(),
+                memberDTOs,
+                programId,
+                programDTO
         );
     }
 
@@ -248,9 +274,9 @@ public class ClassService {
 
         ProgramsDTO programDTO = null;
         if (classInfo.getProgramId() != null) {
-            try {
-                programDTO = programsService.getProgramById(classInfo.getProgramId());
-            } catch (ResourceNotFoundException e) {
+                try {
+                    programDTO = programsService.getProgramById(classInfo.getProgramId());
+                } catch (ResourceNotFoundException e) {
             }
         }
 
@@ -258,7 +284,8 @@ public class ClassService {
                 classInfo.getClassName(),
                 classInfo.getDescription(),
                 memberDTOs,
-                classInfo.getProgramId()
+                classInfo.getProgramId(),
+                programDTO
         );
     }
 }

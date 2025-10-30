@@ -78,6 +78,35 @@ public class ProgramsService {
         programsRepository.deleteById(id);
     }
 
+    @Transactional
+    public ProgramsDTO addModulesToProgram(Integer programId, List<Integer> moduleIds) {
+        Programs program = programsRepository.findById(programId)
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chương trình với id = " + programId));
+
+        // Kiểm tra trùng lặp module trong program
+        List<ProgramModule> currentList = programModuleRepository.findByProgramId(programId);
+        java.util.Set<Integer> currentModuleIds = currentList.stream()
+                .map(pm -> pm.getModule().getId())
+                .collect(java.util.stream.Collectors.toSet());
+        int maxPosition = currentList.stream().mapToInt(pm -> pm.getPosition() != null ? pm.getPosition() : 0).max().orElse(0);
+        int added = 0;
+        for (Integer moduleId : moduleIds) {
+            if (!currentModuleIds.contains(moduleId)) {
+                ProgramModule pm = new ProgramModule();
+                ProgramModule.ProgramModuleId pmId = new ProgramModule.ProgramModuleId(programId, moduleId);
+                pm.setId(pmId);
+                pm.setProgram(program);
+                com.tim.appTim.entity.Module module = new com.tim.appTim.entity.Module();
+                module.setId(moduleId);
+                pm.setModule(module);
+                pm.setPosition(maxPosition + (++added));
+                programModuleRepository.save(pm);
+            }
+        }
+        // Trả về chương trình đã cập nhật
+        return toDTO(programsRepository.findById(programId).orElseThrow());
+    }
+
     private ProgramsDTO toDTO(Programs program) {
         ProgramsDTO dto = new ProgramsDTO();
         dto.setId(program.getId());

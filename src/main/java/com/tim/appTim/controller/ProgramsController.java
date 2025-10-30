@@ -41,6 +41,13 @@ public class ProgramsController {
         return ResponseEntity.ok(programsService.updateProgram(id, program));
     }
 
+    @PutMapping("/{programId}/modules")
+    @PreAuthorize("hasAuthority('program:update')")
+    public ResponseEntity<ProgramsDTO> addModulesToProgram(@PathVariable Integer programId, @RequestBody List<Integer> moduleIds) {
+        ProgramsDTO updated = programsService.addModulesToProgram(programId, moduleIds);
+        return ResponseEntity.ok(updated);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('program:delete')")
     public ResponseEntity<Void> deleteProgram(@PathVariable Integer id) {

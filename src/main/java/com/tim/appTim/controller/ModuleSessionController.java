@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.tim.appTim.dto.ModuleDTO;
 
 @RestController
 @RequestMapping("/modules")
@@ -50,6 +51,13 @@ public class ModuleSessionController {
             @RequestBody UpdateModuleSessionRequest request) {
         ModuleSessionDTO session = moduleSessionService.updateSession(sessionId, request);
         return ResponseEntity.ok(session);
+    }
+
+    @PutMapping("/{moduleId}/sessions")
+    @PreAuthorize("hasAuthority('module:update')")
+    public ResponseEntity<ModuleDTO> addSessionsToModule(@PathVariable Integer moduleId, @RequestBody List<Long> sessionIds) {
+        ModuleDTO updated = moduleSessionService.addSessionsToModule(moduleId, sessionIds);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/sessions/{sessionId}")
