@@ -29,7 +29,7 @@ DELETE FROM permissions;
 -- === 2. TẠO DỮ LIỆU NỀN TẢNG (Users, Roles, Permissions) ===
 
 -- Tạo Roles
-INSERT INTO roles (id, name) VALUES (1, 'ROLE_USER'), (2, 'ROLE_ADMIN');
+INSERT INTO roles (id, name) VALUES (1, 'ROLE_USER'), (2, 'ROLE_ADMIN'),(3, 'ROLE_GIAO_VIEN');
 
 -- Tạo Permissions
 INSERT INTO permissions (id, name) VALUES
@@ -50,6 +50,7 @@ INSERT INTO users (id, username, password, email) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com'),
 (2, 'another_user', '{noop}password', 'another@example.com'),
 (3, 'admin_user', '{noop}password', 'admin@example.com'),
+
 -- Giảng viên cần thiết cho Lịch học
 (5, 'giaovien1', '{noop}password', 'gv1@example.com'),
 (6, 'giaovien2', '{noop}password', 'gv2@example.com'),

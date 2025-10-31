@@ -5,6 +5,11 @@ public class AddMemberDTO {
     private Long userId;
     private String role;
 
+    public AddMemberDTO(Long userId, String role) {
+        this.userId = userId;
+        this.role = role;
+    }
+    
     public Long getUserId() {
         return userId;
     }
