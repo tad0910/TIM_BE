@@ -30,6 +30,13 @@ public class ClassController {
         this.userService = userService;
     }
 
+    @GetMapping
+    @PreAuthorize("hasAuthority('class:read_all')")
+    public ResponseEntity<List<ClassDTO>> getAllClasses() {
+        List<ClassDTO> classes = classService.getAllClasses();
+        return ResponseEntity.ok(classes);
+    }
+    
     @GetMapping("/{classId}")
     @PreAuthorize("hasAuthority('class:read_all') or @classService.isClassMember(authentication, #classId)")
     public ResponseEntity<ClassDTO> getClassInfo(@PathVariable Long classId, Authentication authentication) {

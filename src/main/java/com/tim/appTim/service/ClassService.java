@@ -43,6 +43,36 @@ public class ClassService {
         this.programsService = programsService;
     }
 
+    public List<ClassDTO> getAllClasses() {
+        List<Class> classList = classRepository.findAll();
+        return classList.stream()
+                .map(c -> {
+                    List<ClassMember> members = classMemberRepository.findByClassId(c.getId());
+                    List<ClassDTO.MemberDTO> memberDTOs = members.stream()
+                            .map(m -> new ClassDTO.MemberDTO(
+                                    m.getUserId(),
+                                    m.getRole().name(),
+                                    m.getJoinDate()
+                            ))
+                            .collect(Collectors.toList());
+                    ProgramsDTO programDTO = null;
+                    if (c.getProgramId() != null) {
+                        try {
+                            programDTO = programsService.getProgramById(c.getProgramId());
+                        } catch (ResourceNotFoundException e) {
+                        }
+                    }
+                    return new ClassDTO(
+                            c.getClassName(),
+                            c.getDescription(),
+                            memberDTOs,
+                            c.getProgramId(),
+                            programDTO
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
     public Optional<Class> getClassById(Long id) {
         return classRepository.findById(id);
     }
@@ -301,4 +331,5 @@ public class ClassService {
                 programDTO
         );
     }
+
 }
