@@ -7,6 +7,7 @@ DELETE FROM user_roles;
 DELETE FROM class_module_schedules;
 DELETE FROM module_sessions;
 DELETE FROM program_modules;
+DELETE FROM class_members;
 DELETE FROM classes;
 DELETE FROM modules;
 DELETE FROM programs;
@@ -43,7 +44,11 @@ INSERT INTO permissions (id, name) VALUES
 (7, 'schedule:create'),
 (8, 'schedule:update'),
 (9, 'schedule:delete'),
-(10, 'schedule:read_all');
+(10, 'schedule:read_all'),
+(11, 'program:create'),
+(12, 'class:create'),
+(13, 'class:read_all'),
+(14, 'class:delete_all');
 
 -- Tạo Users
 INSERT INTO users (id, username, password, email) VALUES
@@ -65,10 +70,12 @@ INSERT INTO user_roles (user_id, role_id) VALUES
 
 -- Gán Permissions cho Roles
 INSERT INTO role_permissions (role_id, permission_id) VALUES
+(2, 11),
+(2, 12),
 (1, 1), (1, 4), -- ROLE_USER (post:create, comment:create)
 (2, 2), (2, 3), (2, 5), (2, 6), -- ADMIN (quản lý Comment/Post)
 -- ADMIN có quyền quản lý lịch học
-(2, 7), (2, 8), (2, 9), (2, 10);
+(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14);
 
 
 -- === 3. TẠO DỮ LIỆU NGHIỆP VỤ (Lịch học và Mạng xã hội) ===
@@ -90,6 +97,14 @@ INSERT INTO modules (id, name, description) VALUES
 INSERT INTO classes (id, name, description, program_id) VALUES
 (10, 'BE Class K10', 'Lớp học Test A', 100),
 (11, 'FE Class K11', 'Lớp học Test B', 100);
+
+INSERT INTO class_members (lop_id, nguoi_dung_id, vai_tro, ngay_tham_gia) VALUES
+-- Gán User 1 ('post_owner') vào Class ID 10
+(10, 1, 'sinh_vien', NOW()),
+-- Gán User 5 ('giaovien1') làm giáo viên cho Class ID 10
+(10, 5, 'giao_vien', NOW()),
+
+(10, 2, 'sinh_vien', NOW());
 
 -- Gán Module vào Program (Cần thiết cho Logic nghiệp vụ sau này)
 INSERT INTO program_modules (program_id, module_id, position)
