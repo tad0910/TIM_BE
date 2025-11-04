@@ -1,7 +1,4 @@
 USE dbtest;
--- =====================================
--- 1. Roles & Permissions
--- =====================================
 INSERT INTO roles (id, name) VALUES
   (1, 'ROLE_ADMIN'),
   (2, 'ROLE_GIAO_VIEN'),
@@ -45,9 +42,6 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
   (2,1),(2,3),(2,5),
   (3,3),(3,5);
 
--- =====================================
--- 2. Users & Roles
--- =====================================
 INSERT INTO users (id, username, firstname, lastname, password, email, vai_tro)
 VALUES
   (1, 'admin', 'Alice', 'Nguyen', '123456', 'admin@example.com', 'admin'),
@@ -87,9 +81,6 @@ INSERT INTO program_modules (program_id, module_id, position) VALUES
   (2,2,1),(2,4,2),
   (3,3,1),(3,4,2);
 
--- =====================================
--- 4. Classes & Members
--- =====================================
 INSERT INTO classes (id, name, description, program_id) VALUES
   (1, 'Fullstack K2025', 'Lớp học fullstack đầu tiên năm 2025', 1),
   (2, 'AI Fundamental 2025', 'Lớp học AI cơ bản cho người mới bắt đầu', 2);
@@ -98,9 +89,6 @@ INSERT INTO class_members (lop_id, nguoi_dung_id, vai_tro) VALUES
   (1,2,'giao_vien'),(1,4,'sinh_vien'),(1,5,'sinh_vien'),(1,6,'sinh_vien'),
   (2,3,'giao_vien'),(2,7,'sinh_vien'),(2,8,'sinh_vien');
 
--- =====================================
--- 5. Posts, Comments, Replies, Reactions
--- =====================================
 INSERT INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES
   (1,4,'Em vừa hoàn thành module HTML & CSS!','open'),
   (2,2,'Chúc mừng các em đã hoàn thành buổi đầu tiên!','open');
@@ -120,17 +108,11 @@ INSERT INTO reactions (id, bai_viet_id, nguoi_dung_id, loai_cam_xuc) VALUES
   (3,2,4,'wow'),
   (4,2,6,'like');
 
--- =====================================
--- 6. Notifications
--- =====================================
 INSERT INTO notifications (receiver_id, sender_id, notification_type, target_type, target_id, title, content)
 VALUES
   (2,4,'POST_COMMENT','POST',1,'Lan đã bình luận','Lan đã bình luận bài đăng của bạn'),
   (4,2,'SYSTEM_ANNOUNCEMENT','SYSTEM',NULL,'Thông báo lớp học','Buổi học tiếp theo sẽ vào thứ 6.');
 
--- =====================================
--- 7. Ranking (optional)
--- =====================================
 INSERT INTO ranking (nguoi_dung_id, diem_tong_hop, classes_id, program_id)
 VALUES
   (4,85,1,1),
@@ -139,9 +121,7 @@ VALUES
   (7,80,2,2),
   (8,88,2,2);
 
--- =====================================
--- 8. Password Reset & Token (demo)
--- =====================================
+
 INSERT INTO password_reset_requests (user_id, otp_hash, token_type, attempts, used, expires_at)
 VALUES
   (4, 'abc123', 'OTP', 0, 0, DATE_ADD(NOW(), INTERVAL 1 DAY));
