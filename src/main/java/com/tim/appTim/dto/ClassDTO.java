@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class ClassDTO {
+    private Long id;
     private String className;
     private String description;
     private List<MemberDTO> members;
@@ -11,7 +12,8 @@ public class ClassDTO {
     private ProgramsDTO program;
     
 
-    public ClassDTO(String className, String description, List<MemberDTO> members, Integer programId, ProgramsDTO program) {
+    public ClassDTO(Long id, String className, String description, List<MemberDTO> members, Integer programId, ProgramsDTO program) {
+        this.id = id;
         this.className = className;
         this.description = description;
         this.members = members;
@@ -20,6 +22,8 @@ public class ClassDTO {
     }
 
     
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public String getClassName() { return className; }
     public void setClassName(String className) { this.className = className; }
@@ -40,6 +44,14 @@ public class ClassDTO {
         private Long userId;
         private String role;
         private LocalDateTime joinDate;
+        private String username;
+        private String firstName;
+        private String lastName;
+        private String email;
+        private String profileImage;
+
+        public MemberDTO() {
+        }
 
         public MemberDTO(Long userId, String role, LocalDateTime joinDate) {
             this.userId = userId;
@@ -47,8 +59,32 @@ public class ClassDTO {
             this.joinDate = joinDate;
         }
 
+        public MemberDTO(Long userId, String role, LocalDateTime joinDate, String username, String firstName, String lastName, String email, String profileImage) {
+            this.userId = userId;
+            this.role = role;
+            this.joinDate = joinDate;
+            this.username = username;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+            this.profileImage = profileImage;
+        }
+
         public Long getUserId() { return userId; }
+        public void setUserId(Long userId) { this.userId = userId; }
         public String getRole() { return role; }
+        public void setRole(String role) { this.role = role; }
         public LocalDateTime getJoinDate() { return joinDate; }
+        public void setJoinDate(LocalDateTime joinDate) { this.joinDate = joinDate; }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getProfileImage() { return profileImage; }
+        public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
     }
 }
