@@ -22,11 +22,7 @@ public class KeycloakController {
     private KeycloakSyncService keycloakSyncService;
 
     @PutMapping("/users/{userId}")
-    @PreAuthorize(
-            "hasAuthority('user:update_all') or " +
-                    "(authentication.principal instanceof T(org.springframework.security.oauth2.jwt.Jwt) ? " +
-                    "authentication.principal.getSubject() == #userId : authentication.name == #userId)"
-    )
+    @PreAuthorize("hasAuthority('user:update_all') or authentication.name.equals(#userId)")
     public ResponseEntity<?> updateUser(@PathVariable String userId, @RequestBody UpdateUserDTO updateUserDTO) {
         try {
             keycloakSyncService.updateUser(userId, updateUserDTO);
@@ -58,11 +54,7 @@ public class KeycloakController {
     }
 
     @PostMapping("/users/{userId}/logout")
-    @PreAuthorize(
-            "hasAuthority('user:update_all') or " +
-                    "(authentication.principal instanceof T(org.springframework.security.oauth2.jwt.Jwt) ? " +
-                    "authentication.principal.getSubject().equals(#userId) : authentication.name.equals(#userId))"
-    )
+    @PreAuthorize("hasAuthority('user:update_all') or authentication.name.equals(#userId)")
     public ResponseEntity<?> logoutUser(@PathVariable String userId) {
         try {
             keycloakSyncService.logoutUserFromKeycloak(userId);
