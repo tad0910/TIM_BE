@@ -9,4 +9,5 @@ public interface ModuleService {
     ModuleDTO createModule(ModuleDTO dto);
     ModuleDTO updateModule(Integer id, ModuleDTO dto);
     void deleteModule(Integer id);
+    ModuleDTO assignInstructor(Integer moduleId, Long instructorId);
 }

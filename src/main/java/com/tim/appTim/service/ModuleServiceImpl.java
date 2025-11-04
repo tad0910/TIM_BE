@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import com.tim.appTim.entity.User;
+import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.exception.ResourceNotFoundException;
 
 @Service
 public class ModuleServiceImpl implements ModuleService {
@@ -22,6 +25,9 @@ public class ModuleServiceImpl implements ModuleService {
 
     @Autowired
     private ModuleSessionRepository moduleSessionRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -48,6 +54,13 @@ public class ModuleServiceImpl implements ModuleService {
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
 
+        // Validate và set instructor
+        if (dto.getInstructorId() != null) {
+            User instructor = userRepository.findById(dto.getInstructorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + dto.getInstructorId()));
+            module.setInstructorId(dto.getInstructorId());
+        }
+
         module = moduleRepository.save(module);
 
         // Tạo sessions nếu có trong request
@@ -61,6 +74,17 @@ public class ModuleServiceImpl implements ModuleService {
                 session.setContent(sessionDTO.getContent());
                 session.setScheduledAt(sessionDTO.getScheduledAt());
                 session.setEndDate(sessionDTO.getEndDate());
+                
+                // Set instructor cho session (nếu có, nếu không thì dùng instructor của module)
+                if (sessionDTO.getInstructorId() != null) {
+                    User sessionInstructor = userRepository.findById(sessionDTO.getInstructorId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + sessionDTO.getInstructorId()));
+                    session.setInstructorId(sessionDTO.getInstructorId());
+                } else if (module.getInstructorId() != null) {
+                    // Nếu session không có instructor, dùng instructor của module
+                    session.setInstructorId(module.getInstructorId());
+                }
+                
                 if (sessionDTO.getStatus() != null && !sessionDTO.getStatus().isEmpty()) {
                     try {
                         session.setStatus(ModuleSession.SessionStatus.valueOf(sessionDTO.getStatus()));
@@ -82,10 +106,17 @@ public class ModuleServiceImpl implements ModuleService {
     @Transactional
     public ModuleDTO updateModule(Integer id, ModuleDTO dto) {
         Module module = moduleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Module not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Module not found with ID: " + id));
 
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
+
+        // Validate và update instructor nếu được cung cấp
+        if (dto.getInstructorId() != null) {
+            User instructor = userRepository.findById(dto.getInstructorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + dto.getInstructorId()));
+            module.setInstructorId(dto.getInstructorId());
+        }
 
         module = moduleRepository.save(module);
 
@@ -101,6 +132,24 @@ public class ModuleServiceImpl implements ModuleService {
         moduleRepository.deleteById(id);
     }
 
+    @Override
+    @Transactional
+    public ModuleDTO assignInstructor(Integer moduleId, Long instructorId) {
+        Module module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Module not found with ID: " + moduleId));
+
+        if (instructorId != null) {
+            User instructor = userRepository.findById(instructorId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + instructorId));
+            module.setInstructorId(instructorId);
+        } else {
+            module.setInstructorId(null);
+        }
+
+        module = moduleRepository.save(module);
+        return toDTO(module);
+    }
+
     /**
      * Convert Module entity to ModuleDTO with sessions
      */
@@ -109,6 +158,15 @@ public class ModuleServiceImpl implements ModuleService {
         dto.setId(module.getId());
         dto.setName(module.getName());
         dto.setDescription(module.getDescription());
+        dto.setInstructorId(module.getInstructorId());
+
+        // Load instructor name if exists
+        if (module.getInstructorId() != null) {
+            userRepository.findById(module.getInstructorId()).ifPresent(instructor -> {
+                String fullName = instructor.getFirstName() + " " + instructor.getLastName();
+                dto.setInstructorName(fullName.trim().isEmpty() ? instructor.getUsername() : fullName);
+            });
+        }
 
         // Load sessions for this module
         List<ModuleSessionDTO> sessions = moduleSessionRepository
@@ -134,6 +192,16 @@ public class ModuleServiceImpl implements ModuleService {
         dto.setScheduledAt(session.getScheduledAt());
         dto.setEndDate(session.getEndDate());
         dto.setStatus(session.getStatus() != null ? session.getStatus().name() : null);
+        dto.setInstructorId(session.getInstructorId());
+
+        // Load instructor name if exists
+        if (session.getInstructorId() != null) {
+            userRepository.findById(session.getInstructorId()).ifPresent(instructor -> {
+                String fullName = instructor.getFirstName() + " " + instructor.getLastName();
+                dto.setInstructorName(fullName.trim().isEmpty() ? instructor.getUsername() : fullName);
+            });
+        }
+
         return dto;
     }
 }

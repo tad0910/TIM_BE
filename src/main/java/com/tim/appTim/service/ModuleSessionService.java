@@ -14,16 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.tim.appTim.dto.ModuleDTO;
+import com.tim.appTim.entity.User;
+import com.tim.appTim.repository.UserRepository;
 
 @Service
 public class ModuleSessionService {
     private final ModuleSessionRepository moduleSessionRepository;
     private final ModuleRepository moduleRepository;
+    private final UserRepository userRepository;
 
     public ModuleSessionService(ModuleSessionRepository moduleSessionRepository, 
-                               ModuleRepository moduleRepository) {
+                               ModuleRepository moduleRepository,
+                               UserRepository userRepository) {
         this.moduleSessionRepository = moduleSessionRepository;
         this.moduleRepository = moduleRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
@@ -68,6 +73,20 @@ public class ModuleSessionService {
         session.setContent(request.getContent());
         session.setScheduledAt(request.getScheduledAt());
         session.setEndDate(request.getEndDate());
+
+        // Validate và set instructor
+        if (request.getInstructorId() != null) {
+            User instructor = userRepository.findById(request.getInstructorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + request.getInstructorId()));
+            session.setInstructorId(request.getInstructorId());
+        } else {
+            // Nếu không có instructor cho session, thử lấy từ module
+            moduleRepository.findById(moduleId).ifPresent(module -> {
+                if (module.getInstructorId() != null) {
+                    session.setInstructorId(module.getInstructorId());
+                }
+            });
+        }
 
         if (request.getStatus() != null && !request.getStatus().isEmpty()) {
             try {
@@ -117,6 +136,14 @@ public class ModuleSessionService {
             }
         }
 
+        // Update instructor nếu được cung cấp
+        if (request.getInstructorId() != null) {
+            User instructor = userRepository.findById(request.getInstructorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + request.getInstructorId()));
+            session.setInstructorId(request.getInstructorId());
+        }
+        // Nếu không truyền instructorId, giữ nguyên giáo viên hiện tại
+
         ModuleSession updatedSession = moduleSessionRepository.save(session);
         return toDTO(updatedSession);
     }
@@ -127,6 +154,23 @@ public class ModuleSessionService {
             throw new ResourceNotFoundException("Không tìm thấy buổi học với id = " + sessionId);
         }
         moduleSessionRepository.deleteById(sessionId);
+    }
+
+    @Transactional
+    public ModuleSessionDTO assignInstructor(Long sessionId, Long instructorId) {
+        ModuleSession session = moduleSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy buổi học với id = " + sessionId));
+
+        if (instructorId != null) {
+            User instructor = userRepository.findById(instructorId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + instructorId));
+            session.setInstructorId(instructorId);
+        } else {
+            session.setInstructorId(null);
+        }
+
+        ModuleSession updatedSession = moduleSessionRepository.save(session);
+        return toDTO(updatedSession);
     }
 
     @Transactional
@@ -164,6 +208,16 @@ public class ModuleSessionService {
         dto.setScheduledAt(session.getScheduledAt());
         dto.setEndDate(session.getEndDate());
         dto.setStatus(session.getStatus() != null ? session.getStatus().name() : null);
+        dto.setInstructorId(session.getInstructorId());
+
+        // Load instructor name if exists
+        if (session.getInstructorId() != null) {
+            userRepository.findById(session.getInstructorId()).ifPresent(instructor -> {
+                String fullName = instructor.getFirstName() + " " + instructor.getLastName();
+                dto.setInstructorName(fullName.trim().isEmpty() ? instructor.getUsername() : fullName);
+            });
+        }
+
         return dto;
     }
 }

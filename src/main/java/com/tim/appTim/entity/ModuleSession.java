@@ -32,9 +32,16 @@ public class ModuleSession {
     @Enumerated(EnumType.STRING)
     private SessionStatus status;
 
+    @Column(name = "instructor_id")
+    private Long instructorId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", insertable = false, updatable = false)
     private Module module;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instructor_id", insertable = false, updatable = false)
+    private User instructor;
 
     public enum SessionStatus {
         planned, ongoing, completed
@@ -102,6 +109,22 @@ public class ModuleSession {
 
     public void setStatus(SessionStatus status) {
         this.status = status;
+    }
+
+    public Long getInstructorId() {
+        return instructorId;
+    }
+
+    public void setInstructorId(Long instructorId) {
+        this.instructorId = instructorId;
+    }
+
+    public User getInstructor() {
+        return instructor;
+    }
+
+    public void setInstructor(User instructor) {
+        this.instructor = instructor;
     }
 
     public Module getModule() {

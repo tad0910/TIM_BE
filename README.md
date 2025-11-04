@@ -262,6 +262,100 @@ GET /api/reactions/posts/{postId}/count/{emotionType}
 - `GET /api/teachers/{teacherId}/classes` - Lấy danh sách lớp của giáo viên
 
 
+# Hướng Dẫn: Thêm Giáo Viên Vào Module và Module Session
+
+## Tổng Quan
+
+Giải pháp này cho phép bạn gán giáo viên (instructor) cho:
+1. **Module**: Gán giáo viên cho cả một module
+2. **Module Session**: Gán giáo viên cho từng buổi học cụ thể
+
+## Cấu Trúc Database
+
+### Thay Đổi Schema
+
+Đã thêm cột `instructor_id` vào:
+- Bảng `modules`: Gán giáo viên mặc định cho module
+- Bảng `module_sessions`: Gán giáo viên cho từng buổi học
+
+### Migration
+
+Chạy file migration SQL:
+```bash
+mysql -u your_user -p dbtest < DB/add-instructor-to-modules.sql
+```
+
+Hoặc thực thi file: `DB/add-instructor-to-modules.sql`
+
+## API Endpoints
+
+### 1. Gán Giáo Viên Cho Module
+
+#### Endpoint riêng để gán giáo viên:
+```
+PUT /module/{moduleId}/instructor?instructorId={instructorId}
+```
+
+**Request:**
+- `moduleId`: ID của module (path parameter)
+- `instructorId`: ID của giáo viên (query parameter, có thể null để xóa giáo viên)
+
+**Example:**
+```bash
+PUT /module/1/instructor?instructorId=2
+```
+
+#### Hoặc gán khi tạo/cập nhật module:
+```
+POST /module
+PUT /module/{id}
+```
+
+**Request Body:**
+```json
+{
+  "name": "Module Name",
+  "description": "Module Description",
+  "instructorId": 2  // Optional
+}
+```
+
+### 2. Gán Giáo Viên Cho Module Session
+
+#### Endpoint riêng để gán giáo viên:
+```
+PUT /modules/sessions/{sessionId}/instructor?instructorId={instructorId}
+```
+
+**Request:**
+- `sessionId`: ID của buổi học (path parameter)
+- `instructorId`: ID của giáo viên (query parameter, có thể null để xóa giáo viên)
+
+**Example:**
+```bash
+PUT /modules/sessions/10/instructor?instructorId=2
+```
+
+#### Hoặc gán khi tạo/cập nhật session:
+```
+POST /modules/{moduleId}/sessions
+PUT /modules/sessions/{sessionId}
+```
+
+**Request Body:**
+```json
+{
+  "sessionNumber": 1,
+  "title": "Session Title",
+  "content": "Session Content",
+  "scheduledAt": "2024-01-01T10:00:00",
+  "endDate": "2024-01-01T12:00:00",
+  "status": "planned",
+  "instructorId": 2  // Optional - nếu không có, sẽ dùng instructor của module
+}
+```
+
+
 # Sử dụng DB
 
 ## Tạo db mới
