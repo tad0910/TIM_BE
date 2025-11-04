@@ -11,6 +11,8 @@ public class ModuleSessionDTO {
     private LocalDateTime scheduledAt;
     private LocalDateTime endDate;
     private String status;
+    private Long instructorId;
+    private String instructorName;
 
     public ModuleSessionDTO() {
     }
@@ -97,5 +99,21 @@ public class ModuleSessionDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getInstructorId() {
+        return instructorId;
+    }
+
+    public void setInstructorId(Long instructorId) {
+        this.instructorId = instructorId;
+    }
+
+    public String getInstructorName() {
+        return instructorName;
+    }
+
+    public void setInstructorName(String instructorName) {
+        this.instructorName = instructorName;
     }
 }

@@ -106,7 +106,10 @@ CREATE TABLE IF NOT EXISTS `modules` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` text,
-  PRIMARY KEY (`id`)
+  `instructor_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_modules_instructor` (`instructor_id`),
+  CONSTRAINT `fk_modules_instructor` FOREIGN KEY (`instructor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS `module_sessions` (
@@ -118,9 +121,12 @@ CREATE TABLE IF NOT EXISTS `module_sessions` (
   `scheduled_at` datetime DEFAULT NULL,
   `end_date` datetime DEFAULT NULL,
   `status` enum('planned','ongoing','completed') NOT NULL DEFAULT 'planned',
+  `instructor_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_ms_module` (`module_id`),
-  CONSTRAINT `fk_ms_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `fk_ms_instructor` (`instructor_id`),
+  CONSTRAINT `fk_ms_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_ms_instructor` FOREIGN KEY (`instructor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS `comments` (

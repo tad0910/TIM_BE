@@ -9,6 +9,7 @@ public class UpdateModuleSessionRequest {
     private LocalDateTime scheduledAt;
     private LocalDateTime endDate;
     private String status;
+    private Long instructorId;
 
     public UpdateModuleSessionRequest() {
     }
@@ -59,5 +60,13 @@ public class UpdateModuleSessionRequest {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getInstructorId() {
+        return instructorId;
+    }
+
+    public void setInstructorId(Long instructorId) {
+        this.instructorId = instructorId;
     }
 }
