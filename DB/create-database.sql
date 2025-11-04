@@ -1,6 +1,3 @@
--- Auto-generated schema creation script
--- Only creates tables if they do not exist
-
 CREATE DATABASE IF NOT EXISTS dbtest;
 USE dbtest;
 
