@@ -21,7 +21,9 @@ import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ConflictException;
+import com.tim.appTim.exception.InternalServerErrorException;
 
+import java.util.Map;
 import org.springframework.security.core.Authentication;
 import com.tim.appTim.dto.AddMemberDTO;
 
@@ -41,6 +43,84 @@ public class ClassService {
         this.classRepository = classRepository;
         this.classMemberRepository = classMemberRepository;
         this.programsService = programsService;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClassDTO> getAllClasses() {
+        try {
+            List<Class> classes = classRepository.findAll();
+
+            if (classes == null || classes.isEmpty()) {
+                return new java.util.ArrayList<>();
+            }
+
+            List<Long> classIds = classes.stream()
+                    .filter(c -> c != null && c.getId() != null)
+                    .map(Class::getId)
+                    .collect(Collectors.toList());
+            List<ClassMember> allMembers = new java.util.ArrayList<>();
+            for (Long classId : classIds) {
+                try {
+                    List<ClassMember> members = classMemberRepository.findByClassId(classId);
+                    if (members != null) {
+                        allMembers.addAll(members);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error loading members for class " + classId + ": " + e.getMessage());
+                }
+            }
+
+            Map<Long, List<ClassMember>> membersByClassId = allMembers.stream()
+                    .filter(m -> m != null && m.getClassId() != null)
+                    .collect(Collectors.groupingBy(ClassMember::getClassId));
+            
+            return classes.stream()
+                    .filter(classEntity -> classEntity != null && classEntity.getId() != null)
+                    .map(classEntity -> {
+                        try {
+                            List<ClassMember> members = membersByClassId.getOrDefault(
+                                    classEntity.getId(), 
+                                    new java.util.ArrayList<>()
+                            );
+                            
+                            List<ClassDTO.MemberDTO> memberDTOs = members.stream()
+                                    .filter(m -> m != null && m.getRole() != null)
+                                    .map(member -> new ClassDTO.MemberDTO(
+                                            member.getUserId(),
+                                            member.getRole().name(),
+                                            member.getJoinDate()
+                                    ))
+                                    .collect(Collectors.toList());
+                            ProgramsDTO programDTO = null;
+
+                            ClassDTO classDTO = new ClassDTO(
+                                    classEntity.getId(),
+                                    classEntity.getClassName() != null ? classEntity.getClassName() : "",
+                                    classEntity.getDescription() != null ? classEntity.getDescription() : "",
+                                    memberDTOs,
+                                    classEntity.getProgramId(),
+                                    programDTO
+                            );
+                            
+                            return classDTO;
+                        } catch (Exception e) {
+                            System.err.println("Error processing class " + classEntity.getId() + ": " + e.getMessage());
+                            return new ClassDTO(
+                                    classEntity.getId(),
+                                    classEntity.getClassName() != null ? classEntity.getClassName() : "",
+                                    "",
+                                    new java.util.ArrayList<>(),
+                                    classEntity.getProgramId(),
+                                    null
+                            );
+                        }
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error in getAllClasses: " + e.getMessage());
+            e.printStackTrace();
+            throw new InternalServerErrorException("Lỗi khi lấy danh sách lớp học: " + e.getMessage());
+        }
     }
 
     public Optional<Class> getClassById(Long id) {
@@ -107,6 +187,7 @@ public class ClassService {
         }
 
         return new ClassDTO(
+                savedClass.getId(),
                 savedClass.getClassName(),
                 savedClass.getDescription(),
                 List.of(), 
@@ -155,6 +236,7 @@ public class ClassService {
         
 
         return new ClassDTO(
+                saved.getId(),  
                 saved.getClassName(),
                 saved.getDescription(),
                 memberDTOs,
@@ -184,6 +266,7 @@ public class ClassService {
                 ))
                 .toList();
         return new ClassDTO(
+                saved.getId(),
                 saved.getClassName(),
                 saved.getDescription(),
                 memberDTOs,
@@ -278,11 +361,36 @@ public class ClassService {
         List<ClassMember> members = classMemberRepository.findByClassId(classId);
         
         List<ClassDTO.MemberDTO> memberDTOs = members.stream()
-                .map(member -> new ClassDTO.MemberDTO(
-                        member.getUserId(),
-                        member.getRole().name(),
-                        member.getJoinDate()
-                ))
+                .map(member -> {
+                    try {
+                        User user = userService.findById(member.getUserId());
+                        if (user != null) {
+                            return new ClassDTO.MemberDTO(
+                                    member.getUserId(),
+                                    member.getRole().name(),
+                                    member.getJoinDate(),
+                                    user.getUsername(),
+                                    user.getFirstName(),
+                                    user.getLastName(),
+                                    user.getEmail(),
+                                    user.getProfileImage()
+                            );
+                        } else {
+
+                            return new ClassDTO.MemberDTO(
+                                    member.getUserId(),
+                                    member.getRole().name(),
+                                    member.getJoinDate()
+                            );
+                        }
+                    } catch (Exception e) {
+                        return new ClassDTO.MemberDTO(
+                                member.getUserId(),
+                                member.getRole().name(),
+                                member.getJoinDate()
+                        );
+                    }
+                })
                 .collect(Collectors.toList());
 
         ProgramsDTO programDTO = null;
@@ -294,6 +402,7 @@ public class ClassService {
         }
 
         return new ClassDTO(
+                classInfo.getId(),
                 classInfo.getClassName(),
                 classInfo.getDescription(),
                 memberDTOs,
@@ -301,4 +410,5 @@ public class ClassService {
                 programDTO
         );
     }
+
 }
