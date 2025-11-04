@@ -89,7 +89,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/keycloak/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/link-preview/**").permitAll()
-                        .anyRequest().authenticated() 
+                        .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.authenticationManager(tokenAuthenticationManager))
