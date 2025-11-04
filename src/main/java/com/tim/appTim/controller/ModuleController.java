@@ -1,0 +1,74 @@
+package com.tim.appTim.controller;
+
+import com.tim.appTim.dto.ModuleDTO;
+import com.tim.appTim.dto.CreateModuleSessionRequest;
+import com.tim.appTim.service.ModuleService;
+import com.tim.appTim.service.ModuleSessionService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/module")
+public class ModuleController {
+
+    private final ModuleService moduleService;
+    private final ModuleSessionService moduleSessionService;
+
+    public ModuleController(ModuleService moduleService, ModuleSessionService moduleSessionService) {
+        this.moduleService = moduleService;
+        this.moduleSessionService = moduleSessionService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ModuleDTO>> getAllModules() {
+        List<ModuleDTO> modules = moduleService.getAllModules();
+        return ResponseEntity.ok(modules);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ModuleDTO> getModuleById(@PathVariable Integer id) {
+        ModuleDTO module = moduleService.getModuleById(id);
+        return ResponseEntity.ok(module);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAuthority('module:create')")
+    public ResponseEntity<ModuleDTO> createModule(@RequestBody ModuleDTO request) {
+        ModuleDTO created = moduleService.createModule(request);
+        return ResponseEntity.ok(created);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('module:update')")
+    public ResponseEntity<ModuleDTO> updateModule(
+            @PathVariable Integer id,
+            @RequestBody ModuleDTO request) {
+        ModuleDTO updated = moduleService.updateModule(id, request);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('module:delete')")
+    public ResponseEntity<Map<String, Object>> deleteModule(@PathVariable Integer id) {
+        moduleService.deleteModule(id);
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", "Delete module successfully");
+        body.put("moduleId", id);
+        return ResponseEntity.ok(body);
+    }
+
+    @PutMapping("/{moduleId}/session")
+    @PreAuthorize("hasAuthority('module:create')")
+    public ResponseEntity<ModuleDTO> addSessionToModule(
+            @PathVariable Integer moduleId,
+            @RequestBody CreateModuleSessionRequest request) {
+        moduleSessionService.createSession(moduleId, request);
+        ModuleDTO updatedModule = moduleService.getModuleById(moduleId);
+        return ResponseEntity.ok(updatedModule);
+    }
+}

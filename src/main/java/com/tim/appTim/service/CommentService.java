@@ -9,6 +9,7 @@ import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.ForbiddenException;
+import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
@@ -60,9 +61,15 @@ public class CommentService {
         this.fileRepository = fileRepository;
     }
 
+
+
     @Transactional
     public CommentDTO createComment(Long postId, Long userId, String content,
                                     Comment.Emotion emotion, List<File> filesFromController) { // Thêm List<File>
+
+        if ((content == null || content.trim().isEmpty()) && (filesFromController == null || filesFromController.isEmpty())) {
+            throw new BadRequestException("Bạn phải cung cấp nội dung hoặc tệp đính kèm.");
+        }
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
@@ -76,6 +83,7 @@ public class CommentService {
         comment.setEmotion(emotion);
         comment.setCreatedAt(LocalDateTime.now());
         comment.setUpdatedAt(LocalDateTime.now());
+        List<FileDTO> fileDTOs = new ArrayList<>();
 
         if (filesFromController != null && !filesFromController.isEmpty()) {
             for (File file : filesFromController) {
@@ -100,9 +108,11 @@ public class CommentService {
         return convertToDTO(savedComment);
     }
 
+    @Transactional(readOnly = true)
     public List<CommentDTO> getCommentsByPostId(Long postId) {
-        return commentRepository.findByPostId(postId)
-                .stream()
+        List<Comment> comments = commentRepository.findByPostId(postId);
+
+        return comments.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -117,8 +127,12 @@ public class CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
     }
 
-    @Transactional // Thêm @Transactional nếu chưa có
+    @Transactional
     public CommentDTO updateComment(Long commentId, User currentUser, Authentication authentication, String content, Comment.Emotion emotion, List<File> newFilesFromController) {
+
+        if ((content == null || content.trim().isEmpty()) && (newFilesFromController == null || newFilesFromController.isEmpty())) {
+            throw new BadRequestException("Bạn phải cung cấp nội dung hoặc tệp đính kèm.");
+        }
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
@@ -135,25 +149,24 @@ public class CommentService {
         comment.setEmotion(emotion);
 
         if (comment.getFiles() != null) {
-            // Xóa các file cũ liên kết với comment này khỏi FileRepository
             fileRepository.deleteAll(comment.getFiles());
-            comment.getFiles().clear(); // Xóa khỏi danh sách của Comment Entity
+            comment.getFiles().clear();
         }
 
         // 2. Thêm files mới
         if (newFilesFromController != null && !newFilesFromController.isEmpty()) {
             for (File file : newFilesFromController) {
-                comment.addFile(file); // Dùng hàm addFile đã có trong Comment entity
+                comment.addFile(file);
             }
         }
 
-        comment.setUpdatedAt(LocalDateTime.now()); // Sửa thành updatedAt
+        comment.setUpdatedAt(LocalDateTime.now());
 
         Comment updatedComment = commentRepository.save(comment);
-        return convertToDTO(updatedComment);
+return convertToDTO(updatedComment);
     }
 
-    @Transactional // Thêm @Transactional nếu chưa có
+    @Transactional
     public void deleteComment(Long commentId, User currentUser, Authentication authentication) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
@@ -177,10 +190,13 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
-    // Sửa lại hàm này, xóa hàm createReplyWithFiles
     @Transactional
     public ReplyCommentDTO createReplyComment(Long commentId, Long userId, String content,
-                                              ReplyComment.Emotion emotion, List<File> filesFromController) { // Thêm List<File>
+                                              ReplyComment.Emotion emotion, List<File> filesFromController) {
+
+        if ((content == null || content.trim().isEmpty()) && (filesFromController == null || filesFromController.isEmpty())) {
+            throw new BadRequestException("Bạn phải cung cấp nội dung hoặc tệp đính kèm.");
+        }
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
@@ -192,20 +208,17 @@ public class CommentService {
         reply.setUser(user);
         reply.setContent(content);
         reply.setEmotion(emotion);
-        // reply.setFileId(fileId); // Xóa dòng này nếu File entity đã đủ
         reply.setCreatedAt(LocalDateTime.now());
-        reply.setUpdatedAt(LocalDateTime.now()); // Nên thêm cả updatedAt
+        reply.setUpdatedAt(LocalDateTime.now());
 
-        // Thêm logic gán file vào reply
         if (filesFromController != null && !filesFromController.isEmpty()) {
             for (File file : filesFromController) {
-                reply.addFile(file); // Dùng hàm helper trong ReplyComment entity
+                reply.addFile(file);
             }
         }
 
         ReplyComment savedReplyComment = replyCommentRepository.save(reply);
 
-        // Tạo thông báo (giữ nguyên logic đã sửa)
         try {
             if (!comment.getUser().getId().equals(userId)) {
                 notificationService.createCommentNotification(
@@ -215,8 +228,8 @@ public class CommentService {
         } catch (Exception e) { System.err.println("Error creating notification: " + e.getMessage()); }
 
         return convertReplyToDTO(savedReplyComment);
-    }
-
+}
+    @Transactional(readOnly = true)
     public List<ReplyCommentDTO> getReplyCommentsByCommentId(Long commentId) {
         return replyCommentRepository.findByCommentId(commentId)
                 .stream()
@@ -225,6 +238,11 @@ public class CommentService {
     }
 
     public ReplyCommentDTO updateReplyComment(User currentUser, Authentication authentication, Long replyCommentId, String content, ReplyComment.Emotion emotion, List<File> newFilesFromController) {
+
+        if ((content == null || content.trim().isEmpty()) && (newFilesFromController == null || newFilesFromController.isEmpty())) {
+            throw new BadRequestException("Bạn phải cung cấp nội dung hoặc tệp đính kèm.");
+        }
+
         ReplyComment reply = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyCommentId));
 
@@ -247,7 +265,7 @@ public class CommentService {
         // 2. Thêm files mới
         if (newFilesFromController != null && !newFilesFromController.isEmpty()) {
             for (File file : newFilesFromController) {
-                reply.addFile(file); // Dùng hàm addFile đã có trong ReplyComment entity
+                reply.addFile(file);
             }
         }
         reply.setUpdatedAt(LocalDateTime.now());
@@ -272,7 +290,6 @@ public class CommentService {
     }
 
     private User getUserFromAuthentication(Authentication authentication) {
-        // Lấy user entity từ logic của bạn (ví dụ: qua UserService)
         return userService.findByUsernameOrEmail(authentication.getName());
     }
 
@@ -282,7 +299,6 @@ public class CommentService {
         String userAvatar = (user != null) ? user.getProfileImage() : " ";
         String emotionName = (comment.getEmotion() != null) ? comment.getEmotion().name() : null;
 
-        // Sửa lỗi tên hàm (Lỗi 3, 5): phải là 'convertReplyToDTO'
         List<ReplyCommentDTO> replies = comment.getReplies()
                 .stream()
                 .map(this::convertReplyToDTO)
@@ -290,7 +306,7 @@ public class CommentService {
 
        List<FileDTO> fileDTOs = new ArrayList<>();
         if (comment.getFiles() != null && !comment.getFiles().isEmpty()) {
-            fileDTOs = comment.getFiles().stream()
+fileDTOs = comment.getFiles().stream()
                     .map(file -> new FileDTO(
                             file.getId(),
                             file.getFileUrl(),
@@ -301,18 +317,16 @@ public class CommentService {
                     .collect(Collectors.toList());
         }
 
-        // SẮP XẾP LẠI TOÀN BỘ THAM SỐ CHO ĐÚNG
         return new CommentDTO(
-                comment.getId(),            // 1. Long id
-                comment.getUser().getId(),   // 2. Long userId
-                username,                   // 3. String username
-                comment.getContent(),       // 4. String content
-                userAvatar,                 // 5. String userAvatar
-                emotionName,                // 6. String emotion
-//                comment.getFileId(),        // 7. Long fileId
-                comment.getCreatedAt(),     // 8. LocalDateTime createdAt
+                comment.getId(),
+                comment.getUser().getId(),
+                username,
+                comment.getContent(),
+                userAvatar,
+                emotionName,
+                comment.getCreatedAt(),
                 replies,
-                fileDTOs// 9. List<ReplyCommentDTO> replyComments
+                fileDTOs
         );
     }
 
@@ -345,14 +359,14 @@ public class CommentService {
         User currentUser = getUserFromAuthentication(authentication);
         return commentRepository.findById(commentId)
                 .map(comment -> comment.getUser().getId().equals(currentUser.getId()))
-                .orElse(false); // <-- Sửa: Nếu không tìm thấy, trả về false (không phải là owner)
+                .orElse(false);
     }
 
     public boolean isReplyOwner(Authentication authentication, Long replyCommentId) {
         User currentUser = getUserFromAuthentication(authentication);
         return replyCommentRepository.findById(replyCommentId)
-                .map(reply -> reply.getUser().getId().equals(currentUser.getId()))
-                .orElse(false); // <-- Sửa: Nếu không tìm thấy, trả về false
+.map(reply -> reply.getUser().getId().equals(currentUser.getId()))
+                .orElse(false);
     }
 
     public long countCommentsByPostId(Long postId) {

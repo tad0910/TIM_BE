@@ -30,26 +30,17 @@ public class ClassController {
         this.userService = userService;
     }
 
+    @GetMapping
+    @PreAuthorize("hasAuthority('class:read_all')")
+    public ResponseEntity<List<ClassDTO>> getAllClasses() {
+        List<ClassDTO> classes = classService.getAllClasses();
+        return ResponseEntity.ok(classes);
+    }
+    
     @GetMapping("/{classId}")
     @PreAuthorize("hasAuthority('class:read_all') or @classService.isClassMember(authentication, #classId)")
     public ResponseEntity<ClassDTO> getClassInfo(@PathVariable Long classId, Authentication authentication) {
-        Class classInfo = classService.getClassById(classId)
-                .orElseThrow(() -> new RuntimeException("Class not found with id: " + classId));
-
-        List<ClassMember> members = classService.getClassMembersByClassId(classId);
-
-        ClassDTO classDTO = new ClassDTO(
-                classInfo.getClassName(),
-                classInfo.getDescription(),
-                members.stream()
-                        .map(member -> new ClassDTO.MemberDTO(
-                                member.getUserId(),
-                                member.getRole().name(),
-                                member.getJoinDate()
-                        ))
-                        .collect(Collectors.toList())
-        );
-
+        ClassDTO classDTO = classService.getClassDTOById(classId);
         return ResponseEntity.ok(classDTO);
     }
 
@@ -72,6 +63,13 @@ public class ClassController {
     ) {
         ClassDTO updatedClass = classService.updateClass(classId, classDTO);
         return ResponseEntity.ok(updatedClass);
+    }
+
+    @PutMapping("/{classId}/program")
+    @PreAuthorize("hasAuthority('class:update_all') or @classService.isClassTeacher(authentication, #classId)")
+    public ResponseEntity<ClassDTO> updateClassProgram(@PathVariable Long classId, @RequestBody Integer programId) {
+        ClassDTO updated = classService.updateClassProgram(classId, programId);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{classId}")

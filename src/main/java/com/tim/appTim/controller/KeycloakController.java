@@ -22,7 +22,7 @@ public class KeycloakController {
     private KeycloakSyncService keycloakSyncService;
 
     @PutMapping("/users/{userId}")
-    @PreAuthorize("hasAuthority('user:update_all') or authentication.principal.getSubject() == #userId")
+    @PreAuthorize("hasAuthority('user:update_all') or authentication.name.equals(#userId)")
     public ResponseEntity<?> updateUser(@PathVariable String userId, @RequestBody UpdateUserDTO updateUserDTO) {
         try {
             keycloakSyncService.updateUser(userId, updateUserDTO);
@@ -54,7 +54,7 @@ public class KeycloakController {
     }
 
     @PostMapping("/users/{userId}/logout")
-    @PreAuthorize("hasAuthority('user:logout_all') or authentication.principal.getSubject() == #userId")
+    @PreAuthorize("hasAuthority('user:update_all') or authentication.name.equals(#userId)")
     public ResponseEntity<?> logoutUser(@PathVariable String userId) {
         try {
             keycloakSyncService.logoutUserFromKeycloak(userId);

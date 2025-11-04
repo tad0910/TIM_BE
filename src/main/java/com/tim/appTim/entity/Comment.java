@@ -26,10 +26,10 @@ public class Comment {
     private Emotion emotion;
 
     @Column(name = "files_id")
-    private Long fileId; // Giữ lại nếu bạn đang dùng, nếu không cũng nên map thành Entity
+    private Long fileId;
 
     @Column(name = "reaction_id")
-    private Long reactionId; // Giữ lại nếu bạn đang dùng, nếu không cũng nên map thành Entity
+    private Long reactionId;
 
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<File> files = new ArrayList<>();
@@ -98,9 +98,6 @@ public class Comment {
     public void addFile(File file) {
         files.add(file);
         file.setComment(this);
-        if (this.getPost() != null) {
-            file.setPost(this.getPost()); // <-- Đảm bảo File.java có hàm setPost(Post post)
-        }
     }
 
     public void removeFile(File file) {

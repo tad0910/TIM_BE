@@ -26,7 +26,7 @@ public class File {
     private Long fileSize;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
+    @JoinColumn(name = "post_id", nullable = true)
     @JsonIgnore
     private Post post;
 

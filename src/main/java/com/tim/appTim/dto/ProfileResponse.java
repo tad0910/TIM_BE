@@ -15,9 +15,9 @@ public class ProfileResponse {
     private LocalDateTime createdAt;
     private List<PostDTO> posts;
     private List<UserImageDTO> images;
-    private List<CourseDTO> courses;
+    private List<ProgramsDTO> programs;
 
-    public ProfileResponse(User user, List<PostDTO> posts, List<UserImageDTO> images, List<CourseDTO> courses) {
+    public ProfileResponse(User user, List<PostDTO> posts, List<UserImageDTO> images, List<ProgramsDTO> programs) {
         this.userId = user.getId();
         this.username = user.getUsername();
         this.email = user.getEmail();
@@ -30,7 +30,7 @@ public class ProfileResponse {
         this.createdAt = user.getCreatedAt();
         this.posts = posts;
         this.images = images;
-        this.courses = courses;
+        this.programs = programs;
     }
 
     public ProfileResponse() {}
@@ -52,7 +52,17 @@ public class ProfileResponse {
     public void setPosts(List<PostDTO> posts) { this.posts = posts; }
     public List<UserImageDTO> getImages() { return images; }
     public void setImages(List<UserImageDTO> images) { this.images = images; }
-    public List<CourseDTO> getCourses() { return courses; }
-    public void setCourses(List<CourseDTO> courses) { this.courses = courses; }
+    public List<ProgramsDTO> getPrograms() { return programs; }
+    public void setPrograms(List<ProgramsDTO> programs) { this.programs = programs; }
+
+    // Deprecated: Giữ lại để backward compatibility
+    @Deprecated
+    public List<CourseDTO> getCourses() { 
+        return List.of(); 
+    }
+    @Deprecated
+    public void setCourses(List<CourseDTO> courses) { 
+        // Ignore - không sử dụng nữa
+    }
 
 }

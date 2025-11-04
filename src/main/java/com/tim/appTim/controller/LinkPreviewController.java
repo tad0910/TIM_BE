@@ -29,13 +29,10 @@ public class LinkPreviewController {
             LinkPreviewDTO preview = linkPreviewService.getLinkPreview(url);
             return ResponseEntity.ok(preview);
         } catch (IOException e) {
-            // Lỗi khi Jsoup không thể kết nối (VD: 404, timeout)
             return ResponseEntity.status(500).body(null);
         } catch (URISyntaxException e) {
-            // Lỗi khi URL không hợp lệ
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
-            // Các lỗi khác
             return ResponseEntity.internalServerError().body(null);
         }
     }

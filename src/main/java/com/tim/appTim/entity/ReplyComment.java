@@ -12,8 +12,6 @@ public class ReplyComment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ----- ĐÃ XÓA Long commentId VÀ Long userId -----
-
     @Column(name = "noi_dung")
     private String content;
 
@@ -48,7 +46,6 @@ public class ReplyComment {
         like, love, haha, sad, angry
     }
 
-    // --- Cập nhật Getters/Setters ---
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -91,15 +88,6 @@ public class ReplyComment {
     public void addFile(File file) {
         files.add(file);
         file.setReplyComment(this);
-        Comment parentComment = this.getComment();
-        if (parentComment != null) {
-            file.setComment(parentComment);
-
-            // 3. Gán Post cha (Lấy từ Comment)
-            if (parentComment.getPost() != null) {
-                file.setPost(parentComment.getPost());
-            }
-        }
     }
 
     public void removeFile(File file) {
