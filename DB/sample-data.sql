@@ -1,11 +1,11 @@
+USE dbtest;
 -- =====================================
 -- 1. Roles & Permissions
 -- =====================================
 INSERT INTO roles (id, name) VALUES
   (1, 'ROLE_ADMIN'),
   (2, 'ROLE_GIAO_VIEN'),
-  (3, 'ROLE_STUDENT'),
-  (4, 'ROLE_USER'),
+  (3, 'ROLE_USER');
 
 INSERT INTO permissions (id, name) VALUES
 (1, 'user:read_all'),
@@ -41,7 +41,7 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
   (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),
   (1,8),(1,9),(1,10),(1,11),(1,12),(1,13),(1,14),
   (1,15),(1,16),(1,17),(1,18),(1,19),(1,20),(1,22),
-  (1,23),(1,24),(1,25),(1,26),(1,27),(1,28), (1,21);
+  (1,23),(1,24),(1,25),(1,26),(1,27),(1,28), (1,21),
   (2,1),(2,3),(2,5),
   (3,3),(3,5);
 

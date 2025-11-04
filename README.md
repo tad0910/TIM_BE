@@ -262,5 +262,11 @@ GET /api/reactions/posts/{postId}/count/{emotionType}
 - `GET /api/teachers/{teacherId}/classes` - Lấy danh sách lớp của giáo viên
 
 
+# Sử dụng DB
 
+## Tạo db mới
+mysql -u root -p < DB/create-database.sql
+
+## INSERT DB
+mysql -u root -p < DB/sample-data.sql
 
