@@ -58,7 +58,11 @@ public class KeycloakController {
     }
 
     @PostMapping("/users/{userId}/logout")
-    @PreAuthorize("hasAuthority('user:update_all') or authentication.name == #userId")
+    @PreAuthorize(
+            "hasAuthority('user:update_all') or " +
+                    "(authentication.principal instanceof T(org.springframework.security.oauth2.jwt.Jwt) ? " +
+                    "authentication.principal.getSubject().equals(#userId) : authentication.name.equals(#userId))"
+    )
     public ResponseEntity<?> logoutUser(@PathVariable String userId) {
         try {
             keycloakSyncService.logoutUserFromKeycloak(userId);

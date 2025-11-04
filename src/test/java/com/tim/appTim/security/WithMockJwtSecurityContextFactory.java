@@ -7,6 +7,7 @@ import org.springframework.security.test.context.support.WithSecurityContextFact
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,13 +20,10 @@ public class WithMockJwtSecurityContextFactory implements WithSecurityContextFac
 
         Jwt jwt = new Jwt(
                 "mock-token-value",
-                null,
-                null,
+                Instant.now(),
+                Instant.now().plusSeconds(3600),
                 Map.of("alg", "none"),
-                Map.of(
-                        "sub", annotation.value(),
-                        "preferred_username", annotation.value()
-                )
+                Map.of("sub", annotation.value())
         );
 
         List<SimpleGrantedAuthority> authorities =
@@ -33,7 +31,6 @@ public class WithMockJwtSecurityContextFactory implements WithSecurityContextFac
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        // ✅ Chỉ định principal là subject (điểm quan trọng)
         JwtAuthenticationToken authentication =
                 new JwtAuthenticationToken(jwt, authorities, jwt.getSubject());
 

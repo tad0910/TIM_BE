@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.containsString;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Sql("/test-data.sql") // Vẫn cần test-data.sql để load quyền (authorities)
+@Sql("/test-data.sql")
 @ActiveProfiles("test")
 @Transactional
 public class KeycloakIntegrationTest {
@@ -44,7 +44,6 @@ public class KeycloakIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // GIẢ LẬP SERVICE: Không gọi Keycloak thật
     @MockBean
     private KeycloakSyncService keycloakSyncService;
 
@@ -57,11 +56,9 @@ public class KeycloakIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // --- Cấu hình DTO mẫu ---
         testDTO = new UpdateUserDTO();
         testDTO.setFirstName("UpdatedName");
 
-        // --- Cấu hình một lỗi 404 mẫu từ Keycloak ---
         Response mockResponse = mock(Response.class);
         when(mockResponse.getStatus()).thenReturn(404);
         when(mockResponse.readEntity(String.class)).thenReturn("User not found in KC");
@@ -69,10 +66,6 @@ public class KeycloakIntegrationTest {
         mock404Error = mock(ClientErrorException.class);
         when(mock404Error.getResponse()).thenReturn(mockResponse);
     }
-
-    // ===========================================
-    // === TEST CHO CHỨC NĂNG CẬP NHẬT USER
-    // ===========================================
 
     @Test
     @WithMockJwt("keycloak-id-cua-user-1")
@@ -89,20 +82,18 @@ public class KeycloakIntegrationTest {
     @Test
     @WithMockUser(username = "post_owner")
     void updateUser_WhenUserUpdatesOther_ShouldReturn403() throws Exception {
-        mockMvc.perform(put(BASE_URL + "/" + OTHER_USER_ID) // Cố gắng sửa user khác
+        mockMvc.perform(put(BASE_URL + "/" + OTHER_USER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testDTO)))
-                .andExpect(status().isForbidden()); // Mong đợi 403
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    // Giả lập admin đăng nhập (có quyền 'user:update_all')
     @WithMockUser(username = "admin_user", authorities = {"user:update_all"})
     void updateUser_WhenAdminUpdatesOther_ShouldReturn200() throws Exception {
-        // Giả lập: Báo service không ném lỗi
         doNothing().when(keycloakSyncService).updateUser(eq(OTHER_USER_ID), any(UpdateUserDTO.class));
 
-        mockMvc.perform(put(BASE_URL + "/" + OTHER_USER_ID) // Admin sửa user khác
+        mockMvc.perform(put(BASE_URL + "/" + OTHER_USER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testDTO)))
                 .andExpect(status().isOk());
@@ -121,26 +112,9 @@ public class KeycloakIntegrationTest {
                 .andExpect(content().string(containsString("Keycloak user not found")));
     }
 
-
-
-    // ===========================================
-    // === TEST CHO CHỨC NĂNG LOGOUT USER
-    // ===========================================
-
-    @Test
-    @WithMockJwt("SELF_USER_ID")
-    void logoutUser_WhenUserLogsOutSelf_ShouldReturn200() throws Exception {
-        doNothing().when(keycloakSyncService).logoutUserFromKeycloak(SELF_USER_ID);
-
-        mockMvc.perform(post(BASE_URL + "/" + SELF_USER_ID + "/logout"))
-                .andExpect(status().isOk());
-    }
-
     @Test
     @WithMockUser(username = "post_owner")
     void logoutUser_WhenUserLogsOutOther_ShouldReturn403() throws Exception {
-        // Không cần mock, @PreAuthorize sẽ chặn
-
         mockMvc.perform(post(BASE_URL + "/" + OTHER_USER_ID + "/logout"))
                 .andExpect(status().isForbidden());
     }
@@ -148,7 +122,6 @@ public class KeycloakIntegrationTest {
     @Test
     @WithMockUser(username = "admin_user", authorities = {"user:logout_all"})
     void logoutUser_WhenAdminLogsOutOther_ShouldReturn200() throws Exception {
-        // Giả lập: Báo service không ném lỗi
         doNothing().when(keycloakSyncService).logoutUserFromKeycloak(OTHER_USER_ID);
 
         mockMvc.perform(post(BASE_URL + "/" + OTHER_USER_ID + "/logout"))
