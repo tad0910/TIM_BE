@@ -46,7 +46,8 @@ INSERT INTO permissions (id, name) VALUES
 (17, 'module:create'),
 (18, 'user:read_all'),
 (19, 'user:create'),
-(20, 'user:delete');
+(20, 'user:delete'),
+(21, 'reaction:delete');
 
 
 INSERT INTO users (id, username, password, email) VALUES
@@ -68,7 +69,7 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 12),
 (1, 1), (1, 4),
 (2, 2), (2, 3), (2, 5), (2, 6),
-(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20);
+(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21) ;
 
 
 INSERT INTO programs (id, name, description) VALUES
@@ -110,6 +111,12 @@ INSERT INTO comments (id, bai_viet_id, nguoi_dung_id, noi_dung, thoi_gian_tao) V
 
 INSERT INTO reply_comments (id, comments_id, nguoi_dung_id, noi_dung, thoi_gian_tao) VALUES
 (30, 20, 1, 'Reply của user 1', NOW());
+
+INSERT INTO reactions (id, nguoi_dung_id, bai_viet_id, comment_id, reply_comment_id, loai_cam_xuc)
+VALUES
+(100, 2, 10, null, null, 'like'),
+(101, 1, null, 20, null, 'love'),
+(102, 1, null, null, 30, 'haha');
 
 INSERT INTO notifications (id, receiver_id, sender_id, notification_type, title, content, created_at, is_read, read_at, target_type, target_id) VALUES
 (50, 1, 2, 'POST_COMMENT', 'Thông báo mới', 'User 2 đã bình luận bài viết của bạn', NOW(), false, null, 'POST', 10),
