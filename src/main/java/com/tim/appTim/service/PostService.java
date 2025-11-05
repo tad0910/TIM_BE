@@ -367,24 +367,17 @@ public class PostService {
 
         Long postOwnerId = post.getUser().getId();
 
-        // If the requesting user is the owner, always allow access
         if (requestingUserId.equals(postOwnerId)) {
             return convertToDto(post);
         }
-
-        // Check privacy settings for non-owners
         Post.Privacy privacy = post.getPrivacy();
 
         switch (privacy) {
             case only_me:
-                // Only owner can see
                 throw new ForbiddenException("You do not have permission to access this post");
             case friends:
-                // TODO: Implement friendship check
-                // For now, allow access but should check friendship status
                 return convertToDto(post);
             case open:
-                // Public post, anyone can see
                 return convertToDto(post);
             default:
                 throw new ForbiddenException("You do not have permission to access this post");
@@ -392,35 +385,26 @@ public class PostService {
     }
     private String getUserDisplayName(User user) {
         if (user == null) {
-            return "Người dùng"; // Hoặc giá trị mặc định khác
+            return "Người dùng"; 
         }
 
         String firstName = user.getFirstName();
         String lastName = user.getLastName();
         String username = user.getUsername();
 
-        // Ưu tiên hiển thị FirstName + LastName
         if (firstName != null && !firstName.trim().isEmpty() &&
                 lastName != null && !lastName.trim().isEmpty()) {
             return firstName + " " + lastName;
         }
-
-        // Nếu không có cả hai, hiển thị FirstName (nếu có)
         if (firstName != null && !firstName.trim().isEmpty()) {
             return firstName;
         }
-
-        // Nếu không có FirstName, hiển thị LastName (nếu có)
         if (lastName != null && !lastName.trim().isEmpty()) {
             return lastName;
         }
-
-        // Cuối cùng, hiển thị username
         if (username != null && !username.trim().isEmpty()) {
             return username;
         }
-
-        // Trường hợp không có thông tin gì
         return "Người dùng";
     }
 }

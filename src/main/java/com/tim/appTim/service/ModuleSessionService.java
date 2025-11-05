@@ -11,6 +11,7 @@ import com.tim.appTim.repository.ModuleRepository;
 import com.tim.appTim.repository.ModuleSessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.tim.appTim.dto.ModuleDTO;
@@ -66,6 +67,23 @@ public class ModuleSessionService {
             throw new BadRequestException("Buổi học " + request.getSessionNumber() + " đã tồn tại trong module này");
         }
 
+        if (request.getScheduledAt() != null && request.getEndDate() != null) {
+            List<ModuleSession> existingSessions = moduleSessionRepository.findByModuleId(moduleId);
+            for (ModuleSession existingSession : existingSessions) {
+                if (existingSession.getScheduledAt() != null && existingSession.getEndDate() != null) {
+                    if (isTimeOverlapping(
+                            request.getScheduledAt(), request.getEndDate(),
+                            existingSession.getScheduledAt(), existingSession.getEndDate())) {
+                        throw new BadRequestException(
+                                String.format("Thời gian của buổi học này trùng với buổi học số %d (từ %s đến %s)",
+                                        existingSession.getSessionNumber(),
+                                        existingSession.getScheduledAt(),
+                                        existingSession.getEndDate()));
+                    }
+                }
+            }
+        }
+
         ModuleSession session = new ModuleSession();
         session.setModuleId(moduleId);
         session.setSessionNumber(request.getSessionNumber());
@@ -74,13 +92,12 @@ public class ModuleSessionService {
         session.setScheduledAt(request.getScheduledAt());
         session.setEndDate(request.getEndDate());
 
-        // Validate và set instructor
         if (request.getInstructorId() != null) {
             User instructor = userRepository.findById(request.getInstructorId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + request.getInstructorId()));
             session.setInstructorId(request.getInstructorId());
         } else {
-            // Nếu không có instructor cho session, thử lấy từ module
+
             moduleRepository.findById(moduleId).ifPresent(module -> {
                 if (module.getInstructorId() != null) {
                     session.setInstructorId(module.getInstructorId());
@@ -116,6 +133,29 @@ public class ModuleSessionService {
             session.setSessionNumber(request.getSessionNumber());
         }
 
+        LocalDateTime newScheduledAt = request.getScheduledAt() != null ? request.getScheduledAt() : session.getScheduledAt();
+        LocalDateTime newEndDate = request.getEndDate() != null ? request.getEndDate() : session.getEndDate();
+
+        if (newScheduledAt != null && newEndDate != null) {
+            List<ModuleSession> existingSessions = moduleSessionRepository.findByModuleId(session.getModuleId());
+            for (ModuleSession existingSession : existingSessions) {
+                if (existingSession.getId().equals(sessionId)) {
+                    continue;
+                }
+                if (existingSession.getScheduledAt() != null && existingSession.getEndDate() != null) {
+                    if (isTimeOverlapping(
+                            newScheduledAt, newEndDate,
+                            existingSession.getScheduledAt(), existingSession.getEndDate())) {
+                        throw new BadRequestException(
+                                String.format("Thời gian của buổi học này trùng với buổi học số %d (từ %s đến %s)",
+                                        existingSession.getSessionNumber(),
+                                        existingSession.getScheduledAt(),
+                                        existingSession.getEndDate()));
+                    }
+                }
+            }
+        }
+
         if (request.getTitle() != null) {
             session.setTitle(request.getTitle());
         }
@@ -136,13 +176,11 @@ public class ModuleSessionService {
             }
         }
 
-        // Update instructor nếu được cung cấp
         if (request.getInstructorId() != null) {
             User instructor = userRepository.findById(request.getInstructorId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + request.getInstructorId()));
             session.setInstructorId(request.getInstructorId());
         }
-        // Nếu không truyền instructorId, giữ nguyên giáo viên hiện tại
 
         ModuleSession updatedSession = moduleSessionRepository.save(session);
         return toDTO(updatedSession);
@@ -189,7 +227,7 @@ public class ModuleSessionService {
                 moduleSessionRepository.save(s);
             }
         }
-        // Tạo ModuleDTO trả về
+
         ModuleDTO dto = new ModuleDTO();
         dto.setId(module.getId());
         dto.setName(module.getName());
@@ -210,7 +248,6 @@ public class ModuleSessionService {
         dto.setStatus(session.getStatus() != null ? session.getStatus().name() : null);
         dto.setInstructorId(session.getInstructorId());
 
-        // Load instructor name if exists
         if (session.getInstructorId() != null) {
             userRepository.findById(session.getInstructorId()).ifPresent(instructor -> {
                 String fullName = instructor.getFirstName() + " " + instructor.getLastName();
@@ -219,5 +256,18 @@ public class ModuleSessionService {
         }
 
         return dto;
+    }
+
+    private boolean isTimeOverlapping(LocalDateTime start1, LocalDateTime end1, 
+                                      LocalDateTime start2, LocalDateTime end2) {
+        if (start1 == null || end1 == null || start2 == null || end2 == null) {
+            return false;
+        }
+
+        if (!end1.isAfter(start1) || !end2.isAfter(start2)) {
+            return false;
+        }
+
+        return start1.isBefore(end2) && end1.isAfter(start2);
     }
 }

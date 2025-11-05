@@ -36,16 +36,14 @@ public class NotificationService {
         this.sseService = sseService;
     }
 
-    // Tạo thông báo mới
     public NotificationDTO createNotification(Long receiverId, Long senderId,
                                               Notification.NotificationType notificationType,
                                               String targetType, Long targetId,
                                               String title, String content) {
 
-        // Kiểm tra xem đã có thông báo tương tự chưa (tránh spam)
         if (senderId != null && notificationRepository.existsByReceiverIdAndSenderIdAndNotificationTypeAndTargetTypeAndTargetId(
                 receiverId, senderId, notificationType, targetType, targetId)) {
-            return null; // Không tạo thông báo trùng lặp
+            return null; 
         }
 
         Notification notification = new Notification(receiverId, senderId, notificationType,
@@ -59,29 +57,24 @@ public class NotificationService {
         return notificationDTO;
     }
 
-    // Lấy danh sách thông báo của user với phân trang
     public Page<NotificationDTO> getNotificationsByUserId(Long userId, Pageable pageable) {
         Page<Notification> notifications = notificationRepository.findByReceiverIdOrderByCreatedAtDesc(userId, pageable);
         return notifications.map(this::convertToDTO);
     }
 
-    // Lấy thông báo chưa đọc của user
     public List<NotificationDTO> getUnreadNotificationsByUserId(Long userId) {
         List<Notification> notifications = notificationRepository.findByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
         return notifications.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    // Đếm số thông báo chưa đọc
     public long getUnreadNotificationCount(Long userId) {
         return notificationRepository.countByReceiverIdAndIsReadFalse(userId);
     }
 
-    // Đánh dấu tất cả thông báo là đã đọc
     public void markAllAsRead(Long userId) {
         notificationRepository.markAllAsReadByReceiverId(userId);
     }
 
-    // Đánh dấu một thông báo cụ thể là đã đọc
     public void markAsRead(Long notificationId, Long currentUserId, Authentication authentication) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Thông báo không tồn tại với ID: " + notificationId));
@@ -90,32 +83,28 @@ public class NotificationService {
             throw new ForbiddenException("User not authorized to mark this notification as read");
         }
 
-        // Use the exact setter name from your entity: setIsRead
-        notification.setIsRead(true); // <--- CORRECT CALL based on your entity
-        notification.setReadAt(LocalDateTime.now()); // You might also want to set the read time
+        notification.setIsRead(true); 
+        notification.setReadAt(LocalDateTime.now()); 
 
         notificationRepository.save(notification);
     }
 
-    // Xóa thông báo cũ
     public void deleteOldNotifications() {
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(30);
         notificationRepository.deleteOldNotifications(cutoffDate);
     }
 
-    // Lấy thông báo theo loại
     public Page<NotificationDTO> getNotificationsByType(Long userId, Notification.NotificationType notificationType, Pageable pageable) {
         Page<Notification> notifications = notificationRepository.findByReceiverIdAndNotificationTypeOrderByCreatedAtDesc(userId, notificationType, pageable);
         return notifications.map(this::convertToDTO);
     }
 
-    // Tạo thông báo khi có reaction
     public void createReactionNotification(Long postOwnerId, Long commentOwnerId, Long replyOwnerId,
                                            Long senderId, String senderUsername,
                                            Notification.NotificationType notificationType,
                                            String targetType, Long targetId) {
 
-        if (senderId == null) return; // Không tạo thông báo cho hệ thống
+        if (senderId == null) return; 
 
         Long receiverId = null;
         String title = "";
@@ -144,7 +133,6 @@ public class NotificationService {
             case USER_FOLLOW:
             case SYSTEM_ANNOUNCEMENT:
             default:
-                // Các loại thông báo khác sẽ được xử lý riêng
                 break;
         }
 
@@ -153,7 +141,6 @@ public class NotificationService {
         }
     }
 
-    // Tạo thông báo khi có comment
     public void createCommentNotification(Long postOwnerId, Long commentOwnerId, Long senderId,
                                           String senderUsername, String targetType, Long targetId) {
         if (senderId == null) return;
@@ -179,7 +166,6 @@ public class NotificationService {
         }
     }
 
-    // Convert entity to DTO
     private NotificationDTO convertToDTO(Notification notification) {
         String senderUsername = "Hệ thống";
         String senderAvatar = null;
@@ -214,9 +200,8 @@ public class NotificationService {
         );
     }
 
-    // Tạo URL điều hướng dựa trên loại thông báo
     private String generateActionUrl(Notification notification) {
-        String baseUrl = "/"; // Có thể config từ application.properties
+        String baseUrl = "/"; 
 
         switch (notification.getNotificationType()) {
             case POST_REACTION:
@@ -235,11 +220,11 @@ public class NotificationService {
     }
 
     private Long getPostIdFromComment(Long commentId) {
-        return null; // Placeholder
+        return null; 
     }
 
     private Long getPostIdFromReply(Long replyId) {
-        return null; // Placeholder
+        return null; 
     }
 
     public boolean isReceiver(Authentication authentication, Long notificationId) {

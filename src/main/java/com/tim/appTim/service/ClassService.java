@@ -180,9 +180,9 @@ public class ClassService {
 
         ProgramsDTO programDTO = null;
         if (savedClass.getProgramId() != null) {
-            try {
-                programDTO = programsService.getProgramById(savedClass.getProgramId());
-            } catch (ResourceNotFoundException e) {
+                try {
+                    programDTO = programsService.getProgramById(savedClass.getProgramId());
+                } catch (ResourceNotFoundException e) {
             }
         }
 

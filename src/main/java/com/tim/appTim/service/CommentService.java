@@ -65,7 +65,7 @@ public class CommentService {
 
     @Transactional
     public CommentDTO createComment(Long postId, Long userId, String content,
-                                    Comment.Emotion emotion, List<File> filesFromController) { // Thêm List<File>
+                                    Comment.Emotion emotion, List<File> filesFromController) { 
 
         if ((content == null || content.trim().isEmpty()) && (filesFromController == null || filesFromController.isEmpty())) {
             throw new BadRequestException("Bạn phải cung cấp nội dung hoặc tệp đính kèm.");
@@ -153,7 +153,6 @@ public class CommentService {
             comment.getFiles().clear();
         }
 
-        // 2. Thêm files mới
         if (newFilesFromController != null && !newFilesFromController.isEmpty()) {
             for (File file : newFilesFromController) {
                 comment.addFile(file);
@@ -179,7 +178,6 @@ return convertToDTO(updatedComment);
             throw new ForbiddenException("Bạn không có quyền xóa bình luận này");
         }
 
-        // Cập nhật totalComments (giữ nguyên)
         Post post = comment.getPost();
         if (post != null) {
             Integer currentTotal = post.getTotalComments();
@@ -262,7 +260,6 @@ return convertToDTO(updatedComment);
             reply.getFiles().clear();
         }
 
-        // 2. Thêm files mới
         if (newFilesFromController != null && !newFilesFromController.isEmpty()) {
             for (File file : newFilesFromController) {
                 reply.addFile(file);
