@@ -43,6 +43,9 @@ public class ModuleSession {
     @JoinColumn(name = "instructor_id", insertable = false, updatable = false)
     private User instructor;
 
+    @OneToMany(mappedBy = "moduleSession", fetch = FetchType.LAZY)
+    private java.util.List<ClassModuleSchedule> classModuleSchedules;
+
     public enum SessionStatus {
         planned, ongoing, completed
     }

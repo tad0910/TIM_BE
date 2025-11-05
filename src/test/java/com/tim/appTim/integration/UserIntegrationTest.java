@@ -1,6 +1,8 @@
 package com.tim.appTim.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
+import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
@@ -87,6 +89,12 @@ public class UserIntegrationTest {
     }
 
     @Test
+    void getAllUsers_WhenUserNotAuthenticated_ShouldReturn401() throws Exception {
+        mockMvc.perform(get(BASE_URL))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getById_WhenUserIsSelf_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/1"))
@@ -102,6 +110,27 @@ public class UserIntegrationTest {
     }
 
     @Test
+    void getById_WhenUserNotAuthenticated_ShouldReturn401() throws Exception{
+        mockMvc.perform(get(BASE_URL))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getById_WhenAdminGettingOtherUsers_ShouldReturn200() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("admin_user"));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getById_WhenIdNotAvailable_ShouldReturn404() throws Exception{
+        mockMvc.perform(get(BASE_URL + "/9999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void updateUser_WhenUserIsSelf_ShouldReturn200() throws Exception {
         testUser1.setFirstName("Updated First");
@@ -111,6 +140,25 @@ public class UserIntegrationTest {
                         .content(objectMapper.writeValueAsString(testUser1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName").value("Updated First"));
+    }
+
+    @Test
+    void getUserProfileByEmail_WhenEmailExists_ShouldReturn200() throws Exception {
+        String existingEmail = "owner@example.com";
+        String correspondingUsername = "post_owner";
+
+        ProfileResponse mockResponse = new ProfileResponse();
+        mockResponse.setEmail(existingEmail);
+        mockResponse.setUsername(correspondingUsername);
+        //mockResponse.setId(1L); // Giả sử DTO của bạn cũng có ID
+
+        doReturn(mockResponse).when(userService).getUserProfileByEmail(eq(existingEmail));
+
+        mockMvc.perform(get(BASE_URL + "/profile/" + existingEmail)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value(existingEmail))
+                .andExpect(jsonPath("$.username").value(correspondingUsername));
     }
 
     @Test
