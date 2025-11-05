@@ -16,6 +16,9 @@ public class ClassModuleSchedule {
     @Column(name = "module_id")
     private Long moduleId;
 
+    @Column(name = "module_session_id")
+    private Long moduleSessionId;
+
     @Column(name = "start_date")
     private LocalDate startDate;
 
@@ -40,6 +43,10 @@ public class ClassModuleSchedule {
     @ManyToOne
     @JoinColumn(name = "module_id", insertable = false, updatable = false)
     private Module module;
+
+    @ManyToOne
+    @JoinColumn(name = "module_session_id", insertable = false, updatable = false)
+    private ModuleSession moduleSession;
 
     @ManyToOne
     @JoinColumn(name = "instructor_id", insertable = false, updatable = false)
