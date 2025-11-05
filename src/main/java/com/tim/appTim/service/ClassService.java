@@ -168,7 +168,7 @@ public class ClassService {
         }
 
         if (classDTO.getClassName() == null || classDTO.getClassName().trim().isEmpty()) {
-            throw new UnprocessableException("Tên lớp học (className) là bắt buộc");
+            throw new BadRequestException("Tên lớp học (className) là bắt buộc");
         }
 
         Class newClass = new Class();
@@ -202,7 +202,7 @@ public class ClassService {
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + id));
 
         if (classDTO.getClassName() == null || classDTO.getClassName().trim().isEmpty()) {
-            throw new UnprocessableException("Tên lớp học (className) là bắt buộc");
+            throw new BadRequestException("Tên lớp học (className) là bắt buộc");
         }
 
         boolean nameConflict = classRepository.findAll().stream()

@@ -45,7 +45,8 @@ INSERT INTO permissions (id, name) VALUES
 (16, 'module:update'),
 (17, 'module:create'),
 (18, 'user:read_all'),
-(19, 'user:create');
+(19, 'user:create'),
+(20, 'class:update_all');
 
 INSERT INTO users (id, username, password, email) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com'),
@@ -66,7 +67,7 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 12),
 (1, 1), (1, 4),
 (2, 2), (2, 3), (2, 5), (2, 6),
-(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19);
+(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20);
 
 
 INSERT INTO programs (id, name, description) VALUES
