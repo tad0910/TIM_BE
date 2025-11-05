@@ -3,9 +3,11 @@ package com.tim.appTim.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.tim.appTim.dto.ProfileResponse;
+import com.tim.appTim.dto.UserUpdateDTO;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.service.ClassService;
 import com.tim.appTim.service.KeycloakSyncService;
 import com.tim.appTim.service.UserImageService;
@@ -159,6 +161,151 @@ public class UserIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(existingEmail))
                 .andExpect(jsonPath("$.username").value(correspondingUsername));
+    }
+
+    @Test
+    void getUserProfileByEmail_WhenEmailNotFound_ShouldReturn404() throws Exception {
+        String nonExistentEmail = "nonexistent@example.com";
+
+        String errorMessage = "User not found with email: " + nonExistentEmail;
+        doThrow(new ResourceNotFoundException(errorMessage))
+                .when(userService).getUserProfileByEmail(eq(nonExistentEmail));
+
+        mockMvc.perform(get(BASE_URL + "/profile/" + nonExistentEmail)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(errorMessage));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void createUser_WhenAdminWithPermission_ShouldReturn201() throws Exception {
+        User newUserRequest = new User();
+        newUserRequest.setUsername("new_user");
+        newUserRequest.setEmail("newuser@example.com");
+        newUserRequest.setPassword("password123");
+
+        User savedUser = new User();
+        savedUser.setId(99L);
+        savedUser.setUsername("new_user");
+        savedUser.setEmail("newuser@example.com");
+
+        doReturn(savedUser).when(userService).create(any(User.class));
+
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newUserRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(99L))
+                .andExpect(jsonPath("$.username").value("new_user"))
+                .andExpect(header().string("Location", "/users/99"));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void createUser_WhenNonAdmin_ShouldReturn403() throws Exception {
+        User newUserRequest = new User();
+        newUserRequest.setUsername("test_user");
+        newUserRequest.setEmail("test@example.com");
+
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newUserRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void createUser_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        User newUserRequest = new User();
+        newUserRequest.setUsername("test_user");
+        newUserRequest.setEmail("test@example.com");
+
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newUserRequest)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void createUser_WhenAdminAndBodyIsInvalid_ShouldReturn400() throws Exception {
+        User invalidUserRequest = new User();
+        invalidUserRequest.setEmail("newuser@example.com");
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidUserRequest)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateUser_WhenAdminUpdatesOtherUser_ShouldReturn200() throws Exception {
+        Long targetUserId = 1L;
+
+        UserUpdateDTO userUpdatePayload = new UserUpdateDTO();
+        userUpdatePayload.setFirstName("AdminUpdatedName");
+        userUpdatePayload.setUsername("post_owner");
+        userUpdatePayload.setEmail("owner@example.com");
+
+        User updatedUserFromService = new User();
+        updatedUserFromService.setId(targetUserId);
+        updatedUserFromService.setUsername("post_owner");
+        updatedUserFromService.setFirstName("AdminUpdatedName");
+
+        doReturn(updatedUserFromService).when(userService)
+                .update(eq(targetUserId), any(UserUpdateDTO.class));
+
+        mockMvc.perform(put(BASE_URL + "/" + targetUserId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userUpdatePayload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("AdminUpdatedName"));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void updateUser_WhenUserUpdatesOtherUser_ShouldReturn403() throws Exception {
+        Long targetUserId = 2L;
+
+        User userUpdatePayload = new User();
+        userUpdatePayload.setFirstName("HackerName");
+
+        mockMvc.perform(put(BASE_URL + "/" + targetUserId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userUpdatePayload)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateUser_WhenUserNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentUserId = 999L;
+        UserUpdateDTO validPayload = new UserUpdateDTO();
+
+        validPayload.setFirstName("GhostName");
+        validPayload.setUsername("valid_username");
+        validPayload.setEmail("valid_email@example.com");
+
+        doThrow(new ResourceNotFoundException("User không tồn tại"))
+                .when(userService).update(eq(nonExistentUserId), any(UserUpdateDTO.class));
+
+        mockMvc.perform(put(BASE_URL + "/" + nonExistentUserId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validPayload)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updateUser_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        Long targetUserId = 1L;
+
+        User userUpdatePayload = new User();
+        userUpdatePayload.setFirstName("UnauthName");
+
+        mockMvc.perform(put(BASE_URL + "/" + targetUserId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userUpdatePayload)))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

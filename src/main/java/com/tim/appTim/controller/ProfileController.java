@@ -3,6 +3,7 @@ package com.tim.appTim.controller;
 import java.util.List;
 import java.util.Map;
 
+import com.tim.appTim.dto.UserUpdateDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,8 +31,8 @@ public class ProfileController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
-    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
-        return ResponseEntity.ok(userService.update(id, user));
+    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody UserUpdateDTO userDTO) {
+        return ResponseEntity.ok(userService.update(id, userDTO));
     }
 
     @GetMapping("/{userId}/images")

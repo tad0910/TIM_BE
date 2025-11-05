@@ -7,7 +7,8 @@
     import java.util.Optional;
     import java.util.Set; 
     import java.util.stream.Collectors;
-    
+
+    import com.tim.appTim.dto.*;
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.security.core.Authentication; 
     import org.springframework.security.core.userdetails.UserDetails;
@@ -17,21 +18,12 @@
     import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
     import org.springframework.security.oauth2.jwt.Jwt; 
     import org.springframework.stereotype.Service;
-    
-    import com.tim.appTim.dto.CommentDTO;
-    import com.tim.appTim.dto.ProgramsDTO;
+
     import com.tim.appTim.repository.ProgramsRepository;
     import com.tim.appTim.repository.ProgramModuleRepository;
     import com.tim.appTim.repository.ClassRepository;
     import com.tim.appTim.entity.Programs;
     import com.tim.appTim.entity.ProgramModule;
-    import com.tim.appTim.dto.FileDTO;
-    import com.tim.appTim.dto.LinkPreviewDTO;
-    import com.tim.appTim.dto.PostDTO;
-    import com.tim.appTim.dto.ProfileResponse;
-    import com.tim.appTim.dto.ReactionDTO;
-    import com.tim.appTim.dto.ReplyCommentDTO;
-    import com.tim.appTim.dto.UserImageDTO;
     import com.tim.appTim.entity.ClassMember;
     import com.tim.appTim.entity.Role;
     import com.tim.appTim.entity.User;
@@ -146,37 +138,42 @@
             return userRepository.save(user);
         }
     
-        public User update(Long id, User user) {
+        public User update(Long id, UserUpdateDTO userDTO) {
             User existingUser = findById(id);
             if (existingUser == null) {
                 throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + id);
             }
-    
-            if (!existingUser.getEmail().equals(user.getEmail())
-                    && userRepository.findByEmail(user.getEmail()).isPresent()) {
-                throw new ConflictException("Email đã tồn tại");
+
+            if (!existingUser.getEmail().equals(userDTO.getEmail())) {
+                if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+                    throw new ConflictException("Email đã tồn tại");
+                }
+                existingUser.setEmail(userDTO.getEmail());
             }
-    
-            if (!existingUser.getUsername().equals(user.getUsername())
-                    && userRepository.findByUsername(user.getUsername()).isPresent()) {
-                throw new ConflictException("Username đã tồn tại");
+
+            if (!existingUser.getUsername().equals(userDTO.getUsername())) {
+                if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
+                    throw new ConflictException("Username đã tồn tại");
+                }
+                existingUser.setUsername(userDTO.getUsername());
             }
-    
-            existingUser.setUsername(user.getUsername());
-            existingUser.setEmail(user.getEmail());
-            existingUser.setFirstName(user.getFirstName());
-            existingUser.setLastName(user.getLastName());
-            existingUser.setPhoneNumber(user.getPhoneNumber());
-    
-            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-                existingUser.setPassword(user.getPassword());
-            }
-    
+
+            existingUser.setFirstName(userDTO.getFirstName());
+            existingUser.setLastName(userDTO.getLastName());
+            existingUser.setPhoneNumber(userDTO.getPhoneNumber());
+
             try {
                 return userRepository.save(existingUser);
             } catch (Exception e) {
                 throw new InternalServerErrorException("Không thể cập nhật thông tin người dùng: " + e.getMessage());
             }
+        }
+
+        public User internalSave(User user) {
+            if (user == null || user.getId() == null) {
+                throw new IllegalArgumentException("User hoặc User ID không được null khi lưu nội bộ");
+            }
+            return userRepository.save(user);
         }
     
         public void delete(Long id) {
