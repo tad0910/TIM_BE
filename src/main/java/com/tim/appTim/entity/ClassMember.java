@@ -1,5 +1,5 @@
 package com.tim.appTim.entity;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -25,10 +25,12 @@ public class ClassMember {
 
     @ManyToOne
     @JoinColumn(name = "lop_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @JsonIgnore
     private Class classEntity;
 
     @ManyToOne
     @JoinColumn(name = "nguoi_dung_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @JsonIgnore
     private User user;
 
     public enum Role {
