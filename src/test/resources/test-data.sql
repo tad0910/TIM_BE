@@ -46,7 +46,8 @@ INSERT INTO permissions (id, name) VALUES
 (17, 'module:create'),
 (18, 'user:read_all'),
 (19, 'user:create'),
-(20, 'class:update_all');
+(20, 'class:update_all'),
+(21, 'module:delete');
 
 INSERT INTO users (id, username, password, email) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com'),
@@ -67,7 +68,7 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 12),
 (1, 1), (1, 4),
 (2, 2), (2, 3), (2, 5), (2, 6),
-(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20);
+(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21);
 
 
 INSERT INTO programs (id, name, description) VALUES
@@ -96,6 +97,11 @@ INSERT INTO class_module_schedules (id, class_id, module_id, start_date, end_dat
 VALUES
 (1000, 10, 200, '2025-11-01', '2025-11-15', 5, 'planned'),
 (1001, 11, 201, '2025-12-01', '2025-12-10', 6, 'planned');
+
+INSERT INTO module_sessions (id, module_id, session_number, title, content, scheduled_at, end_date, status, instructor_id)
+VALUES
+(1000, 200, 1, 'Buổi 1: Giới thiệu', 'Nội dung buổi 1', '2025-11-01 09:00:00', '2025-11-01 11:00:00', 'planned', 5),
+(1001, 200, 2, 'Buổi 2: Thực hành', 'Nội dung buổi 2', '2025-11-02 09:00:00', '2025-11-02 11:00:00', 'planned', 5);
 
 
 INSERT INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES

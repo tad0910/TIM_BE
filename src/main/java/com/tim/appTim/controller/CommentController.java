@@ -284,7 +284,7 @@ public ResponseEntity<ReplyCommentDTO> updateReplyComment(
     private <T extends Enum<T>> T parseEmotion(String value, Class<T> enumType) {
         if (value == null || value.isEmpty()) return null;
         try {
-            return Enum.valueOf(enumType, value.toUpperCase());
+            return Enum.valueOf(enumType, value.toLowerCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Emotion không hợp lệ: " + value);
         }

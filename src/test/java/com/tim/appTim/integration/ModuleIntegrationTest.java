@@ -30,6 +30,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -141,13 +142,52 @@ public class ModuleIntegrationTest {
     }
 
     @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void updateModule_WhenUserWithoutPermission_ShouldReturn403() throws Exception {
+        mockMvc.perform(put(BASE_URL + "/200")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testModule)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateModule_WhenModuleNotFound_ShouldReturn404() throws Exception {
+        when(moduleService.updateModule(eq(999), any(ModuleDTO.class)))
+                .thenThrow(new ResourceNotFoundException("Module not found with ID: 999"));
+
+        mockMvc.perform(put(BASE_URL + "/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testModule)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @WithMockUser(authorities = "module:delete")
     void deleteModule_WhenAdmin_ShouldReturn200() throws Exception {
         doNothing().when(moduleService).deleteModule(200);
 
         mockMvc.perform(delete(BASE_URL + "/200"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Delete module successfully"));
+                .andExpect(jsonPath("$.message").value("Delete module successfully"))
+                .andExpect(jsonPath("$.moduleId").value(200));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void deleteModule_WhenUserWithoutPermission_ShouldReturn403() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/200"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = "module:delete")
+    void deleteModule_WhenModuleNotFound_ShouldReturn500() throws Exception {
+        doThrow(new RuntimeException("Module not found with ID: 999"))
+                .when(moduleService).deleteModule(999);
+
+        mockMvc.perform(delete(BASE_URL + "/999"))
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -164,5 +204,63 @@ public class ModuleIntegrationTest {
                         .content(objectMapper.writeValueAsString(sessionRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(200));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void addSessionToModule_WhenUserWithoutPermission_ShouldReturn403() throws Exception {
+        CreateModuleSessionRequest sessionRequest = new CreateModuleSessionRequest();
+
+        mockMvc.perform(put(BASE_URL + "/200/session")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sessionRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = "module:create")
+    void addSessionToModule_WhenModuleNotFound_ShouldReturn404() throws Exception {
+        CreateModuleSessionRequest sessionRequest = new CreateModuleSessionRequest();
+        when(moduleSessionService.createSession(eq(999), any(CreateModuleSessionRequest.class)))
+                .thenReturn(new ModuleSessionDTO());
+
+        when(moduleService.getModuleById(999))
+                .thenThrow(new ResourceNotFoundException("Module not found"));
+
+        mockMvc.perform(put(BASE_URL + "/999/session")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sessionRequest)))
+                .andExpect(status().isNotFound());
+    }
+
+    // ========== PUT /module/{id}/instructor - assignInstructor ==========
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void assignInstructor_WhenAdmin_ShouldReturn200() throws Exception {
+        when(moduleService.assignInstructor(eq(200), eq(5L))).thenReturn(testModule);
+
+        mockMvc.perform(put(BASE_URL + "/200/instructor")
+                        .param("instructorId", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(200));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void assignInstructor_WhenUserWithoutPermission_ShouldReturn403() throws Exception {
+        mockMvc.perform(put(BASE_URL + "/200/instructor")
+                        .param("instructorId", "5"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void assignInstructor_WhenModuleNotFound_ShouldReturn404() throws Exception {
+        when(moduleService.assignInstructor(eq(999), eq(5L)))
+                .thenThrow(new ResourceNotFoundException("Module not found with ID: 999"));
+
+        mockMvc.perform(put(BASE_URL + "/999/instructor")
+                        .param("instructorId", "5"))
+                .andExpect(status().isNotFound());
     }
 }
