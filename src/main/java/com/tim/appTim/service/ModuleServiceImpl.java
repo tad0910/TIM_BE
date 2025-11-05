@@ -10,12 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.BadRequestException;
 
 @Service
 public class ModuleServiceImpl implements ModuleService {
@@ -54,7 +56,6 @@ public class ModuleServiceImpl implements ModuleService {
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
 
-        // Validate và set instructor
         if (dto.getInstructorId() != null) {
             User instructor = userRepository.findById(dto.getInstructorId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + dto.getInstructorId()));
@@ -63,10 +64,10 @@ public class ModuleServiceImpl implements ModuleService {
 
         module = moduleRepository.save(module);
 
-        // Tạo sessions nếu có trong request
         if (dto.getSessions() != null && !dto.getSessions().isEmpty()) {
             List<ModuleSession> sessions = new ArrayList<>();
-            for (ModuleSessionDTO sessionDTO : dto.getSessions()) {
+            for (int i = 0; i < dto.getSessions().size(); i++) {
+                ModuleSessionDTO sessionDTO = dto.getSessions().get(i);
                 ModuleSession session = new ModuleSession();
                 session.setModuleId(module.getId());
                 session.setSessionNumber(sessionDTO.getSessionNumber());
@@ -74,14 +75,35 @@ public class ModuleServiceImpl implements ModuleService {
                 session.setContent(sessionDTO.getContent());
                 session.setScheduledAt(sessionDTO.getScheduledAt());
                 session.setEndDate(sessionDTO.getEndDate());
+
+                if (sessionDTO.getScheduledAt() != null && sessionDTO.getEndDate() != null) {
+                    if (sessionDTO.getEndDate().isBefore(sessionDTO.getScheduledAt()) || sessionDTO.getEndDate().isEqual(sessionDTO.getScheduledAt())) {
+                        throw new BadRequestException("Thời gian kết thúc của session phải sau thời gian bắt đầu");
+                    }
+                }
+
+                if (sessionDTO.getScheduledAt() != null && sessionDTO.getEndDate() != null) {
+                    for (int j = 0; j < i; j++) {
+                        ModuleSessionDTO otherSessionDTO = dto.getSessions().get(j);
+                        if (otherSessionDTO.getScheduledAt() != null && otherSessionDTO.getEndDate() != null) {
+                            if (isTimeOverlapping(
+                                    sessionDTO.getScheduledAt(), sessionDTO.getEndDate(),
+                                    otherSessionDTO.getScheduledAt(), otherSessionDTO.getEndDate())) {
+                                throw new BadRequestException(
+                                        String.format("Buổi học số %d trùng thời gian với buổi học số %d",
+                                                sessionDTO.getSessionNumber(),
+                                                otherSessionDTO.getSessionNumber()));
+                            }
+                        }
+                    }
+                }
                 
-                // Set instructor cho session (nếu có, nếu không thì dùng instructor của module)
                 if (sessionDTO.getInstructorId() != null) {
                     User sessionInstructor = userRepository.findById(sessionDTO.getInstructorId())
                             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + sessionDTO.getInstructorId()));
                     session.setInstructorId(sessionDTO.getInstructorId());
                 } else if (module.getInstructorId() != null) {
-                    // Nếu session không có instructor, dùng instructor của module
+
                     session.setInstructorId(module.getInstructorId());
                 }
                 
@@ -111,7 +133,6 @@ public class ModuleServiceImpl implements ModuleService {
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
 
-        // Validate và update instructor nếu được cung cấp
         if (dto.getInstructorId() != null) {
             User instructor = userRepository.findById(dto.getInstructorId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giáo viên với id = " + dto.getInstructorId()));
@@ -150,9 +171,6 @@ public class ModuleServiceImpl implements ModuleService {
         return toDTO(module);
     }
 
-    /**
-     * Convert Module entity to ModuleDTO with sessions
-     */
     private ModuleDTO toDTO(Module module) {
         ModuleDTO dto = new ModuleDTO();
         dto.setId(module.getId());
@@ -160,7 +178,6 @@ public class ModuleServiceImpl implements ModuleService {
         dto.setDescription(module.getDescription());
         dto.setInstructorId(module.getInstructorId());
 
-        // Load instructor name if exists
         if (module.getInstructorId() != null) {
             userRepository.findById(module.getInstructorId()).ifPresent(instructor -> {
                 String fullName = instructor.getFirstName() + " " + instructor.getLastName();
@@ -168,7 +185,6 @@ public class ModuleServiceImpl implements ModuleService {
             });
         }
 
-        // Load sessions for this module
         List<ModuleSessionDTO> sessions = moduleSessionRepository
                 .findByModuleIdOrderBySessionNumberAsc(module.getId())
                 .stream()
@@ -179,9 +195,6 @@ public class ModuleServiceImpl implements ModuleService {
         return dto;
     }
 
-    /**
-     * Convert ModuleSession entity to ModuleSessionDTO
-     */
     private ModuleSessionDTO sessionToDTO(ModuleSession session) {
         ModuleSessionDTO dto = new ModuleSessionDTO();
         dto.setId(session.getId());
@@ -194,7 +207,6 @@ public class ModuleServiceImpl implements ModuleService {
         dto.setStatus(session.getStatus() != null ? session.getStatus().name() : null);
         dto.setInstructorId(session.getInstructorId());
 
-        // Load instructor name if exists
         if (session.getInstructorId() != null) {
             userRepository.findById(session.getInstructorId()).ifPresent(instructor -> {
                 String fullName = instructor.getFirstName() + " " + instructor.getLastName();
@@ -203,5 +215,17 @@ public class ModuleServiceImpl implements ModuleService {
         }
 
         return dto;
+    }
+
+    private boolean isTimeOverlapping(LocalDateTime start1, LocalDateTime end1, 
+                                      LocalDateTime start2, LocalDateTime end2) {
+
+        if (start1 == null || end1 == null || start2 == null || end2 == null) {
+            return false;
+        }
+        if (!end1.isAfter(start1) || !end2.isAfter(start2)) {
+            return false;
+        }
+        return start1.isBefore(end2) && end1.isAfter(start2);
     }
 }

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.tim.appTim.entity.*; // Import tất cả entity
+import com.tim.appTim.entity.*; 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +21,6 @@ import com.tim.appTim.repository.UserRepository;
 @Service
 @Transactional
 public class ReactionService {
-
-    // (Tất cả @Autowired của bạn giữ nguyên)
     @Autowired private ReactionRepository reactionRepository;
     @Autowired private PostRepository postRepository;
     @Autowired private UserRepository userRepository;
@@ -36,8 +34,6 @@ public class ReactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-
-        // SỬA: Dùng đối tượng để tìm
         Optional<Reaction> existingReaction = reactionRepository.findByPostAndUserAndCommentIsNullAndReplyCommentIsNull(post, user);
 
         Reaction reaction;
@@ -53,7 +49,6 @@ public class ReactionService {
         reaction.setCreatedAt(LocalDateTime.now());
         Reaction savedReaction = reactionRepository.save(reaction);
 
-        // (Logic thông báo của bạn đã đúng)
         try {
             if (!post.getUser().getId().equals(userId)) {
                 notificationService.createReactionNotification(
@@ -73,7 +68,7 @@ public class ReactionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        // SỬA: Dùng đối tượng để tìm
+
         Optional<Reaction> existing = reactionRepository.findByCommentAndUserAndReplyCommentIsNull(comment, user);
 
         Reaction reaction = existing.orElseGet(Reaction::new);
@@ -153,7 +148,6 @@ public class ReactionService {
                 .stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    // --- CÁC HÀM DELETE (ĐÃ SỬA) ---
     @Transactional
     public void deleteReaction(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
@@ -187,7 +181,6 @@ public class ReactionService {
         reaction.ifPresent(reactionRepository::delete);
     }
 
-    // --- CÁC HÀM COUNT (ĐÃ SỬA) ---
     public long countReactionsByType(Long postId, Reaction.EmotionType emotionType) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
@@ -206,13 +199,12 @@ public class ReactionService {
         return reactionRepository.countByReplyCommentAndEmotionType(reply, emotionType);
     }
 
-    // --- HÀM CONVERT DTO (ĐÃ SỬA) ---
     private ReactionDTO convertToDTO(Reaction reaction) {
         String username = reaction.getUser() != null ? reaction.getUser().getUsername() : "Unknown";
 
         return new ReactionDTO(
                 reaction.getId(),
-                reaction.getUser().getId(), // SỬA: Dùng .getUser().getId()
+                reaction.getUser().getId(), 
                 username,
                 reaction.getUser() != null? reaction.getUser().getProfileImage() : null,
                 reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
