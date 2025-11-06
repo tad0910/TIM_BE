@@ -1,27 +1,32 @@
 package com.tim.appTim.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import com.tim.appTim.service.KeycloakSyncService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+// Quan trọng: Import 'multipart'
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Sql("/test-data.sql")
+@Sql("/test-data.sql") // Chạy file SQL trước mỗi test
 @ActiveProfiles("test")
 public class PostSecurityIntegrationTest {
 
@@ -34,54 +39,97 @@ public class PostSecurityIntegrationTest {
     @MockBean
     private KeycloakSyncService keycloakSyncService;
 
+    // --- Test Cases cho POST /posts/create ---
+
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void deletePost_WhenUserIsOwner_ShouldReturn200() throws Exception {
-        Long postIdOwnedByUser = 10L;
-        mockMvc.perform(delete("/posts/" + postIdOwnedByUser))
-                .andExpect(status().isOk());
+    void testCreatePost_WhenUserIsAuthenticated_ShouldReturn200() throws Exception {
+        // [ĐÃ SỬA] Sử dụng multipart() thay vì post()
+        mockMvc.perform(multipart("/posts/create")
+                        .param("content", "Một bài viết mới toanh.")
+                        .param("privacy", "open"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value("Một bài viết mới toanh."))
+                .andExpect(jsonPath("$.privacy").value("open"))
+                .andExpect(jsonPath("$.userId").value(1L)); // post_owner có ID 1
     }
 
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void deletePost_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
-        Long postIdNotOwnedByUser = 10L;
-        mockMvc.perform(delete("/posts/" + postIdNotOwnedByUser))
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testCreatePost_WithOneImageFile_ShouldReturn200AndFileDetails() throws Exception {
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "files", // Tên @RequestParam
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "image content".getBytes()
+        );
+
+        mockMvc.perform(multipart("/posts/create")
+                        .file(imageFile)
+                        .param("content", "Bài viết có ảnh")
+                        .param("privacy", "friends"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value("Bài viết có ảnh"))
+                .andExpect(jsonPath("$.files").isArray())
+                .andExpect(jsonPath("$.files.length()").value(1))
+                .andExpect(jsonPath("$.files[0].fileName").value("test-image.jpg"));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testCreatePost_WithMultipleFiles_ShouldReturn200() throws Exception {
+        MockMultipartFile imageFile = new MockMultipartFile("files", "image.jpg", MediaType.IMAGE_JPEG_VALUE, "img".getBytes());
+        MockMultipartFile videoFile = new MockMultipartFile("files", "video.mp4", MediaType.APPLICATION_OCTET_STREAM_VALUE, "vid".getBytes());
+
+        mockMvc.perform(multipart("/posts/create")
+                        .file(imageFile)
+                        .file(videoFile)
+                        .param("content", "Bài viết có nhiều file")
+                        .param("privacy", "open"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.files.length()").value(2));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testCreatePost_WhenInvalidPrivacyValue_ShouldReturn400() throws Exception {
+        // [MỚI] Test case cho giá trị enum không hợp lệ
+        mockMvc.perform(multipart("/posts/create")
+                        .param("content", "Nội dung hợp lệ")
+                        .param("privacy", "INVALID_VALUE"))
+                .andExpect(status().isBadRequest()); // Controller bắt IllegalArgumentException
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void testCreatePost_WhenUserHasNoCreatePermission_ShouldReturn403() throws Exception {
+        // [MỚI] admin_user không có quyền 'post:create' (dựa trên test-data.sql)
+        mockMvc.perform(multipart("/posts/create")
+                        .param("content", "Admin thử tạo post")
+                        .param("privacy", "open"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void testGetPostById_WhenPostExists_ShouldReturn200AndPostDetails() throws Exception {
-        Long postId = 10L;
-        Long userId = 1L;
-
-        mockMvc.perform(get("/posts/" + postId + "/user/" + userId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(postId))
-                .andExpect(jsonPath("$.content").value("Bài viết của owner"))
-                .andExpect(jsonPath("$.userId").value(userId));
+    void testCreatePost_WhenUserIsAnonymous_ShouldReturn401() throws Exception {
+        // [CŨ] Test này vẫn đúng
+        mockMvc.perform(multipart("/posts/create") // Sửa thành multipart để nhất quán
+                        .param("content", "Nội dung ẩn danh")
+                        .param("privacy", "open"))
+                .andExpect(status().isUnauthorized());
     }
 
-    @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void testGetPostsByUserId_WhenUserExists_ShouldReturn200AndListOfPosts() throws Exception {
-        Long userId = 1L;
-        mockMvc.perform(get("/posts/user/" + userId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(10))
-                .andExpect(jsonPath("$[0].userId").value(userId));
-    }
+    // --- Test Cases cho PUT /{postId} ---
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testUpdatePost_WhenUserIsOwner_ShouldReturn200AndUpdatedPost() throws Exception {
+        // [ĐÃ SỬA] Sử dụng multipart(HttpMethod.PUT, ...)
         Long postId = 10L;
         String updatedContent = "Nội dung đã được cập nhật.";
         String updatedPrivacy = "friends";
 
-        mockMvc.perform(put("/posts/" + postId)
+        mockMvc.perform(multipart(HttpMethod.PUT, "/posts/" + postId)
                         .param("content", updatedContent)
                         .param("privacy", updatedPrivacy))
                 .andExpect(status().isOk())
@@ -94,71 +142,211 @@ public class PostSecurityIntegrationTest {
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testUpdatePost_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
-        Long postId = 10L;
-        String updatedContent = "Cố gắng cập nhật trái phép.";
-        String updatedPrivacy = "only_me";
-
-        mockMvc.perform(put("/posts/" + postId)
-                        .param("content", updatedContent)
-                        .param("privacy", updatedPrivacy))
+        // [ĐÃ SỬA] Sử dụng multipart(HttpMethod.PUT, ...)
+        Long postId = 10L; // Post 10 thuộc về 'post_owner'
+        mockMvc.perform(multipart(HttpMethod.PUT, "/posts/" + postId)
+                        .param("content", "Cố gắng cập nhật trái phép.")
+                        .param("privacy", "only_me"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void testUpdatePost_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        // [MỚI] Admin có quyền 'post:update_all' (dựa trên test-data.sql và PostService)
+        Long postId = 10L; // Post 10 thuộc về 'post_owner' (ID 1)
+        String updatedContent = "Admin cập nhật bài viết.";
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/posts/" + postId)
+                        .param("content", updatedContent)
+                        .param("privacy", "open"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value(updatedContent));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testUpdatePost_AddFile_ShouldReturn200AndNewFile() throws Exception {
+        Long postId = 10L;
+        MockMultipartFile newFile = new MockMultipartFile("files", "new-file.jpg", MediaType.IMAGE_JPEG_VALUE, "new".getBytes());
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/posts/" + postId)
+                        .file(newFile)
+                        .param("content", "Nội dung cũ, thêm file mới")
+                        .param("privacy", "open"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.files[?(@.fileName == 'new-file.jpg')]").exists());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testUpdatePost_DeleteFile_ShouldReturn200AndFileRemoved() throws Exception {
+        // [MỚI] Test case phức tạp: Tạo post -> Lấy ID file -> Xóa file đó
+
+        // 1. Tạo Post với 1 file
+        MockMultipartFile fileToCreate = new MockMultipartFile("files", "file-to-delete.txt", MediaType.TEXT_PLAIN_VALUE, "deleteme".getBytes());
+        MvcResult createResult = mockMvc.perform(multipart("/posts/create")
+                        .file(fileToCreate)
+                        .param("content", "Tạo để xóa file")
+                        .param("privacy", "open"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String createResponse = createResult.getResponse().getContentAsString();
+        Long createdPostId = JsonPath.parse(createResponse).read("$.id", Long.class);
+        Integer createdFileId = JsonPath.parse(createResponse).read("$.files[0].id", Integer.class);
+
+        // 2. Cập nhật post đó và xóa file
+        mockMvc.perform(multipart(HttpMethod.PUT, "/posts/" + createdPostId)
+                        .param("fileIdsToDelete", String.valueOf(createdFileId))
+                        .param("content", "Đã xóa file")
+                        .param("privacy", "open"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value("Đã xóa file"))
+                .andExpect(jsonPath("$.files").isArray())
+                .andExpect(jsonPath("$.files.length()").value(0));
+    }
+
+
+    @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testUpdatePost_WhenPostNotFound_ShouldReturn404() throws Exception {
+        // [ĐÃ SỬA] Sử dụng multipart(HttpMethod.PUT, ...)
         Long nonExistentPostId = 9999L;
-        String updatedContent = "Cập nhật bài viết không tồn tại.";
-        String updatedPrivacy = "open";
-        mockMvc.perform(put("/posts/" + nonExistentPostId)
-                        .param("content", updatedContent)
-                        .param("privacy", updatedPrivacy))
+        mockMvc.perform(multipart(HttpMethod.PUT, "/posts/" + nonExistentPostId)
+                        .param("content", "Cập nhật bài viết không tồn tại.")
+                        .param("privacy", "open"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testUpdatePost_WhenInvalidPrivacyValue_ShouldReturn400() throws Exception {
+        // [ĐÃ SỬA] Sử dụng multipart(HttpMethod.PUT, ...)
         Long postId = 10L;
-        String updatedContent = "Nội dung hợp lệ.";
-        String invalidPrivacy = "INVALID_VALUE";
-
-        mockMvc.perform(put("/posts/" + postId)
-                        .param("content", updatedContent)
-                        .param("privacy", invalidPrivacy))
+        mockMvc.perform(multipart(HttpMethod.PUT, "/posts/" + postId)
+                        .param("content", "Nội dung hợp lệ.")
+                        .param("privacy", "INVALID_VALUE"))
                 .andExpect(status().isBadRequest());
+    }
+
+    // --- Test Cases cho DELETE /{postId} ---
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void deletePost_WhenUserIsOwner_ShouldReturn200() throws Exception {
+        // [CŨ] Test này vẫn đúng
+        Long postIdOwnedByUser = 10L;
+        mockMvc.perform(delete("/posts/" + postIdOwnedByUser))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void deletePost_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
+        // [CŨ] Test này vẫn đúng
+        Long postIdNotOwnedByUser = 10L;
+        mockMvc.perform(delete("/posts/" + postIdNotOwnedByUser))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void deletePost_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        // [MỚI] Admin có quyền (post:update_all -> PostService logic)
+        Long postIdOfOtherUser = 12L; // Thuộc về 'another_user' (ID 2)
+        mockMvc.perform(delete("/posts/" + postIdOfOtherUser))
+                .andExpect(status().isOk());
     }
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void testCreatePost_WhenUserIsAuthenticated_ShouldReturn200() throws Exception {
-        String content = "Một bài viết mới toanh.";
-        String privacy = "open";
-
-        mockMvc.perform(post("/posts/create")
-                        .param("content", content)
-                        .param("privacy", privacy))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value(content))
-                .andExpect(jsonPath("$.privacy").value(privacy))
-                .andExpect(jsonPath("$.userId").value(1L));
+    void deletePost_WhenPostNotFound_ShouldReturn404() throws Exception {
+        // [MỚI]
+        mockMvc.perform(delete("/posts/9999"))
+                .andExpect(status().isNotFound());
     }
 
+    // --- Test Cases cho GET /{postId}/user/{userId} ---
+
     @Test
-    void testCreatePost_WhenUserIsAnonymous_ShouldReturn401() throws Exception {
-        mockMvc.perform(post("/posts/create")
-                        .param("content", "Nội dung ẩn danh")
-                        .param("privacy", "open"))
-                .andExpect(status().isUnauthorized());
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testGetPostById_WhenPostExists_ShouldReturn200AndPostDetails() throws Exception {
+        // [CŨ] Test này vẫn đúng
+        Long postId = 10L;
+        Long userId = 1L; // User ID của post_owner
+
+        mockMvc.perform(get("/posts/" + postId + "/user/" + userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(postId))
+                .andExpect(jsonPath("$.content").value("Bài viết của owner"))
+                .andExpect(jsonPath("$.userId").value(userId));
     }
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testGetPostById_WhenPostIsPrivateAndUserIsNotOwner_ShouldReturn403() throws Exception {
+        // [CŨ] Test này vẫn đúng (Post 11 là 'only_me' của owner)
         Long privatePostId = 11L;
         Long ownerUserId = 1L;
 
         mockMvc.perform(get("/posts/" + privatePostId + "/user/" + ownerUserId))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testGetPostById_WhenPostNotFound_ShouldReturn404() throws Exception {
+        // [MỚI]
+        mockMvc.perform(get("/posts/9999/user/1"))
+                .andExpect(status().isNotFound());
+    }
+
+    // --- Test Cases cho GET /user/{userId} ---
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testGetPostsByUserId_WhenUserExists_ShouldReturn200AndListOfPosts() throws Exception {
+        // [CŨ] Test này vẫn đúng
+        Long userId = 1L;
+        mockMvc.perform(get("/posts/user/" + userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].id").value(10)) // Post 10 của user 1
+                .andExpect(jsonPath("$[0].userId").value(userId));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testGetPostsByUserId_WhenUserNotFound_ShouldReturn404() throws Exception {
+        // [MỚI] PostService ném 404
+        mockMvc.perform(get("/posts/user/9999"))
+                .andExpect(status().isNotFound());
+    }
+
+    // --- Test Cases cho GET /posts ---
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testGetAllPosts_DefaultPagination_ShouldReturn200() throws Exception {
+        // [MỚI]
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.totalElements").value(3)) // Dựa trên test-data.sql
+                .andExpect(jsonPath("$.totalPages").value(1));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testGetAllPosts_WithPaginationParams_ShouldReturn200() throws Exception {
+        // [MỚI]
+        mockMvc.perform(get("/posts?page=0&size=1&sort=id,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(3))
+                .andExpect(jsonPath("$.content[0].id").value(10)); // Post 10 là ID nhỏ nhất (sau 11, 12)
     }
 }
