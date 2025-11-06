@@ -364,3 +364,589 @@ mysql -u root -p < DB/create-database.sql
 ## INSERT DB
 mysql -u root -p < DB/sample-data.sql
 
+
+# JSON Examples để Test các Chức năng Gán Giáo viên trên Postman
+
+## Base URL
+```
+http://localhost:8080
+```
+
+## 1. GÁN GIÁO VIÊN VÀO CLASS MODULE (ClassModuleTeacher)
+
+### 1.1. Tạo ClassModule từ Program của lớp
+**POST** `/classes/{classId}/modules/from-program`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Path Variables:**
+- `classId`: 1 (ví dụ)
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "classId": 1,
+    "className": "Lớp Frontend 2024",
+    "moduleId": 1,
+    "moduleName": "ReactJS",
+    "scheduleType": "fixed",
+    "createdAt": "2024-01-15T10:00:00"
+  }
+]
+```
+
+---
+
+### 1.2. Tạo ClassModule thủ công
+**POST** `/classes/{classId}/modules`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Path Variables:**
+- `classId`: 1
+
+**Body (JSON):**
+```json
+{
+  "moduleId": 2,
+  "scheduleType": "flexible"
+}
+```
+
+**Các giá trị scheduleType hợp lệ:**
+- `"fixed"`
+- `"flexible"`
+- `"online"`
+- `"offline"`
+
+**Response:**
+```json
+{
+  "id": 2,
+  "classId": 1,
+  "className": "Lớp Frontend 2024",
+  "moduleId": 2,
+  "moduleName": "VueJS",
+  "scheduleType": "flexible",
+  "createdAt": "2024-01-15T10:30:00"
+}
+```
+
+---
+
+### 1.3. Gán giáo viên vào ClassModule
+**POST** `/classes/{classId}/modules/{classModuleId}/teachers`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Path Variables:**
+- `classId`: 1
+- `classModuleId`: 1
+
+**Body (JSON):**
+```json
+{
+  "userId": 5,
+  "role": "MAIN"
+}
+```
+
+**Các giá trị role hợp lệ:**
+- `"MAIN"` - Giáo viên chính
+- `"ASSISTANT"` - Giáo viên phụ
+- `"MENTOR"` - Giáo viên hướng dẫn
+
+**Response:**
+```json
+{
+  "id": 1,
+  "classModuleId": 1,
+  "userId": 5,
+  "userName": "teacher1",
+  "userEmail": "teacher1@example.com",
+  "role": "MAIN",
+  "assignedAt": "2024-01-15T11:00:00"
+}
+```
+
+**Ví dụ gán giáo viên phụ:**
+```json
+{
+  "userId": 6,
+  "role": "ASSISTANT"
+}
+```
+
+---
+
+### 1.4. Lấy danh sách giáo viên của ClassModule
+**GET** `/classes/{classId}/modules/{classModuleId}/teachers`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `classId`: 1
+- `classModuleId`: 1
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "classModuleId": 1,
+    "userId": 5,
+    "userName": "teacher1",
+    "userEmail": "teacher1@example.com",
+    "role": "MAIN",
+    "assignedAt": "2024-01-15T11:00:00"
+  },
+  {
+    "id": 2,
+    "classModuleId": 1,
+    "userId": 6,
+    "userName": "teacher2",
+    "userEmail": "teacher2@example.com",
+    "role": "ASSISTANT",
+    "assignedAt": "2024-01-15T11:05:00"
+  }
+]
+```
+
+---
+
+### 1.5. Cập nhật vai trò giáo viên trong ClassModule
+**PUT** `/classes/{classId}/modules/{classModuleId}/teachers/{userId}/role`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Path Variables:**
+- `classId`: 1
+- `classModuleId`: 1
+- `userId`: 6
+
+**Body (JSON):**
+```json
+{
+  "role": "MENTOR"
+}
+```
+
+**Response:**
+```json
+{
+  "id": 2,
+  "classModuleId": 1,
+  "userId": 6,
+  "userName": "teacher2",
+  "userEmail": "teacher2@example.com",
+  "role": "MENTOR",
+  "assignedAt": "2024-01-15T11:05:00"
+}
+```
+
+---
+
+### 1.6. Xóa giáo viên khỏi ClassModule
+**DELETE** `/classes/{classId}/modules/{classModuleId}/teachers/{userId}`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `classId`: 1
+- `classModuleId`: 1
+- `userId`: 6
+
+**Response:**
+```json
+{
+  "message": "Xóa giáo viên khỏi ClassModule thành công"
+}
+```
+
+---
+
+## 2. GÁN GIÁO VIÊN VÀO BUỔI HỌC (ClassModuleScheduleTeacher)
+
+### 2.1. Tạo lịch học (Schedule)
+**POST** `/schedules`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Body (JSON):**
+```json
+{
+  "classId": 1,
+  "moduleId": 1,
+  "classModuleId": 1,
+  "moduleSessionId": 5,
+  "startDate": "2024-02-01",
+  "endDate": "2024-02-05",
+  "instructorId": 5,
+  "status": "planned"
+}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "classId": 1,
+  "className": "Lớp Frontend 2024",
+  "moduleId": 1,
+  "moduleName": "ReactJS",
+  "classModuleId": 1,
+  "moduleSessionId": 5,
+  "instructorId": 5,
+  "instructorName": "teacher1",
+  "startDate": "2024-02-01",
+  "endDate": "2024-02-05",
+  "status": "planned"
+}
+```
+
+---
+
+### 2.2. Gán giáo viên vào buổi học
+**POST** `/schedules/{scheduleId}/teachers`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Path Variables:**
+- `scheduleId`: 1
+
+**Body (JSON):**
+```json
+{
+  "userId": 7,
+  "role": "LECTURER"
+}
+```
+
+**Các giá trị role hợp lệ:**
+- `"LECTURER"` - Giảng viên (mặc định)
+- `"SUPPORTER"` - Giáo viên hỗ trợ
+- `"OBSERVER"` - Người quan sát
+
+**Response:**
+```json
+{
+  "id": 1,
+  "classModuleScheduleId": 1,
+  "userId": 7,
+  "userName": "teacher3",
+  "userEmail": "teacher3@example.com",
+  "role": "LECTURER",
+  "assignedAt": "2024-01-15T12:00:00"
+}
+```
+
+**Ví dụ gán giáo viên hỗ trợ:**
+```json
+{
+  "userId": 8,
+  "role": "SUPPORTER"
+}
+```
+
+**Ví dụ gán người quan sát:**
+```json
+{
+  "userId": 9,
+  "role": "OBSERVER"
+}
+```
+
+---
+
+### 2.3. Lấy danh sách giáo viên của buổi học
+**GET** `/schedules/{scheduleId}/teachers`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `scheduleId`: 1
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "classModuleScheduleId": 1,
+    "userId": 7,
+    "userName": "teacher3",
+    "userEmail": "teacher3@example.com",
+    "role": "LECTURER",
+    "assignedAt": "2024-01-15T12:00:00"
+  },
+  {
+    "id": 2,
+    "classModuleScheduleId": 1,
+    "userId": 8,
+    "userName": "teacher4",
+    "userEmail": "teacher4@example.com",
+    "role": "SUPPORTER",
+    "assignedAt": "2024-01-15T12:05:00"
+  }
+]
+```
+
+---
+
+### 2.4. Cập nhật vai trò giáo viên trong buổi học
+**PUT** `/schedules/{scheduleId}/teachers/{userId}/role`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Path Variables:**
+- `scheduleId`: 1
+- `userId`: 8
+
+**Body (JSON):**
+```json
+{
+  "role": "LECTURER"
+}
+```
+
+**Response:**
+```json
+{
+  "id": 2,
+  "classModuleScheduleId": 1,
+  "userId": 8,
+  "userName": "teacher4",
+  "userEmail": "teacher4@example.com",
+  "role": "LECTURER",
+  "assignedAt": "2024-01-15T12:05:00"
+}
+```
+
+---
+
+### 2.5. Xóa giáo viên khỏi buổi học
+**DELETE** `/schedules/{scheduleId}/teachers/{userId}`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `scheduleId`: 1
+- `userId`: 8
+
+**Response:**
+```json
+{
+  "message": "Xóa giáo viên khỏi buổi học thành công"
+}
+```
+
+---
+
+## 3. LẤY LỊCH HỌC CỦA GIÁO VIÊN
+
+### 3.1. Lấy lịch học của giáo viên (vai trò chính)
+**GET** `/schedules/instructor/{instructorId}`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `instructorId`: 5
+
+**Query Parameters (optional):**
+- `startDate`: 2024-01-01
+- `endDate`: 2024-12-31
+
+**Example:**
+```
+GET /schedules/instructor/5?startDate=2024-01-01&endDate=2024-12-31
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "classId": 1,
+    "className": "Lớp Frontend 2024",
+    "moduleId": 1,
+    "moduleName": "ReactJS",
+    "classModuleId": 1,
+    "moduleSessionId": 5,
+    "instructorId": 5,
+    "instructorName": "teacher1",
+    "startDate": "2024-02-01",
+    "endDate": "2024-02-05",
+    "status": "planned"
+  }
+]
+```
+
+---
+
+### 3.2. Lấy TẤT CẢ lịch học của giáo viên (chính + phụ)
+**GET** `/schedules/teacher/{teacherId}/all`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `teacherId`: 7
+
+**Query Parameters (optional):**
+- `startDate`: 2024-01-01
+- `endDate`: 2024-12-31
+
+**Example:**
+```
+GET /schedules/teacher/7/all?startDate=2024-01-01&endDate=2024-12-31
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "classId": 1,
+    "className": "Lớp Frontend 2024",
+    "moduleId": 1,
+    "moduleName": "ReactJS",
+    "classModuleId": 1,
+    "moduleSessionId": 5,
+    "instructorId": 5,
+    "instructorName": "teacher1",
+    "startDate": "2024-02-01",
+    "endDate": "2024-02-05",
+    "status": "planned"
+  },
+  {
+    "id": 2,
+    "classId": 2,
+    "className": "Lớp Backend 2024",
+    "moduleId": 3,
+    "moduleName": "Spring Boot",
+    "classModuleId": 3,
+    "moduleSessionId": 8,
+    "instructorId": 6,
+    "instructorName": "teacher2",
+    "startDate": "2024-02-10",
+    "endDate": "2024-02-15",
+    "status": "planned"
+  }
+]
+```
+
+---
+
+## 4. CÁC API KHÁC HỮU ÍCH
+
+### 4.1. Lấy danh sách ClassModule của lớp
+**GET** `/classes/{classId}/modules`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `classId`: 1
+
+---
+
+### 4.2. Lấy chi tiết ClassModule
+**GET** `/classes/{classId}/modules/{classModuleId}`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `classId`: 1
+- `classModuleId`: 1
+
+---
+
+### 4.3. Lấy lịch học của lớp
+**GET** `/schedules/class/{classId}`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Variables:**
+- `classId`: 1
+
+**Query Parameters (optional):**
+- `startDate`: 2024-01-01
+- `endDate`: 2024-12-31
+
+---
+
+## LƯU Ý
+
+1. **Authentication**: Tất cả các API đều cần token JWT trong header `Authorization: Bearer {token}`
+
+2. **Permissions**: 
+   - Các API tạo/sửa/xóa cần quyền `class:update_all` hoặc `schedule:update`
+   - Các API đọc cần `isAuthenticated()` hoặc quyền tương ứng
+
+3. **Enum Values**:
+   - **ClassModuleTeacher.role**: `MAIN`, `ASSISTANT`, `MENTOR`
+   - **ClassModuleScheduleTeacher.role**: `LECTURER`, `SUPPORTER`, `OBSERVER`
+   - **ClassModule.scheduleType**: `fixed`, `flexible`, `online`, `offline`
+   - **ClassModuleSchedule.status**: `planned`, `ongoing`, `completed`
+
+4. **Date Format**: Sử dụng format `YYYY-MM-DD` (ví dụ: `2024-02-01`)
+
+5. **ID Types**: 
+   - `classId`, `userId`, `scheduleId`: Long (số nguyên)
+   - `moduleId`: Integer (số nguyên)
+
+

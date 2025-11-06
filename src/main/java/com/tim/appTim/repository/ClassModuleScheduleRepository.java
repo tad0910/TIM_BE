@@ -55,5 +55,6 @@ public interface ClassModuleScheduleRepository extends JpaRepository<ClassModule
             java.time.LocalDate endDate
     );
 
+    List<ClassModuleSchedule> findByClassModuleId(Long classModuleId);
 
 }
