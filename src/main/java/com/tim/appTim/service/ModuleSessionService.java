@@ -250,8 +250,24 @@ public class ModuleSessionService {
 
         if (session.getInstructorId() != null) {
             userRepository.findById(session.getInstructorId()).ifPresent(instructor -> {
-                String fullName = instructor.getFirstName() + " " + instructor.getLastName();
-                dto.setInstructorName(fullName.trim().isEmpty() ? instructor.getUsername() : fullName);
+                String firstName = instructor.getFirstName();
+                String lastName = instructor.getLastName();
+                String fullName = null;
+
+                if (firstName != null && !firstName.trim().isEmpty() &&
+                        lastName != null && !lastName.trim().isEmpty()) {
+                    fullName = firstName.trim() + " " + lastName.trim();
+                } else if (firstName != null && !firstName.trim().isEmpty()) {
+                    fullName = firstName.trim();
+                } else if (lastName != null && !lastName.trim().isEmpty()) {
+                    fullName = lastName.trim();
+                }
+
+                if (fullName == null || fullName.trim().isEmpty()) {
+                    dto.setInstructorName(instructor.getUsername());
+                } else {
+                    dto.setInstructorName(fullName);
+                }
             });
         }
 
