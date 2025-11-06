@@ -49,7 +49,9 @@ INSERT INTO permissions (id, name) VALUES
 (20, 'user:delete'),
 (21, 'reaction:delete'),
 (22, 'program:update'),
-(23, 'program:delete');
+(23, 'program:delete'),
+(24, 'notification:cleanup'),
+(25, 'notification:create_manual');
 
 
 INSERT INTO users (id, username, password, email) VALUES
@@ -71,7 +73,7 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 12),
 (1, 1), (1, 4),
 (2, 2), (2, 3), (2, 5), (2, 6),
-(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23);
+(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25);
 
 
 INSERT INTO programs (id, name, description) VALUES
