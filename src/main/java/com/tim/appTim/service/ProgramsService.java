@@ -6,12 +6,10 @@ import com.tim.appTim.dto.ProgramsDTO;
 import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.entity.ProgramModule;
 import com.tim.appTim.entity.Programs;
+import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.UnprocessableException;
-import com.tim.appTim.exception.BadRequestException;
-import com.tim.appTim.repository.ModuleSessionRepository;
-import com.tim.appTim.repository.ProgramModuleRepository;
-import com.tim.appTim.repository.ProgramsRepository;
+import com.tim.appTim.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,16 +18,22 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProgramsService {
+    private final ModuleRepository moduleRepository;
+    private final ClassRepository classRepository;
     private final ProgramsRepository programsRepository;
     private final ProgramModuleRepository programModuleRepository;
     private final ModuleSessionRepository moduleSessionRepository;
 
-    public ProgramsService(ProgramsRepository programsRepository, 
-                          ProgramModuleRepository programModuleRepository,
-                          ModuleSessionRepository moduleSessionRepository) {
+    public ProgramsService(ProgramsRepository programsRepository,
+                           ProgramModuleRepository programModuleRepository,
+                           ModuleSessionRepository moduleSessionRepository,
+                           ModuleRepository moduleRepository,
+                           ClassRepository classRepository) {
         this.programsRepository = programsRepository;
         this.programModuleRepository = programModuleRepository;
         this.moduleSessionRepository = moduleSessionRepository;
+        this.moduleRepository = moduleRepository;
+        this.classRepository = classRepository;
     }
 
     @Transactional(readOnly = true)
@@ -80,6 +84,12 @@ public class ProgramsService {
         if (!programsRepository.existsById(id)) {
             throw new ResourceNotFoundException("Không tìm thấy chương trình với id = " + id);
         }
+        if (classRepository.existsByProgramId(id)) {
+            throw new ConflictException("Không thể xóa chương trình này vì đang được sử dụng bởi một Lớp học.");
+        }
+        if (programModuleRepository.existsByProgramId(id)) {
+            throw new ConflictException("Không thể xóa chương trình này vì đang có các Module liên kết.");
+        }
         programsRepository.deleteById(id);
     }
 
@@ -96,13 +106,15 @@ public class ProgramsService {
         int added = 0;
         for (Integer moduleId : moduleIds) {
             if (!currentModuleIds.contains(moduleId)) {
+                com.tim.appTim.entity.Module module = moduleRepository.findById(moduleId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy module với id = " + moduleId));
                 ProgramModule pm = new ProgramModule();
                 ProgramModule.ProgramModuleId pmId = new ProgramModule.ProgramModuleId(programId, moduleId);
                 pm.setId(pmId);
                 pm.setProgram(program);
-                com.tim.appTim.entity.Module module = new com.tim.appTim.entity.Module();
-                module.setId(moduleId);
+
                 pm.setModule(module);
+
                 pm.setPosition(maxPosition + (++added));
                 programModuleRepository.save(pm);
             }
