@@ -52,7 +52,7 @@ INSERT INTO permissions (id, name) VALUES
 (23, 'program:delete'),
 (24, 'notification:cleanup'),
 (25, 'notification:create_manual'),
-(26, 'module:delete')
+(26, 'module:delete'),
 (27, 'class:update_all');
 
 

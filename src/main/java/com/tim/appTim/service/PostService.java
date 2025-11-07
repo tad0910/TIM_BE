@@ -3,6 +3,7 @@ package com.tim.appTim.service;
 
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.ReactionDTO;
+import com.tim.appTim.repository.FileRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +40,7 @@ public class PostService {
     private final ReactionService reactionService;
     private final CommentRepository commentRepository;
     private final LinkPreviewService linkPreviewService;
+    private final FileRepository fileRepository;
 
     private static final Pattern URL_PATTERN = Pattern.compile(
         "\\b(https?://[\\w.-]+(?:\\:[0-9]+)?(?:/[^\\s]*)?)\\b",
@@ -47,13 +49,14 @@ public class PostService {
 
     public PostService(PostRepository postRepository, UserRepository userRepository, 
                        CommentService commentService, ReactionService reactionService, CommentRepository commentRepository,
-                       LinkPreviewService linkPreviewService) {
+                       LinkPreviewService linkPreviewService, FileRepository fileRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentService = commentService;
         this.reactionService = reactionService;
         this.commentRepository = commentRepository;
         this.linkPreviewService = linkPreviewService;
+        this.fileRepository = fileRepository;
     }
 
     private String extractFirstUrl(String content) {
@@ -232,6 +235,7 @@ public class PostService {
         if (newFiles != null && !newFiles.isEmpty()) {
             for (File f : newFiles) {
                 post.addFile(f);
+                fileRepository.save(f);
             }
         }
 
