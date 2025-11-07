@@ -18,6 +18,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -81,7 +82,7 @@ public class ClassIntegrationTest {
     void updateClass_WhenUserIsTeacherOfClass_ShouldReturn200() throws Exception {
         ClassDTO update = new ClassDTO(10L, "Lớp 10A Updated", "Mô tả mới", new ArrayList<>(), 100, null);
 
-        mockMvc.perform(put(BASE_URL + "/10") // Lớp 10
+        mockMvc.perform(put(BASE_URL + "/10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isOk())
@@ -145,7 +146,6 @@ public class ClassIntegrationTest {
                     .andExpect(status().isBadRequest());
     }
 
-// ========== GET /classes - getAllClasses() ==========
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void getAllClasses_WhenUserIsAdmin_ShouldReturn200() throws Exception {
@@ -161,7 +161,6 @@ public class ClassIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ========== GET /classes/{id} - Additional cases ==========
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void getClassInfo_WhenUserIsAdmin_ShouldReturn200() throws Exception {
@@ -177,7 +176,6 @@ public class ClassIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ========== PUT /classes/{id} - Additional cases ==========
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void updateClass_WhenUserIsAdmin_ShouldReturn200() throws Exception {
@@ -190,7 +188,6 @@ public class ClassIntegrationTest {
                 .andExpect(jsonPath("$.className").value("Lớp Updated by Admin"));
     }
 
-    // ========== PUT /classes/{id}/program ==========
     @Test
     @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
     void updateClassProgram_WhenUserIsTeacher_ShouldReturn200() throws Exception {

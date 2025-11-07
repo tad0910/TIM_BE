@@ -46,8 +46,15 @@ INSERT INTO permissions (id, name) VALUES
 (17, 'module:create'),
 (18, 'user:read_all'),
 (19, 'user:create'),
-(20, 'class:update_all'),
-(21, 'module:delete');
+(20, 'user:delete'),
+(21, 'reaction:delete'),
+(22, 'program:update'),
+(23, 'program:delete'),
+(24, 'notification:cleanup'),
+(25, 'notification:create_manual'),
+(26, 'module:delete')
+(27, 'class:update_all');
+
 
 INSERT INTO users (id, username, password, email) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com'),
@@ -68,7 +75,7 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 12),
 (1, 1), (1, 4),
 (2, 2), (2, 3), (2, 5), (2, 6),
-(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21);
+(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25), (2, 26), (2, 27);
 
 
 INSERT INTO programs (id, name, description) VALUES
@@ -79,6 +86,12 @@ INSERT INTO modules (id, name, description) VALUES
 (201, 'Module Spring Security', 'Hướng dẫn bảo mật ứng dụng.'),
 (202, 'Module Test Mới', 'Dùng cho test case CREATE thành công');
 
+INSERT INTO module_sessions (id, module_id, session_number, title, instructor_id, scheduled_at, end_date, status)
+VALUES
+(300, 200, 1, 'Buổi 1: Giới thiệu JPA', 5, '2025-10-01T09:00:00', '2025-10-01T11:00:00', 'completed'),
+(301, 200, 2, 'Buổi 2: Quan hệ Entity', 5, '2025-10-03T09:00:00', '2025-10-03T11:00:00', 'planned'),
+(302, 201, 1, 'Buổi 1: Giới thiệu Security', 6, '2025-11-01T09:00:00', '2025-11-01T11:00:00', 'planned'),
+(303, null, 1, 'Buổi học tự do', null, '2025-12-01T09:00:00', '2025-12-01T11:00:00', 'planned');
 
 INSERT INTO classes (id, name, description, program_id) VALUES
 (10, 'BE Class K10', 'Lớp học Test A', 100),
@@ -98,11 +111,6 @@ VALUES
 (1000, 10, 200, '2025-11-01', '2025-11-15', 5, 'planned'),
 (1001, 11, 201, '2025-12-01', '2025-12-10', 6, 'planned');
 
-INSERT INTO module_sessions (id, module_id, session_number, title, content, scheduled_at, end_date, status, instructor_id)
-VALUES
-(1000, 200, 1, 'Buổi 1: Giới thiệu', 'Nội dung buổi 1', '2025-11-01 09:00:00', '2025-11-01 11:00:00', 'planned', 5),
-(1001, 200, 2, 'Buổi 2: Thực hành', 'Nội dung buổi 2', '2025-11-02 09:00:00', '2025-11-02 11:00:00', 'planned', 5);
-
 
 INSERT INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES
 (10, 1, 'Bài viết của owner', 'open'),
@@ -115,6 +123,12 @@ INSERT INTO comments (id, bai_viet_id, nguoi_dung_id, noi_dung, thoi_gian_tao) V
 
 INSERT INTO reply_comments (id, comments_id, nguoi_dung_id, noi_dung, thoi_gian_tao) VALUES
 (30, 20, 1, 'Reply của user 1', NOW());
+
+INSERT INTO reactions (id, nguoi_dung_id, bai_viet_id, comment_id, reply_comment_id, loai_cam_xuc)
+VALUES
+(100, 2, 10, null, null, 'like'),
+(101, 1, null, 20, null, 'love'),
+(102, 1, null, null, 30, 'haha');
 
 INSERT INTO notifications (id, receiver_id, sender_id, notification_type, title, content, created_at, is_read, read_at, target_type, target_id) VALUES
 (50, 1, 2, 'POST_COMMENT', 'Thông báo mới', 'User 2 đã bình luận bài viết của bạn', NOW(), false, null, 'POST', 10),

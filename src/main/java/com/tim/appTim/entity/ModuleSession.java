@@ -10,7 +10,7 @@ public class ModuleSession {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "module_id", nullable = false)
+    @Column(name = "module_id", nullable = true)
     private Integer moduleId;
 
     @Column(name = "session_number", nullable = false)
@@ -36,7 +36,7 @@ public class ModuleSession {
     private Long instructorId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "module_id", insertable = false, updatable = false)
+    @JoinColumn(name = "module_id", insertable = false, updatable = false, nullable = true)
     private Module module;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -12,5 +12,6 @@ import com.tim.appTim.entity.Class;
 public interface ClassRepository extends JpaRepository<Class, Long> {
     Optional<Class> findById(Long id);
     List<Class> findAll();
+    boolean existsByProgramId(Integer programId);
 
 }
