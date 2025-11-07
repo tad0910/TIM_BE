@@ -49,7 +49,7 @@ public class PostController {
     @PreAuthorize("hasAuthority('post:create') ")
     public ResponseEntity<PostDTO> createPost(
             Authentication authentication,
-            @RequestParam("content") String content,
+            @RequestParam( value = "content", required = false) String content,
             @RequestParam("privacy") String privacy,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles
     ) {
@@ -131,7 +131,7 @@ public class PostController {
     public ResponseEntity<PostDTO> updatePost(
             @PathVariable Long postId,
             Authentication authentication,
-            @RequestParam("content") String content,
+            @RequestParam(value = "content", required = false) String content,
             @RequestParam("privacy") String privacy,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles,
             @RequestParam(value = "fileIdsToDelete", required = false) List<Integer> fileIdsToDelete
