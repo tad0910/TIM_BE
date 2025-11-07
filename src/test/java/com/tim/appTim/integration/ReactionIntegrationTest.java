@@ -92,49 +92,157 @@ public class ReactionIntegrationTest {
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void getSchedulesByClass_WhenFilteredByValidDateRange_ShouldReturnOneSchedule() throws Exception {
-        Long classId = 10L;
-
-        String startDate = "2025-11-01";
-        String endDate = "2025-11-30";
-
-        mockMvc.perform(get(BASE_URL + "/class/{classId}", classId)
-                        .param("startDate", startDate)
-                        .param("endDate", endDate))
+    void testGetReactionsByPostId_ShouldReturnReactionList() throws Exception {
+        Long postId = 10L;
+        mockMvc.perform(get("/reactions/posts/" + postId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id").value(1000L))
-                .andExpect(jsonPath("$[0].startDate").value("2025-11-01"));
+                .andExpect(jsonPath("$[0].emotionType").value("like"))
+                .andExpect(jsonPath("$[0].userId").value(2L));
     }
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void getSchedulesByClass_WhenFilteredByEmptyDateRange_ShouldReturnEmptyList() throws Exception {
-        Long classId = 10L;
-
-        String startDate = "2025-10-01";
-        String endDate = "2025-10-31";
-
-        mockMvc.perform(get(BASE_URL + "/class/{classId}", classId)
-                        .param("startDate", startDate)
-                        .param("endDate", endDate))
+    void testCountReactionsByType_ShouldReturnCount() throws Exception {
+        Long postId = 10L;
+        String emotion = "like";
+        mockMvc.perform(get("/reactions/posts/" + postId + "/count/" + emotion))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$").value(1L));
     }
 
     @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
-    void getSchedulesByInstructor_WhenFilteredByValidDateRange_ShouldReturnSchedule() throws Exception {
-        Long instructorId = 5L;
-
-        String startDate = "2025-11-01";
-        String endDate = "2025-11-30";
-
-        mockMvc.perform(get(BASE_URL + "/instructor/{instructorId}", instructorId)
-                        .param("startDate", startDate)
-                        .param("endDate", endDate))
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testGetReactionsByCommentId_ShouldReturnReactionList() throws Exception {
+        Long commentId = 20L;
+        mockMvc.perform(get("/reactions/comments/" + commentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].instructorId").value(5L));
+                .andExpect(jsonPath("$[0].userId").value(1L));
     }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void testCountCommentReactionsByType_ShouldReturnCorrectCount() throws Exception {
+        Long commentId = 20L;
+        String emotion = "love";
+
+        mockMvc.perform(post("/reactions/comments/" + commentId)
+                        .param("emotionType", emotion))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.emotionType").value(emotion));
+
+        mockMvc.perform(get("/reactions/comments/" + commentId + "/count/" + emotion)
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("another_user").roles("USER"))) // Đổi user để test
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(1L));
+
+        mockMvc.perform(get("/reactions/comments/" + commentId + "/count/" + "like")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("another_user").roles("USER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(0L));
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testGetReactionsByReplyId_ShouldReturnReactionList() throws Exception {
+        Long replyId = 30L;
+        mockMvc.perform(get("/reactions/replies/" + replyId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].emotionType").value("haha"))
+                .andExpect(jsonPath("$[0].userId").value(1L));
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testCountReplyReactionsByType_ShouldReturnCount() throws Exception {
+        Long replyId = 30L;
+        String emotion = "haha";
+        mockMvc.perform(get("/reactions/replies/" + replyId + "/count/" + emotion))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(1L));
+    }
+
+    @Test
+    void testPostReaction_WhenUserIsNotAuthenticated_ShouldReturn401() throws Exception {
+        mockMvc.perform(post("/reactions/posts/10")
+                        .param("emotionType", "like"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testDeleteCommentReaction_WhenUserLacksAuthority_ShouldReturn403() throws Exception {
+        Long commentId = 20L;
+        mockMvc.perform(delete("/reactions/comments/" + commentId))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testDeleteReplyReaction_WhenUserLacksAuthority_ShouldReturn403() throws Exception {
+        Long replyId = 30L;
+        mockMvc.perform(delete("/reactions/replies/" + replyId))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testPostReaction_WhenEmotionTypeIsInvalid_ShouldReturn400() throws Exception {
+        Long postId = 10L;
+        mockMvc.perform(post("/reactions/posts/" + postId)
+                        .param("emotionType", "invalid_emotion_string"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testCountReactions_WhenEmotionTypeIsInvalid_ShouldReturn400() throws Exception {
+        Long postId = 10L;
+        mockMvc.perform(get("/reactions/posts/" + postId + "/count/invalid_string"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testPostReaction_WhenPostNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentPostId = 9999L;
+        mockMvc.perform(post("/reactions/posts/" + nonExistentPostId)
+                        .param("emotionType", "like"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testGetReactions_WhenCommentNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentCommentId = 9999L;
+        mockMvc.perform(get("/reactions/comments/" + nonExistentCommentId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void testAddReactionToPost_WhenReactionAlreadyExists_ShouldUpdateEmotion() throws Exception {
+        Long postId = 10L;
+        mockMvc.perform(post("/reactions/posts/" + postId)
+                        .param("emotionType", "like"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.emotionType").value("like"))
+                .andExpect(jsonPath("$.userId").value(2L));
+
+        mockMvc.perform(post("/reactions/posts/" + postId)
+                        .param("emotionType", "love"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.emotionType").value("love"))
+                .andExpect(jsonPath("$.userId").value(2L));
+    }
+
+
+
+
+
+
+
+
 }

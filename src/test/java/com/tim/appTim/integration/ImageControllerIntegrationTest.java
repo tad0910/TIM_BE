@@ -1,6 +1,5 @@
 package com.tim.appTim.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tim.appTim.entity.UserImage;
 import com.tim.appTim.service.KeycloakSyncService;
 import com.tim.appTim.service.UserImageService;
@@ -23,7 +22,6 @@ import org.springframework.web.context.WebApplicationContext;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -46,6 +44,7 @@ public class ImageControllerIntegrationTest {
     private UserImageService userImageService;
 
     @Autowired
+    @SuppressWarnings("unused")
     private UserService userService;
 
     private final String BASE_URL = "/api/users";
@@ -100,5 +99,156 @@ public class ImageControllerIntegrationTest {
     void deleteImage_WhenUserIsNotSelf_ShouldReturn403() throws Exception {
         mockMvc.perform(delete(BASE_URL + "/2/image/100"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void deleteImage_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        when(userImageService.findById(100L)).thenReturn(testImage);
+        doNothing().when(userImageService).delete(100L);
+
+        mockMvc.perform(delete(BASE_URL + "/1/image/100"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Xóa ảnh thành công"));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void deleteImage_WhenImageDoesNotExist_ShouldReturn404() throws Exception {
+        when(userImageService.findById(999L)).thenReturn(null);
+
+        mockMvc.perform(delete(BASE_URL + "/1/image/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    // ========== GET /api/users/{userId}/image - Additional tests ==========
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void getAllImages_WhenNoImagesExist_ShouldReturn404() throws Exception {
+        when(userImageService.findAllByUserId(2L)).thenReturn(List.of());
+        mockMvc.perform(get(BASE_URL + "/2/image"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void getAllImages_WhenUserDoesNotExist_ShouldReturn404() throws Exception {
+        when(userImageService.findAllByUserId(999L)).thenReturn(List.of());
+
+        mockMvc.perform(get(BASE_URL + "/999/image"))
+                .andExpect(status().isNotFound());
+    }
+
+    // ========== POST /api/users/{userId}/image - uploadImage ==========
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void uploadImage_WhenUserIsSelf_ShouldReturn200() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes()
+        );
+
+        when(userImageService.save(any(UserImage.class))).thenAnswer(invocation -> {
+            UserImage img = invocation.getArgument(0);
+            img.setId(200L);
+            return img;
+        });
+
+        mockMvc.perform(multipart(BASE_URL + "/1/image")
+                        .file(file))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Tải ảnh thành công")));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void uploadImage_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "admin-upload.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "admin upload content".getBytes()
+        );
+
+        when(userImageService.save(any(UserImage.class))).thenAnswer(invocation -> {
+            UserImage img = invocation.getArgument(0);
+            img.setId(201L);
+            return img;
+        });
+
+        mockMvc.perform(multipart(BASE_URL + "/1/image")
+                        .file(file))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Tải ảnh thành công")));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void uploadImage_WhenFileIsEmpty_ShouldReturn400() throws Exception {
+        MockMultipartFile emptyFile = new MockMultipartFile(
+                "file",
+                "empty.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                new byte[0]
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/1/image")
+                        .file(emptyFile))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("File tải lên bị trống"));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void uploadImage_WhenUserDoesNotExist_ShouldReturn404() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test content".getBytes()
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/999/image")
+                        .file(file))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+    void uploadImage_WhenUserIsNotSelfAndNotAdmin_ShouldReturn403() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test content".getBytes()
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/1/image")
+                        .file(file))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void uploadImage_WithDifferentFileTypes_ShouldReturn200() throws Exception {
+        MockMultipartFile pngFile = new MockMultipartFile(
+                "file",
+                "test.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "png content".getBytes()
+        );
+
+        when(userImageService.save(any(UserImage.class))).thenAnswer(invocation -> {
+            UserImage img = invocation.getArgument(0);
+            img.setId(202L);
+            return img;
+        });
+
+        mockMvc.perform(multipart(BASE_URL + "/1/image")
+                        .file(pngFile))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Tải ảnh thành công")));
     }
 }

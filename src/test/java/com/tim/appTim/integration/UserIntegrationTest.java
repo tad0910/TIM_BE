@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -122,7 +123,7 @@ public class UserIntegrationTest {
     void getById_WhenAdminGettingOtherUsers_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("admin_user"));
+                .andExpect(jsonPath("$.username").value("post_owner"));
     }
 
     @Test
@@ -266,12 +267,15 @@ public class UserIntegrationTest {
     void updateUser_WhenUserUpdatesOtherUser_ShouldReturn403() throws Exception {
         Long targetUserId = 2L;
 
-        User userUpdatePayload = new User();
-        userUpdatePayload.setFirstName("HackerName");
+        UserUpdateDTO validPayload = new UserUpdateDTO();
+
+        validPayload.setFirstName("HackerName");
+        validPayload.setUsername("valid_username_abc");
+        validPayload.setEmail("valid_email@example.com");
 
         mockMvc.perform(put(BASE_URL + "/" + targetUserId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userUpdatePayload)))
+                        .content(objectMapper.writeValueAsString(validPayload)))
                 .andExpect(status().isForbidden());
     }
 
@@ -308,6 +312,46 @@ public class UserIntegrationTest {
     }
 
     @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void deleteUser_WhenAdmin_ShouldReturn204() throws Exception {
+        Long targetUserId = 2L;
+
+        doNothing().when(userService).delete(eq(targetUserId));
+
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void deleteUser_WhenNonAdmin_ShouldReturn403() throws Exception {
+        Long targetUserId = 2L;
+
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void deleteUser_WhenUserNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentUserId = 999L;
+
+        doThrow(new ResourceNotFoundException("User không tồn tại"))
+                .when(userService).delete(eq(nonExistentUserId));
+
+        mockMvc.perform(delete(BASE_URL + "/" + nonExistentUserId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteUser_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        Long targetUserId = 1L;
+
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void uploadProfileImage_WhenUserIsSelf_ShouldReturn200() throws Exception {
         MockMultipartFile mockFile = new MockMultipartFile(
@@ -326,7 +370,151 @@ public class UserIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Ảnh đại diện đã được cập nhật thành công"));
     }
 
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void uploadProfileImage_WhenFileIsEmpty_ShouldReturn400() throws Exception {
+        Long selfUserId = 1L;
 
+        MockMultipartFile emptyFile = new MockMultipartFile(
+                "file",
+                "empty-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                new byte[0]
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/" + selfUserId + "/profile-image")
+                        .file(emptyFile))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void uploadProfileImage_WhenUserNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentUserId = 999L;
+
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes()
+        );
+
+        doThrow(new ResourceNotFoundException("User không tồn tại"))
+                .when(userService).findById(eq(nonExistentUserId));
+
+        mockMvc.perform(multipart(BASE_URL + "/" + nonExistentUserId + "/profile-image")
+                        .file(validFile))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void uploadProfileImage_WhenAdminUpdatesOtherUser_ShouldReturn200() throws Exception {
+        Long targetUserId = 1L;
+
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file",
+                "admin-upload.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "admin upload content".getBytes()
+        );
+
+        User targetUser = userService.findById(targetUserId);
+
+        doReturn(new com.tim.appTim.entity.UserImage())
+                .when(userImageService).save(any(com.tim.appTim.entity.UserImage.class));
+
+        targetUser.setProfileImage("/uploads/new-admin-image.jpg");
+        doReturn(targetUser)
+                .when(userService).updateProfileImage(eq(targetUserId), anyString());
+
+        mockMvc.perform(multipart(BASE_URL + "/" + targetUserId + "/profile-image")
+                        .file(validFile))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Ảnh đại diện đã được cập nhật thành công"));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void uploadProfileImage_WhenUserUpdatesOtherUser_ShouldReturn403() throws Exception {
+        Long otherUserId = 2L;
+
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file",
+                "hacker-file.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "hacker content".getBytes()
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/" + otherUserId + "/profile-image")
+                        .file(validFile))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void uploadProfileImage_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        Long targetUserId = 1L;
+
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes()
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/" + targetUserId + "/profile-image")
+                        .file(validFile))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void getProfileImage_WhenUserIsSelf_ShouldReturn200() throws Exception {
+        Long selfUserId = 1L;
+
+        mockMvc.perform(get(BASE_URL + "/" + selfUserId + "/profile-image"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(selfUserId));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getProfileImage_WhenAdminGetsOther_ShouldReturn200() throws Exception {
+        Long targetUserId = 1L;
+
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId + "/profile-image"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(targetUserId));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void getProfileImage_WhenUserGetsOther_ShouldReturn403() throws Exception {
+        Long otherUserId = 2L;
+
+        mockMvc.perform(get(BASE_URL + "/" + otherUserId + "/profile-image"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getProfileImage_WhenUserNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentUserId = 999L;
+
+        doThrow(new ResourceNotFoundException("User không tồn tại"))
+                .when(userService).findById(eq(nonExistentUserId));
+
+        mockMvc.perform(get(BASE_URL + "/" + nonExistentUserId + "/profile-image"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getProfileImage_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        Long targetUserId = 1L;
+
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId + "/profile-image"))
+                .andExpect(status().isUnauthorized());
+    }
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
@@ -340,6 +528,94 @@ public class UserIntegrationTest {
                         .content(objectMapper.writeValueAsString(Map.of("imageUrl", newImageUrl))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.profileImage").value(newImageUrl));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void updateProfileImageByUrl_WhenImageUrlIsNull_ShouldReturn400() throws Exception {
+        Long selfUserId = 1L;
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("imageUrl", null);
+
+        mockMvc.perform(put(BASE_URL + "/" + selfUserId + "/profile-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void updateProfileImageByUrl_WhenImageUrlIsBlank_ShouldReturn400() throws Exception {
+        Long selfUserId = 1L;
+
+        Map<String, String> payload = Map.of("imageUrl", "   ");
+
+        mockMvc.perform(put(BASE_URL + "/" + selfUserId + "/profile-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateProfileImageByUrl_WhenAdminUpdatesOther_ShouldReturn200() throws Exception {
+        Long targetUserId = 1L;
+        String newImageUrl = "http://example.com/admin-update.jpg";
+
+        Map<String, String> payload = Map.of("imageUrl", newImageUrl);
+
+        User updatedUser = userService.findById(targetUserId);
+        updatedUser.setProfileImage(newImageUrl);
+
+        doReturn(updatedUser)
+                .when(userService).updateProfileImage(eq(targetUserId), eq(newImageUrl));
+
+        mockMvc.perform(put(BASE_URL + "/" + targetUserId + "/profile-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.profileImage").value(newImageUrl));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void updateProfileImageByUrl_WhenUserUpdatesOther_ShouldReturn403() throws Exception {
+        Long otherUserId = 2L;
+        String newImageUrl = "http://example.com/hacker.jpg";
+        Map<String, String> payload = Map.of("imageUrl", newImageUrl);
+
+        mockMvc.perform(put(BASE_URL + "/" + otherUserId + "/profile-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateProfileImageByUrl_WhenUserNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentUserId = 999L;
+        String newImageUrl = "http://example.com/image.jpg";
+        Map<String, String> payload = Map.of("imageUrl", newImageUrl);
+
+        doThrow(new ResourceNotFoundException("User không tồn tại"))
+                .when(userService).updateProfileImage(eq(nonExistentUserId), eq(newImageUrl));
+
+        mockMvc.perform(put(BASE_URL + "/" + nonExistentUserId + "/profile-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updateProfileImageByUrl_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        Long targetUserId = 1L;
+        Map<String, String> payload = Map.of("imageUrl", "http://example.com/image.jpg");
+
+        mockMvc.perform(put(BASE_URL + "/" + targetUserId + "/profile-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnauthorized());
     }
 
 
@@ -357,5 +633,149 @@ public class UserIntegrationTest {
                 .andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.totalClasses").value(1))
                 .andExpect(jsonPath("$.classes[0].role").value("sinh_vien"));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void uploadCoverImage_WhenUserIsSelf_ShouldReturn200() throws Exception {
+        Long selfUserId = 1L;
+
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file", "cover.jpg", MediaType.IMAGE_JPEG_VALUE, "cover content".getBytes()
+        );
+
+        User targetUser = userService.findById(selfUserId);
+        targetUser.setCoverImage("/uploads/new-cover.jpg");
+
+        doReturn(new com.tim.appTim.entity.UserImage())
+                .when(userImageService).save(any(com.tim.appTim.entity.UserImage.class));
+
+        doReturn(targetUser)
+                .when(userService).updateCoverImage(eq(selfUserId), anyString());
+
+        mockMvc.perform(multipart(BASE_URL + "/" + selfUserId + "/cover-image")
+                        .file(validFile))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Ảnh bìa đã được cập nhật thành công"));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void uploadCoverImage_WhenFileIsEmpty_ShouldReturn400() throws Exception {
+        Long selfUserId = 1L;
+
+        MockMultipartFile emptyFile = new MockMultipartFile(
+                "file", "empty.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[0]
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/" + selfUserId + "/cover-image")
+                        .file(emptyFile))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void uploadCoverImage_WhenUserNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentUserId = 999L;
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file", "cover.jpg", MediaType.IMAGE_JPEG_VALUE, "cover content".getBytes()
+        );
+
+        doThrow(new ResourceNotFoundException("User không tồn tại"))
+                .when(userService).findById(eq(nonExistentUserId));
+
+        mockMvc.perform(multipart(BASE_URL + "/" + nonExistentUserId + "/cover-image")
+                        .file(validFile))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void uploadCoverImage_WhenAdminUpdatesOtherUser_ShouldReturn200() throws Exception {
+        Long targetUserId = 1L;
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file", "admin-cover.jpg", MediaType.IMAGE_JPEG_VALUE, "admin content".getBytes()
+        );
+
+        User targetUser = userService.findById(targetUserId);
+        targetUser.setCoverImage("/uploads/new-admin-cover.jpg");
+
+        doReturn(new com.tim.appTim.entity.UserImage())
+                .when(userImageService).save(any(com.tim.appTim.entity.UserImage.class));
+        doReturn(targetUser)
+                .when(userService).updateCoverImage(eq(targetUserId), anyString());
+
+        mockMvc.perform(multipart(BASE_URL + "/" + targetUserId + "/cover-image")
+                        .file(validFile))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void uploadCoverImage_WhenUserUpdatesOtherUser_ShouldReturn403() throws Exception {
+        Long otherUserId = 2L;
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file", "hacker-cover.jpg", MediaType.IMAGE_JPEG_VALUE, "hacker content".getBytes()
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/" + otherUserId + "/cover-image")
+                        .file(validFile))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void uploadCoverImage_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        Long targetUserId = 1L;
+        MockMultipartFile validFile = new MockMultipartFile(
+                "file", "cover.jpg", MediaType.IMAGE_JPEG_VALUE, "cover content".getBytes()
+        );
+
+        mockMvc.perform(multipart(BASE_URL + "/" + targetUserId + "/cover-image")
+                        .file(validFile))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void getCoverImage_WhenUserIsSelf_ShouldReturn200() throws Exception {
+        Long selfUserId = 1L;
+        mockMvc.perform(get(BASE_URL + "/" + selfUserId + "/cover-image"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(selfUserId));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getCoverImage_WhenAdminGetsOther_ShouldReturn200() throws Exception {
+        Long targetUserId = 1L;
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId + "/cover-image"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(targetUserId));
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void getCoverImage_WhenUserGetsOther_ShouldReturn403() throws Exception {
+        Long otherUserId = 2L;
+        mockMvc.perform(get(BASE_URL + "/" + otherUserId + "/cover-image"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getCoverImage_WhenUserNotFound_ShouldReturn404() throws Exception {
+        Long nonExistentUserId = 999L;
+        doThrow(new ResourceNotFoundException("User không tồn tại"))
+                .when(userService).findById(eq(nonExistentUserId));
+
+        mockMvc.perform(get(BASE_URL + "/" + nonExistentUserId + "/cover-image"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getCoverImage_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        Long targetUserId = 1L;
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId + "/cover-image"))
+                .andExpect(status().isUnauthorized());
     }
 }

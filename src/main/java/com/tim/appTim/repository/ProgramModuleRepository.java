@@ -18,4 +18,6 @@ public interface ProgramModuleRepository extends JpaRepository<ProgramModule, Pr
            "WHERE pm.program.id = :programId " +
            "ORDER BY pm.position ASC")
     List<ProgramModule> findByProgramIdWithModule(@Param("programId") Integer programId);
+
+    boolean existsByProgramId(Integer programId);
 }
