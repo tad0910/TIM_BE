@@ -1,5 +1,6 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.UpdateMemberRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tim.appTim.dto.AddMemberDTO;
 import com.tim.appTim.dto.ClassDTO;
@@ -58,8 +59,6 @@ public class ClassIntegrationTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isForbidden());
     }
-
-    
 
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
@@ -136,6 +135,167 @@ public class ClassIntegrationTest {
         mockMvc.perform(delete(BASE_URL + "/" + nonExistentClassId))
                 .andExpect(status().isNotFound());
     }
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void createClass_WhenInvalidData_ShouldReturn400() throws Exception {
+            ClassDTO dto = new ClassDTO(null, null, "Mô tả", new ArrayList<>(), 999, null);
+
+            mockMvc.perform(post(BASE_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getAllClasses_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        mockMvc.perform(get(BASE_URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
+    void getAllClasses_WhenUserIsNotAdmin_ShouldReturn403() throws Exception {
+        mockMvc.perform(get(BASE_URL))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getClassInfo_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.className").value("BE Class K10"));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getClassInfo_WhenClassDoesNotExist_ShouldReturn404() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateClass_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        ClassDTO update = new ClassDTO(10L, "Lớp Updated by Admin", "Mô tả mới", new ArrayList<>(), 100, null);
+
+        mockMvc.perform(put(BASE_URL + "/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(update)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.className").value("Lớp Updated by Admin"));
+    }
+
+    @Test
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
+    void updateClassProgram_WhenUserIsTeacher_ShouldReturn200() throws Exception {
+        Integer newProgramId = 100;
+
+        mockMvc.perform(put(BASE_URL + "/10/program")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newProgramId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.programId").value(100));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateClassProgram_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        Integer newProgramId = 100;
+
+        mockMvc.perform(put(BASE_URL + "/10/program")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newProgramId)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = "giaovien2", userDetailsServiceBeanName = "userService")
+    void updateClassProgram_WhenUserIsNotTeacher_ShouldReturn403() throws Exception {
+        Integer newProgramId = 100;
+
+        mockMvc.perform(put(BASE_URL + "/10/program")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newProgramId)))
+                .andExpect(status().isForbidden());
+    }
 
 
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void deleteClass_WhenUserIsAdmin_ShouldReturn204() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/11"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithUserDetails(value = "giaovien2", userDetailsServiceBeanName = "userService")
+    void deleteClass_WhenUserIsNotTeacher_ShouldReturn403() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/10"))
+                .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void addMember_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        AddMemberDTO dto = new AddMemberDTO(3L, "sinh_vien");
+
+        mockMvc.perform(post(BASE_URL + "/10/members")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Thêm thành viên vào lớp học thành công"));
+    }
+
+    @Test
+    @WithUserDetails(value = "giaovien2", userDetailsServiceBeanName = "userService")
+    void addMember_WhenUserIsNotTeacher_ShouldReturn403() throws Exception {
+        AddMemberDTO dto = new AddMemberDTO(3L, "sinh_vien");
+
+        mockMvc.perform(post(BASE_URL + "/10/members")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateMemberRole_WhenUserIsAdmin_ShouldReturn200() throws Exception {
+        UpdateMemberRequest request = new UpdateMemberRequest(ClassMember.Role.sinh_vien);
+
+        mockMvc.perform(put(BASE_URL + "/10/members/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.message").value("Cập nhật vai trò thành viên thành công"));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void removeMember_WhenAdminRemovesMember_ShouldReturn200() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/10/members/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Xóa thành viên khỏi lớp học thành công"));
+    }
+
+    @Test
+    @WithUserDetails(value = "giaovien2", userDetailsServiceBeanName = "userService")
+    void removeMember_WhenUserIsNotTeacherOrAdminOrSelf_ShouldReturn403() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/10/members/1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void updateClass_WhenClassDoesNotExist_ShouldReturn404() throws Exception {
+        ClassDTO update = new ClassDTO(999L, "Lớp không tồn tại", "Mô tả", new ArrayList<>(), 100, null);
+
+        mockMvc.perform(put(BASE_URL + "/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(update)))
+                .andExpect(status().isNotFound());
+    }
 }
