@@ -69,13 +69,4 @@ public class ModuleSessionController {
         body.put("sessionId", sessionId);
         return ResponseEntity.ok().body(body);
     }
-
-    @PutMapping("/sessions/{sessionId}/instructor")
-    @PreAuthorize("hasAuthority('module:update')")
-    public ResponseEntity<ModuleSessionDTO> assignInstructor(
-            @PathVariable Long sessionId,
-            @RequestParam Long instructorId) {
-        ModuleSessionDTO updated = moduleSessionService.assignInstructor(sessionId, instructorId);
-        return ResponseEntity.ok(updated);
-    }
 }

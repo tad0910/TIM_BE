@@ -1,7 +1,6 @@
 package com.tim.appTim.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "module_sessions")
@@ -22,33 +21,12 @@ public class ModuleSession {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "scheduled_at")
-    private LocalDateTime scheduledAt;
-
-    @Column(name = "end_date")
-    private LocalDateTime endDate;
-
-    @Column(name = "status")
-    @Enumerated(EnumType.STRING)
-    private SessionStatus status;
-
-    @Column(name = "instructor_id")
-    private Long instructorId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", insertable = false, updatable = false, nullable = true)
     private Module module;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instructor_id", insertable = false, updatable = false)
-    private User instructor;
-
     @OneToMany(mappedBy = "moduleSession", fetch = FetchType.LAZY)
     private java.util.List<ClassModuleSchedule> classModuleSchedules;
-
-    public enum SessionStatus {
-        planned, ongoing, completed
-    }
 
     public Long getId() {
         return id;
@@ -88,46 +66,6 @@ public class ModuleSession {
 
     public void setContent(String content) {
         this.content = content;
-    }
-
-    public LocalDateTime getScheduledAt() {
-        return scheduledAt;
-    }
-
-    public void setScheduledAt(LocalDateTime scheduledAt) {
-        this.scheduledAt = scheduledAt;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
-    public SessionStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(SessionStatus status) {
-        this.status = status;
-    }
-
-    public Long getInstructorId() {
-        return instructorId;
-    }
-
-    public void setInstructorId(Long instructorId) {
-        this.instructorId = instructorId;
-    }
-
-    public User getInstructor() {
-        return instructor;
-    }
-
-    public void setInstructor(User instructor) {
-        this.instructor = instructor;
     }
 
     public Module getModule() {
