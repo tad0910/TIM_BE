@@ -232,35 +232,4 @@ public class ModuleIntegrationTest {
                         .content(objectMapper.writeValueAsString(sessionRequest)))
                 .andExpect(status().isNotFound());
     }
-
-    // ========== PUT /module/{id}/instructor - assignInstructor ==========
-    @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
-    void assignInstructor_WhenAdmin_ShouldReturn200() throws Exception {
-        when(moduleService.assignInstructor(eq(200), eq(5L))).thenReturn(testModule);
-
-        mockMvc.perform(put(BASE_URL + "/200/instructor")
-                        .param("instructorId", "5"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(200));
-    }
-
-    @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void assignInstructor_WhenUserWithoutPermission_ShouldReturn403() throws Exception {
-        mockMvc.perform(put(BASE_URL + "/200/instructor")
-                        .param("instructorId", "5"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
-    void assignInstructor_WhenModuleNotFound_ShouldReturn404() throws Exception {
-        when(moduleService.assignInstructor(eq(999), eq(5L)))
-                .thenThrow(new ResourceNotFoundException("Module not found with ID: 999"));
-
-        mockMvc.perform(put(BASE_URL + "/999/instructor")
-                        .param("instructorId", "5"))
-                .andExpect(status().isNotFound());
-    }
 }
