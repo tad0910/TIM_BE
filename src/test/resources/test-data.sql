@@ -86,12 +86,12 @@ INSERT INTO modules (id, name, description) VALUES
 (201, 'Module Spring Security', 'Hướng dẫn bảo mật ứng dụng.'),
 (202, 'Module Test Mới', 'Dùng cho test case CREATE thành công');
 
-INSERT INTO module_sessions (id, module_id, session_number, title, instructor_id, scheduled_at, end_date, status)
+INSERT INTO module_sessions (id, module_id, session_number, title, content)
 VALUES
-(300, 200, 1, 'Buổi 1: Giới thiệu JPA', 5, '2025-10-01T09:00:00', '2025-10-01T11:00:00', 'completed'),
-(301, 200, 2, 'Buổi 2: Quan hệ Entity', 5, '2025-10-03T09:00:00', '2025-10-03T11:00:00', 'planned'),
-(302, 201, 1, 'Buổi 1: Giới thiệu Security', 6, '2025-11-01T09:00:00', '2025-11-01T11:00:00', 'planned'),
-(303, null, 1, 'Buổi học tự do', null, '2025-12-01T09:00:00', '2025-12-01T11:00:00', 'planned');
+(300, 200, 1, 'Buổi 1: Giới thiệu JPA', 'Nội dung buổi 1'),
+(301, 200, 2, 'Buổi 2: Quan hệ Entity', 'Nội dung buổi 2'),
+(302, 201, 1, 'Buổi 1: Giới thiệu Security', 'Nội dung buổi 1 Security'),
+(303, 202, 1, 'Buổi 1: Module Test Mới', 'Nội dung buổi 1 Module Test Mới');
 
 INSERT INTO classes (id, name, description, program_id) VALUES
 (10, 'BE Class K10', 'Lớp học Test A', 100),

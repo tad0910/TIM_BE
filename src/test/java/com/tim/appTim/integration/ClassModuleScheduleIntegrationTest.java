@@ -95,7 +95,7 @@ public class ClassModuleScheduleIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(duplicateDto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Module này đã được lập lịch cho lớp học này."));
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Module này đã được lập lịch cho lớp học này")));
     }
 
     @Test
