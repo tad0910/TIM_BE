@@ -161,9 +161,6 @@ public class ProgramsService {
         dto.setSessionNumber(session.getSessionNumber());
         dto.setTitle(session.getTitle());
         dto.setContent(session.getContent());
-        dto.setScheduledAt(session.getScheduledAt());
-        dto.setEndDate(session.getEndDate());
-        dto.setStatus(session.getStatus() != null ? session.getStatus().name() : null);
         return dto;
     }
 }

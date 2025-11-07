@@ -15,18 +15,11 @@ public class Module {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "instructor_id")
-    private Long instructorId;
-
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProgramModule> programModules;
 
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ModuleSession> moduleSessions;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instructor_id", insertable = false, updatable = false)
-    private User instructor;
 
     public Integer getId() {
         return id;
@@ -50,22 +43,6 @@ public class Module {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Long getInstructorId() {
-        return instructorId;
-    }
-
-    public void setInstructorId(Long instructorId) {
-        this.instructorId = instructorId;
-    }
-
-    public User getInstructor() {
-        return instructor;
-    }
-
-    public void setInstructor(User instructor) {
-        this.instructor = instructor;
     }
 
     public List<ProgramModule> getProgramModules() {

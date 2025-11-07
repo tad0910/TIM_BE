@@ -7,8 +7,6 @@ public class ModuleDTO {
     private String name;
     private String description;
     private Integer position; 
-    private Long instructorId;
-    private String instructorName;
     private List<ModuleSessionDTO> sessions;
 
     public ModuleDTO() {
@@ -57,22 +55,6 @@ public class ModuleDTO {
 
     public void setPosition(Integer position) {
         this.position = position;
-    }
-
-    public Long getInstructorId() {
-        return instructorId;
-    }
-
-    public void setInstructorId(Long instructorId) {
-        this.instructorId = instructorId;
-    }
-
-    public String getInstructorName() {
-        return instructorName;
-    }
-
-    public void setInstructorName(String instructorName) {
-        this.instructorName = instructorName;
     }
 
     public List<ModuleSessionDTO> getSessions() {

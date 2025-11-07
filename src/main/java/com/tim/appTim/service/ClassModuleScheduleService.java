@@ -8,10 +8,12 @@ import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.InvalidRequestException;
 import com.tim.appTim.repository.ClassModuleScheduleRepository;
 import com.tim.appTim.repository.ModuleRepository;
+import com.tim.appTim.repository.ModuleSessionRepository;
 import com.tim.appTim.repository.ClassRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.ClassModuleRepository;
 import com.tim.appTim.repository.ClassModuleScheduleTeacherRepository;
+import com.tim.appTim.entity.ModuleSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ public class ClassModuleScheduleService {
 
     private final ClassModuleScheduleRepository scheduleRepository;
     private final ModuleRepository moduleRepository;
+    private final ModuleSessionRepository moduleSessionRepository;
     private final ClassRepository classRepository;
     private final UserRepository userRepository;
     private final ClassModuleRepository classModuleRepository;
@@ -33,12 +36,14 @@ public class ClassModuleScheduleService {
 
     public ClassModuleScheduleService(ClassModuleScheduleRepository scheduleRepository,
                                       ModuleRepository moduleRepository,
+                                      ModuleSessionRepository moduleSessionRepository,
                                       ClassRepository classRepository,
                                       UserRepository userRepository,
                                       ClassModuleRepository classModuleRepository,
                                       ClassModuleScheduleTeacherRepository scheduleTeacherRepository) {
         this.scheduleRepository = scheduleRepository;
         this.moduleRepository = moduleRepository;
+        this.moduleSessionRepository = moduleSessionRepository;
         this.classRepository = classRepository;
         this.userRepository = userRepository;
         this.classModuleRepository = classModuleRepository;
@@ -123,27 +128,98 @@ public class ClassModuleScheduleService {
 
         validateDateRange(dto.getStartDate(), dto.getEndDate());
 
-        if (scheduleRepository.existsByClassIdAndModuleId(dto.getClassId(), dto.getModuleId())) {
-            throw new InvalidRequestException("Module này đã được lập lịch cho lớp học này.");
-        }
-
-        checkInstructorConflict(dto.getInstructorId(), dto.getStartDate(), dto.getEndDate(), null);
-
-        ClassModuleSchedule entity = new ClassModuleSchedule();
-        entity.setClassId(dto.getClassId());
-        entity.setModuleId(dto.getModuleId());
-        entity.setClassModuleId(dto.getClassModuleId());
-        entity.setModuleSessionId(dto.getModuleSessionId());
-        entity.setStartDate(dto.getStartDate());
-        entity.setEndDate(dto.getEndDate());
-        entity.setInstructorId(dto.getInstructorId());
-        entity.setStatus(ClassModuleSchedule.ScheduleStatus.planned);
-
         if (dto.getClassModuleId() != null) {
             if (!classModuleRepository.existsById(dto.getClassModuleId())) {
                 throw new ResourceNotFoundException("ClassModule không tồn tại với ID: " + dto.getClassModuleId());
             }
         }
+
+        // Nếu có moduleSessionId cụ thể, chỉ tạo schedule cho session đó
+        if (dto.getModuleSessionId() != null) {
+            // Kiểm tra xem đã có schedule cho session này chưa
+            boolean existsForSession = scheduleRepository.findByClassId(dto.getClassId()).stream()
+                    .anyMatch(s -> s.getModuleSessionId() != null && s.getModuleSessionId().equals(dto.getModuleSessionId()));
+            if (existsForSession) {
+                throw new InvalidRequestException("ModuleSession này đã được lập lịch cho lớp học này.");
+            }
+
+            checkInstructorConflict(dto.getInstructorId(), dto.getStartDate(), dto.getEndDate(), null);
+
+            ClassModuleSchedule entity = new ClassModuleSchedule();
+            entity.setClassId(dto.getClassId());
+            entity.setModuleId(dto.getModuleId());
+            entity.setClassModuleId(dto.getClassModuleId());
+            entity.setModuleSessionId(dto.getModuleSessionId());
+            entity.setStartDate(dto.getStartDate());
+            entity.setEndDate(dto.getEndDate());
+            entity.setInstructorId(dto.getInstructorId());
+            entity.setStatus(ClassModuleSchedule.ScheduleStatus.planned);
+
+            ClassModuleSchedule savedEntity = scheduleRepository.save(entity);
+            return convertToDTO(savedEntity);
+        }
+
+        // Nếu không có moduleSessionId nhưng có instructorId, tự động tạo schedule cho tất cả ModuleSession
+        if (dto.getInstructorId() != null) {
+            // Lấy tất cả ModuleSession của Module
+            List<ModuleSession> moduleSessions = moduleSessionRepository.findByModuleIdOrderBySessionNumberAsc(dto.getModuleId().intValue());
+            
+            if (moduleSessions.isEmpty()) {
+                throw new InvalidRequestException("Module này chưa có ModuleSession nào.");
+            }
+
+            // Kiểm tra xem đã có schedule cho bất kỳ ModuleSession nào của module này chưa
+            List<ClassModuleSchedule> existingSchedules = scheduleRepository.findByClassId(dto.getClassId());
+            java.util.Set<Long> existingSessionIds = existingSchedules.stream()
+                    .filter(s -> s.getModuleId().equals(dto.getModuleId()) && s.getModuleSessionId() != null)
+                    .map(ClassModuleSchedule::getModuleSessionId)
+                    .collect(java.util.stream.Collectors.toSet());
+            
+            // Kiểm tra xem có schedule cho module (không có session cụ thể) chưa
+            boolean moduleScheduledWithoutSession = existingSchedules.stream()
+                    .anyMatch(s -> s.getModuleId().equals(dto.getModuleId()) && s.getModuleSessionId() == null);
+            
+            if (moduleScheduledWithoutSession || !existingSessionIds.isEmpty()) {
+                throw new InvalidRequestException("Module này đã được lập lịch cho lớp học này. " +
+                        (existingSessionIds.isEmpty() ? "" : "Đã có schedule cho " + existingSessionIds.size() + " ModuleSession."));
+            }
+
+            checkInstructorConflict(dto.getInstructorId(), dto.getStartDate(), dto.getEndDate(), null);
+
+            // Tạo ClassModuleSchedule cho từng ModuleSession
+            List<ClassModuleSchedule> schedules = new java.util.ArrayList<>();
+            for (ModuleSession session : moduleSessions) {
+                ClassModuleSchedule entity = new ClassModuleSchedule();
+                entity.setClassId(dto.getClassId());
+                entity.setModuleId(dto.getModuleId());
+                entity.setClassModuleId(dto.getClassModuleId());
+                entity.setModuleSessionId(session.getId());
+                entity.setStartDate(dto.getStartDate());
+                entity.setEndDate(dto.getEndDate());
+                entity.setInstructorId(dto.getInstructorId());
+                entity.setStatus(ClassModuleSchedule.ScheduleStatus.planned);
+                schedules.add(entity);
+            }
+
+            List<ClassModuleSchedule> savedSchedules = scheduleRepository.saveAll(schedules);
+            // Trả về schedule đầu tiên
+            return convertToDTO(savedSchedules.get(0));
+        }
+
+        // Nếu không có cả moduleSessionId và instructorId, chỉ tạo schedule cho module (không có session)
+        if (scheduleRepository.existsByClassIdAndModuleId(dto.getClassId(), dto.getModuleId())) {
+            throw new InvalidRequestException("Module này đã được lập lịch cho lớp học này.");
+        }
+
+        ClassModuleSchedule entity = new ClassModuleSchedule();
+        entity.setClassId(dto.getClassId());
+        entity.setModuleId(dto.getModuleId());
+        entity.setClassModuleId(dto.getClassModuleId());
+        entity.setModuleSessionId(null);
+        entity.setStartDate(dto.getStartDate());
+        entity.setEndDate(dto.getEndDate());
+        entity.setInstructorId(null);
+        entity.setStatus(ClassModuleSchedule.ScheduleStatus.planned);
 
         ClassModuleSchedule savedEntity = scheduleRepository.save(entity);
         return convertToDTO(savedEntity);
