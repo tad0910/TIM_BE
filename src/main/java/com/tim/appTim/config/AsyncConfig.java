@@ -12,9 +12,9 @@ public class AsyncConfig {
     @Bean(name = "linkPreviewTaskExecutor")
     public Executor linkPreviewTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);      // 2 threads mặc định
-        executor.setMaxPoolSize(5);       // Tối đa 5 threads
-        executor.setQueueCapacity(100);   // Queue 100 tasks
+        executor.setCorePoolSize(2);     
+        executor.setMaxPoolSize(5);       
+        executor.setQueueCapacity(100);   
         executor.setThreadNamePrefix("link-preview-");
         executor.initialize();
         return executor;

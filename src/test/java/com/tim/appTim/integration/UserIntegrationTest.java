@@ -153,6 +153,7 @@ public class UserIntegrationTest {
         ProfileResponse mockResponse = new ProfileResponse();
         mockResponse.setEmail(existingEmail);
         mockResponse.setUsername(correspondingUsername);
+
         doReturn(mockResponse).when(userService).getUserProfileByEmail(eq(existingEmail));
 
         mockMvc.perform(get(BASE_URL + "/profile/" + existingEmail)

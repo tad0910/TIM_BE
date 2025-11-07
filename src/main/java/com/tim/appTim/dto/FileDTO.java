@@ -5,7 +5,7 @@ public class FileDTO {
     private String fileType;
     private String fileName;
     private Long fileSize;
-    // Constructors
+
     public FileDTO() {}
     public FileDTO(Integer id, String fileUrl, String fileType, String fileName, Long fileSize) {
         this.id = id;
@@ -14,7 +14,7 @@ public class FileDTO {
         this.fileName = fileName;
         this.fileSize = fileSize;
     }
-    // Getters and Setters
+
     public Integer getId() {
         return id;
     }

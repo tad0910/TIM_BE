@@ -53,7 +53,7 @@ public class ClassModuleScheduleIntegrationTest {
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inputDto)))
-                .andExpect(status().isCreated()) // Mong đợi 201
+                .andExpect(status().isCreated()) 
                 .andExpect(jsonPath("$.classId").value(10L))
                 .andExpect(jsonPath("$.moduleId").value(202L));
     }

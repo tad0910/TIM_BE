@@ -80,7 +80,6 @@ public class ReactionService {
 
         Reaction savedReaction = reactionRepository.save(reaction);
 
-        // (Logic thông báo của bạn đã đúng)
         try {
             if (!comment.getUser().getId().equals(userId)) {
                 notificationService.createReactionNotification(
@@ -100,7 +99,6 @@ public class ReactionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        // SỬA: Dùng đối tượng để tìm
         Optional<Reaction> existing = reactionRepository.findByReplyCommentAndUser(replyComment, user);
 
         Reaction reaction = existing.orElseGet(Reaction::new);
@@ -113,7 +111,6 @@ public class ReactionService {
 
         Reaction savedReaction = reactionRepository.save(reaction);
 
-        // (Logic thông báo của bạn đã đúng)
         try {
             if (!replyComment.getUser().getId().equals(userId)) {
                 notificationService.createReactionNotification(
@@ -126,7 +123,6 @@ public class ReactionService {
         return convertToDTO(savedReaction);
     }
 
-    // --- CÁC HÀM GET (ĐÃ SỬA) ---
     public List<ReactionDTO> getReactionsByPostId(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));

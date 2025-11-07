@@ -35,19 +35,16 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             Long targetId
     );
 
-    // ✅ Đánh dấu tất cả là đã đọc
     @Modifying
     @Transactional
     @Query("UPDATE Notification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.receiverId = :receiverId AND n.isRead = false")
     void markAllAsReadByReceiverId(@Param("receiverId") Long receiverId);
 
-    // ✅ Đánh dấu một thông báo là đã đọc
     @Modifying
     @Transactional
     @Query("UPDATE Notification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.id = :notificationId AND n.receiverId = :receiverId")
     void markAsReadByIdAndReceiverId(@Param("notificationId") Long notificationId, @Param("receiverId") Long receiverId);
 
-    // ✅ Xóa thông báo cũ
     @Modifying
     @Transactional
     @Query("DELETE FROM Notification n WHERE n.createdAt < :cutoffDate")

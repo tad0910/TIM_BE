@@ -75,7 +75,6 @@ public class ImageControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].userId").value(1L));
     }
 
-    // --- Test Xóa ảnh (DELETE) ---
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void deleteImage_WhenUserIsSelfAndOwner_ShouldReturn200() throws Exception {

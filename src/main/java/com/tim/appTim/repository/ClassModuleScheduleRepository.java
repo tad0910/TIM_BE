@@ -22,7 +22,7 @@ public interface ClassModuleScheduleRepository extends JpaRepository<ClassModule
 
     @Query("SELECT s FROM ClassModuleSchedule s " +
             "WHERE s.instructorId = :instructorId " +
-            "AND s.id != :scheduleId " + //
+            "AND s.id != :scheduleId " +
             "AND (" +
             "   (s.startDate <= :newEndDate AND s.endDate >= :newStartDate)" +
             ")")
@@ -55,5 +55,6 @@ public interface ClassModuleScheduleRepository extends JpaRepository<ClassModule
             java.time.LocalDate endDate
     );
 
+    List<ClassModuleSchedule> findByClassModuleId(Long classModuleId);
 
 }

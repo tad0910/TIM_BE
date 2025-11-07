@@ -9,6 +9,8 @@ public class ClassModuleScheduleDTO {
     private String className;
     private Long moduleId;
     private String moduleName;
+    private Long classModuleId;
+    private Long moduleSessionId;
     private Long instructorId;
     private String instructorName;
     private LocalDate startDate;
@@ -20,13 +22,15 @@ public class ClassModuleScheduleDTO {
     }
 
     public ClassModuleScheduleDTO(Long id, Long classId, String className, Long moduleId, String moduleName,
-                                  Long instructorId, String instructorName, LocalDate startDate, LocalDate endDate,
-                                  ScheduleStatus status) {
+                                  Long classModuleId, Long moduleSessionId, Long instructorId, String instructorName, 
+                                  LocalDate startDate, LocalDate endDate, ScheduleStatus status) {
         this.id = id;
         this.classId = classId;
         this.className = className;
         this.moduleId = moduleId;
         this.moduleName = moduleName;
+        this.classModuleId = classModuleId;
+        this.moduleSessionId = moduleSessionId;
         this.instructorId = instructorId;
         this.instructorName = instructorName;
         this.startDate = startDate;
@@ -112,5 +116,21 @@ public class ClassModuleScheduleDTO {
 
     public void setStatus(ScheduleStatus status) {
         this.status = status;
+    }
+
+    public Long getClassModuleId() {
+        return classModuleId;
+    }
+
+    public void setClassModuleId(Long classModuleId) {
+        this.classModuleId = classModuleId;
+    }
+
+    public Long getModuleSessionId() {
+        return moduleSessionId;
+    }
+
+    public void setModuleSessionId(Long moduleSessionId) {
+        this.moduleSessionId = moduleSessionId;
     }
 }

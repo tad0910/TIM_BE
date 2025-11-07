@@ -16,6 +16,9 @@ public class ClassModuleSchedule {
     @Column(name = "module_id")
     private Long moduleId;
 
+    @Column(name = "class_module_id")
+    private Long classModuleId;
+
     @Column(name = "module_session_id")
     private Long moduleSessionId;
 
@@ -45,14 +48,20 @@ public class ClassModuleSchedule {
     private Module module;
 
     @ManyToOne
+    @JoinColumn(name = "class_module_id", insertable = false, updatable = false)
+    private ClassModule classModule;
+
+    @ManyToOne
     @JoinColumn(name = "module_session_id", insertable = false, updatable = false)
     private ModuleSession moduleSession;
+
+    @OneToMany(mappedBy = "classModuleSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<ClassModuleScheduleTeacher> teachers;
 
     @ManyToOne
     @JoinColumn(name = "instructor_id", insertable = false, updatable = false)
     private User instructor;
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -75,6 +84,22 @@ public class ClassModuleSchedule {
 
     public void setModuleId(Long moduleId) {
         this.moduleId = moduleId;
+    }
+
+    public Long getClassModuleId() {
+        return classModuleId;
+    }
+
+    public void setClassModuleId(Long classModuleId) {
+        this.classModuleId = classModuleId;
+    }
+
+    public Long getModuleSessionId() {
+        return moduleSessionId;
+    }
+
+    public void setModuleSessionId(Long moduleSessionId) {
+        this.moduleSessionId = moduleSessionId;
     }
 
     public LocalDate getStartDate() {
@@ -131,5 +156,29 @@ public class ClassModuleSchedule {
 
     public void setInstructor(User instructor) {
         this.instructor = instructor;
+    }
+
+    public ClassModule getClassModule() {
+        return classModule;
+    }
+
+    public void setClassModule(ClassModule classModule) {
+        this.classModule = classModule;
+    }
+
+    public ModuleSession getModuleSession() {
+        return moduleSession;
+    }
+
+    public void setModuleSession(ModuleSession moduleSession) {
+        this.moduleSession = moduleSession;
+    }
+
+    public java.util.List<ClassModuleScheduleTeacher> getTeachers() {
+        return teachers;
+    }
+
+    public void setTeachers(java.util.List<ClassModuleScheduleTeacher> teachers) {
+        this.teachers = teachers;
     }
 }
