@@ -51,7 +51,8 @@ INSERT INTO permissions (id, name) VALUES
 (22, 'program:update'),
 (23, 'program:delete'),
 (24, 'notification:cleanup'),
-(25, 'notification:create_manual');
+(25, 'notification:create_manual'),
+(26, 'module:delete');
 
 
 INSERT INTO users (id, username, password, email) VALUES
@@ -73,7 +74,7 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 12),
 (1, 1), (1, 4),
 (2, 2), (2, 3), (2, 5), (2, 6),
-(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25);
+(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25), (2, 26);
 
 
 INSERT INTO programs (id, name, description) VALUES
@@ -84,6 +85,12 @@ INSERT INTO modules (id, name, description) VALUES
 (201, 'Module Spring Security', 'Hướng dẫn bảo mật ứng dụng.'),
 (202, 'Module Test Mới', 'Dùng cho test case CREATE thành công');
 
+INSERT INTO module_sessions (id, module_id, session_number, title, instructor_id, scheduled_at, end_date, status)
+VALUES
+(300, 200, 1, 'Buổi 1: Giới thiệu JPA', 5, '2025-10-01T09:00:00', '2025-10-01T11:00:00', 'completed'),
+(301, 200, 2, 'Buổi 2: Quan hệ Entity', 5, '2025-10-03T09:00:00', '2025-10-03T11:00:00', 'planned'),
+(302, 201, 1, 'Buổi 1: Giới thiệu Security', 6, '2025-11-01T09:00:00', '2025-11-01T11:00:00', 'planned'),
+(303, null, 1, 'Buổi học tự do', null, '2025-12-01T09:00:00', '2025-12-01T11:00:00', 'planned');
 
 INSERT INTO classes (id, name, description, program_id) VALUES
 (10, 'BE Class K10', 'Lớp học Test A', 100),
