@@ -35,20 +35,18 @@ public class NotificationIntegrationTest {
     @MockBean
     private KeycloakSyncService keycloakSyncService;
 
-    // --- CÁC TEST CASE CŨ CỦA BẠN (Đã hoạt động tốt) ---
-
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testGetNotifications_WhenUserIsAuthenticated_ShouldReturn200AndList() throws Exception {
         Long currentUserId = 1L;
 
         mockMvc.perform(get("/notifications/user/" + currentUserId)
-                        .param("size", "2")) // Thêm size để khớp với
+                        .param("size", "2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content.length()").value(2))
-                .andExpect(jsonPath("$.content[0].id").value(50L)) // Mới nhất (NOW())
-                .andExpect(jsonPath("$.content[1].id").value(51L)) // Cũ hơn (-1 day)
+                .andExpect(jsonPath("$.content[0].id").value(50L))
+                .andExpect(jsonPath("$.content[1].id").value(51L))
                 .andExpect(jsonPath("$.content[0].isRead").value(false));
     }
 
@@ -59,7 +57,7 @@ public class NotificationIntegrationTest {
 
         mockMvc.perform(get("/notifications/user/" + currentUserId + "/unread-count"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("1")); // Chỉ có ID 50 là unread
+                .andExpect(content().string("1"));
     }
 
     @Test
@@ -75,7 +73,7 @@ public class NotificationIntegrationTest {
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testMarkNotificationAsRead_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
-        Long notificationId = 50L; // Thuộc về post_owner
+        Long notificationId = 50L;
 
         mockMvc.perform(put("/notifications/" + notificationId + "/mark-read"))
                 .andExpect(status().isForbidden());
@@ -90,16 +88,11 @@ public class NotificationIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
-    // --- 14 TEST CASE MỚI CÒN THIẾU ---
-
-    // --- Endpoint: GET /subscribe ---
-
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testSubscribe_WhenUserIsAuthenticated_ShouldReturn200AndSseHeader() throws Exception {
         mockMvc.perform(get("/notifications/subscribe"))
                 .andExpect(status().isOk())
-                // Sửa lại: Chỉ cần kiểm tra giá trị cốt lõi là "text/event-stream"
                 .andExpect(header().string("Content-Type", "text/event-stream"));
     }
 
@@ -108,8 +101,6 @@ public class NotificationIntegrationTest {
         mockMvc.perform(get("/notifications/subscribe"))
                 .andExpect(status().isUnauthorized());
     }
-
-    // --- Endpoint: GET /user/{userId} (Test 403 và Pagination) ---
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
@@ -132,10 +123,8 @@ public class NotificationIntegrationTest {
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.totalElements").value(2))
                 .andExpect(jsonPath("$.totalPages").value(2))
-                .andExpect(jsonPath("$.content[0].id").value(50L)); // Mới nhất
+                .andExpect(jsonPath("$.content[0].id").value(50L));
     }
-
-    // --- Endpoint: GET /user/{userId}/unread ---
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
@@ -156,8 +145,6 @@ public class NotificationIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // --- Endpoint: GET /user/{userId}/unread-count (Test 403) ---
-
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void testGetUnreadNotificationCount_WhenUserIsNotSelf_ShouldReturn403() throws Exception {
@@ -166,22 +153,18 @@ public class NotificationIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // --- Endpoint: PUT /user/{userId}/mark-all-read ---
-
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testMarkAllAsRead_WhenUserIsSelf_ShouldReturn200() throws Exception {
         Long currentUserId = 1L;
 
-        // 1. Mark all as read
         mockMvc.perform(put("/notifications/user/" + currentUserId + "/mark-all-read"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("All notifications marked as read"));
 
-        // 2. Verify by checking unread count
         mockMvc.perform(get("/notifications/user/" + currentUserId + "/unread-count"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("0")); // Count phải về 0
+                .andExpect(content().string("0"));
     }
 
     @Test
@@ -192,13 +175,11 @@ public class NotificationIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // --- Endpoint: GET /user/{userId}/type/{notificationType} ---
-
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testGetNotificationsByType_WhenUserIsSelf_ShouldReturn200() throws Exception {
         Long currentUserId = 1L;
-        String type = "POST_COMMENT"; // Dựa trên test-data.sql (ID 50)
+        String type = "POST_COMMENT";
 
         mockMvc.perform(get("/notifications/user/" + currentUserId + "/type/" + type))
                 .andExpect(status().isOk())
@@ -211,7 +192,7 @@ public class NotificationIntegrationTest {
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testGetNotificationsByType_WhenInvalidType_ShouldReturn400() throws Exception {
         Long currentUserId = 1L;
-        String type = "INVALID_TYPE"; // Enum không tồn tại
+        String type = "INVALID_TYPE";
 
         mockMvc.perform(get("/notifications/user/" + currentUserId + "/type/" + type))
                 .andExpect(status().isBadRequest());
@@ -226,22 +207,16 @@ public class NotificationIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // --- Endpoint: DELETE /cleanup ---
-
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testCleanupOldNotifications_WhenUserLacksPermission_ShouldReturn403() throws Exception {
-        // post_owner (Role 1) không có quyền 'notification:cleanup'
         mockMvc.perform(delete("/notifications/cleanup"))
                 .andExpect(status().isForbidden());
     }
 
-    // --- Endpoint: POST /create ---
-
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void testCreateNotification_WhenUserLacksPermission_ShouldReturn403() throws Exception {
-        // post_owner (Role 1) không có quyền 'notification:create_manual'
         mockMvc.perform(post("/notifications/create")
                         .param("receiverId", "2")
                         .param("notificationType", "SYSTEM_ANNOUNCEMENT")
@@ -253,7 +228,6 @@ public class NotificationIntegrationTest {
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void testCleanupOldNotifications_WhenUserIsAdmin_ShouldReturn200() throws Exception {
-        // [TEST CASE MỚI] admin_user giờ đã có quyền
         mockMvc.perform(delete("/notifications/cleanup"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Old notifications cleaned up"));
@@ -262,9 +236,8 @@ public class NotificationIntegrationTest {
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void testCreateNotification_WhenUserIsAdmin_ShouldReturn200() throws Exception {
-        // [TEST CASE MỚI] admin_user giờ đã có quyền
         mockMvc.perform(post("/notifications/create")
-                        .param("receiverId", "1") // Gửi cho post_owner
+                        .param("receiverId", "1")
                         .param("notificationType", "SYSTEM_ANNOUNCEMENT")
                         .param("title", "Admin Test")
                         .param("content", "Test content từ admin"))

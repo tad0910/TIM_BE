@@ -534,11 +534,8 @@ public class UserIntegrationTest {
     void updateProfileImageByUrl_WhenImageUrlIsNull_ShouldReturn400() throws Exception {
         Long selfUserId = 1L;
 
-        // Tạo payload với imageUrl là null
         Map<String, String> payload = new HashMap<>();
         payload.put("imageUrl", null);
-
-        // Test này kiểm tra logic: if (imageUrl == null || imageUrl.trim().isEmpty())
 
         mockMvc.perform(put(BASE_URL + "/" + selfUserId + "/profile-image")
                         .contentType(MediaType.APPLICATION_JSON)
