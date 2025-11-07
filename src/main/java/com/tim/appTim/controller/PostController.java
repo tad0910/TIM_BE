@@ -177,7 +177,7 @@ public class PostController {
 
             PostDTO updatedPost = postService.updatePostWithFiles(
                     currentUser,
-                    authentication, // Thêm tham số này
+                    authentication,
                     postId,
                     content,
                     privacyEnum,

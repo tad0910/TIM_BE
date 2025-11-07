@@ -1,7 +1,7 @@
 package com.tim.appTim.config;
 
 import com.tim.appTim.repository.InvalidatedTokenRepository;
-import com.tim.appTim.util.JwtUtil; // Sử dụng JwtUtil của bạn
+import com.tim.appTim.util.JwtUtil; 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;

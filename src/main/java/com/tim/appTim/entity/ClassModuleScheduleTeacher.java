@@ -39,8 +39,7 @@ public class ClassModuleScheduleTeacher {
     protected void onCreate() {
         assignedAt = LocalDateTime.now();
     }
-
-    // Getters and Setters
+    
     public Long getId() {
         return id;
     }

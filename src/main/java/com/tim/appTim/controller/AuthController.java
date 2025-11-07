@@ -86,8 +86,6 @@ public class AuthController {
         }
     }
 
-
-    // 🟠 REFRESH TOKEN — lấy access token mới khi hết hạn
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
@@ -114,7 +112,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 
-    // 🔴 LOGOUT — xóa refresh token để vô hiệu hóa đăng nhập lại
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
         try {
@@ -138,8 +135,6 @@ public class AuthController {
             }
         }
 
-
-    //  PASSWORD RESET 
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> requestBody, HttpServletRequest request) {
         String email = requestBody.get("email");

@@ -28,7 +28,6 @@ public class ClassModuleDTO {
         this.createdAt = createdAt;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

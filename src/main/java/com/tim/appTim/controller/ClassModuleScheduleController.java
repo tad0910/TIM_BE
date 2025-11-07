@@ -75,11 +75,6 @@ public class ClassModuleScheduleController {
         return ResponseEntity.ok(schedules);
     }
 
-    /**
-     * Lấy TẤT CẢ schedules của một giáo viên (bao gồm cả vai trò chính và phụ)
-     * - Schedules từ vai trò chính (instructorId)
-     * - Schedules từ vai trò phụ (LECTURER, SUPPORTER, OBSERVER trong ClassModuleScheduleTeacher)
-     */
     @GetMapping("/teacher/{teacherId}/all")
     @PreAuthorize("hasAuthority('schedule:read_all') or @userService.isSelf(authentication, #teacherId)")
     public ResponseEntity<List<ClassModuleScheduleDTO>> getAllSchedulesByTeacher(
@@ -98,11 +93,6 @@ public class ClassModuleScheduleController {
         return ResponseEntity.ok().build();
     }
 
-    // ========== ClassModuleScheduleTeacher endpoints ==========
-    
-    /**
-     * Gán giáo viên vào buổi học (ClassModuleSchedule)
-     */
     @PostMapping("/{scheduleId}/teachers")
     @PreAuthorize("hasAuthority('schedule:update')")
     public ResponseEntity<ClassModuleScheduleTeacherDTO> assignTeacherToSchedule(
@@ -112,9 +102,6 @@ public class ClassModuleScheduleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(assigned);
     }
 
-    /**
-     * Lấy danh sách giáo viên của buổi học
-     */
     @GetMapping("/{scheduleId}/teachers")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ClassModuleScheduleTeacherDTO>> getScheduleTeachers(@PathVariable Long scheduleId) {
@@ -122,9 +109,6 @@ public class ClassModuleScheduleController {
         return ResponseEntity.ok(teachers);
     }
 
-    /**
-     * Xóa giáo viên khỏi buổi học
-     */
     @DeleteMapping("/{scheduleId}/teachers/{userId}")
     @PreAuthorize("hasAuthority('schedule:update')")
     public ResponseEntity<Map<String, String>> removeTeacherFromSchedule(
@@ -134,9 +118,6 @@ public class ClassModuleScheduleController {
         return ResponseEntity.ok(Map.of("message", "Xóa giáo viên khỏi buổi học thành công"));
     }
 
-    /**
-     * Cập nhật vai trò giáo viên trong buổi học
-     */
     @PutMapping("/{scheduleId}/teachers/{userId}/role")
     @PreAuthorize("hasAuthority('schedule:update')")
     public ResponseEntity<ClassModuleScheduleTeacherDTO> updateScheduleTeacherRole(

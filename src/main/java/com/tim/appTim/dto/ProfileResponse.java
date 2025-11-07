@@ -26,7 +26,7 @@ public class ProfileResponse {
         this.role = user.getRoles().stream()
                 .findFirst()
                 .map(com.tim.appTim.entity.Role::getName)
-                .orElse(null); //
+                .orElse(null); 
         this.createdAt = user.getCreatedAt();
         this.posts = posts;
         this.images = images;
@@ -55,14 +55,13 @@ public class ProfileResponse {
     public List<ProgramsDTO> getPrograms() { return programs; }
     public void setPrograms(List<ProgramsDTO> programs) { this.programs = programs; }
 
-    // Deprecated: Giữ lại để backward compatibility
     @Deprecated
     public List<CourseDTO> getCourses() { 
         return List.of(); 
     }
     @Deprecated
     public void setCourses(List<CourseDTO> courses) { 
-        // Ignore - không sử dụng nữa
+
     }
 
 }

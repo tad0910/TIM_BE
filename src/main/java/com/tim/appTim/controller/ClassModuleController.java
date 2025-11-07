@@ -22,9 +22,6 @@ public class ClassModuleController {
         this.classModuleService = classModuleService;
     }
 
-    /**
-     * Tạo ClassModule từ program của lớp
-     */
     @PostMapping("/from-program")
     @PreAuthorize("hasAuthority('class:update_all')")
     public ResponseEntity<List<ClassModuleDTO>> createModulesFromProgram(@PathVariable Long classId) {
@@ -32,9 +29,6 @@ public class ClassModuleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    /**
-     * Tạo ClassModule thủ công
-     */
     @PostMapping
     @PreAuthorize("hasAuthority('class:update_all')")
     public ResponseEntity<ClassModuleDTO> createClassModule(
@@ -45,9 +39,6 @@ public class ClassModuleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    /**
-     * Lấy danh sách ClassModule của lớp
-     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ClassModuleDTO>> getClassModules(@PathVariable Long classId) {
@@ -55,9 +46,6 @@ public class ClassModuleController {
         return ResponseEntity.ok(modules);
     }
 
-    /**
-     * Lấy ClassModule theo ID
-     */
     @GetMapping("/{classModuleId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ClassModuleDTO> getClassModule(
@@ -67,9 +55,6 @@ public class ClassModuleController {
         return ResponseEntity.ok(module);
     }
 
-    /**
-     * Cập nhật ClassModule
-     */
     @PutMapping("/{classModuleId}")
     @PreAuthorize("hasAuthority('class:update_all')")
     public ResponseEntity<ClassModuleDTO> updateClassModule(
@@ -80,9 +65,6 @@ public class ClassModuleController {
         return ResponseEntity.ok(updated);
     }
 
-    /**
-     * Xóa ClassModule
-     */
     @DeleteMapping("/{classModuleId}")
     @PreAuthorize("hasAuthority('class:update_all')")
     public ResponseEntity<Map<String, String>> deleteClassModule(
@@ -92,9 +74,6 @@ public class ClassModuleController {
         return ResponseEntity.ok(Map.of("message", "Xóa ClassModule thành công"));
     }
 
-    /**
-     * Gán giáo viên vào ClassModule
-     */
     @PostMapping("/{classModuleId}/teachers")
     @PreAuthorize("hasAuthority('class:update_all')")
     public ResponseEntity<ClassModuleTeacherDTO> assignTeacher(
@@ -105,9 +84,6 @@ public class ClassModuleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(assigned);
     }
 
-    /**
-     * Lấy danh sách giáo viên của ClassModule
-     */
     @GetMapping("/{classModuleId}/teachers")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ClassModuleTeacherDTO>> getClassModuleTeachers(
@@ -117,9 +93,6 @@ public class ClassModuleController {
         return ResponseEntity.ok(teachers);
     }
 
-    /**
-     * Xóa giáo viên khỏi ClassModule
-     */
     @DeleteMapping("/{classModuleId}/teachers/{userId}")
     @PreAuthorize("hasAuthority('class:update_all')")
     public ResponseEntity<Map<String, String>> removeTeacher(
@@ -130,9 +103,6 @@ public class ClassModuleController {
         return ResponseEntity.ok(Map.of("message", "Xóa giáo viên khỏi ClassModule thành công"));
     }
 
-    /**
-     * Cập nhật vai trò giáo viên
-     */
     @PutMapping("/{classModuleId}/teachers/{userId}/role")
     @PreAuthorize("hasAuthority('class:update_all')")
     public ResponseEntity<ClassModuleTeacherDTO> updateTeacherRole(

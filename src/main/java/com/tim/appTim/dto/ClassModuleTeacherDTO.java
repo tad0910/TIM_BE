@@ -26,7 +26,6 @@ public class ClassModuleTeacherDTO {
         this.assignedAt = assignedAt;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

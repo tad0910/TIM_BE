@@ -62,7 +62,6 @@ public class ClassModuleSchedule {
     @JoinColumn(name = "instructor_id", insertable = false, updatable = false)
     private User instructor;
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
