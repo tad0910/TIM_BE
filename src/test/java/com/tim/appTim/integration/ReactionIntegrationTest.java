@@ -32,7 +32,6 @@ public class ReactionIntegrationTest {
     @MockBean
     private KeycloakSyncService keycloakSyncService;
 
-    // ⬅️ KHAI BÁO BIẾN THIẾU
     private final String BASE_URL = "/schedules";
 
     @Test

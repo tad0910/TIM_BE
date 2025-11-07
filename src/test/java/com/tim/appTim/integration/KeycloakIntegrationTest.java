@@ -17,11 +17,9 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-// Import cho việc mock lỗi Keycloak
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 
-// Import các hàm static của Mockito
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

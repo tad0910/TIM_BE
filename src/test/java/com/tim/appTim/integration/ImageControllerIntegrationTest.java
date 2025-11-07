@@ -42,11 +42,9 @@ public class ImageControllerIntegrationTest {
     @MockBean
     private KeycloakSyncService keycloakSyncService;
 
-    // Giả lập service
     @MockBean
     private UserImageService userImageService;
 
-    // UserService thật để kiểm tra @userService.isSelf
     @Autowired
     private UserService userService;
 
@@ -62,15 +60,13 @@ public class ImageControllerIntegrationTest {
 
         testImage = new UserImage();
         testImage.setId(100L);
-        testImage.setUserId(1L); // Lỗi thiết kế (như đã nói)
+        testImage.setUserId(1L); 
         testImage.setImageUrl("/uploads/image-cua-user-1.jpg");
     }
 
-    // --- Test Lấy danh sách ảnh (GET) ---
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getAllImages_WhenImagesExist_ShouldReturn200() throws Exception {
-        // Giả lập service trả về 1 ảnh
         when(userImageService.findAllByUserId(1L)).thenReturn(List.of(testImage));
 
         mockMvc.perform(get(BASE_URL + "/1/image"))
@@ -80,13 +76,10 @@ public class ImageControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].userId").value(1L));
     }
 
-    // --- Test Xóa ảnh (DELETE) ---
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void deleteImage_WhenUserIsSelfAndOwner_ShouldReturn200() throws Exception {
-        // Giả lập service tìm thấy ảnh
         when(userImageService.findById(100L)).thenReturn(testImage);
-        // Giả lập service xóa thành công
         doNothing().when(userImageService).delete(100L);
 
         mockMvc.perform(delete(BASE_URL + "/1/image/100"))
@@ -97,16 +90,7 @@ public class ImageControllerIntegrationTest {
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void deleteImage_WhenUserIsSelfButNotOwner_ShouldReturn404() throws Exception {
-        // User 2 cố xóa ảnh 100 (thuộc User 1)
-
-        // Giả lập service tìm thấy ảnh
         when(userImageService.findById(100L)).thenReturn(testImage);
-        // (Lưu ý: testImage.getUserId() là 1L)
-
-        // User 2 (ID 2) đang cố xóa ảnh 100 của User 1
-        // @PreAuthorize("...isSelf...") (2L, 2L) -> PASS
-        // Logic trong Controller: if (!userImage.getUserId().equals(userId)) -> if (!1L.equals(2L)) -> true
-        // Controller ném ResourceNotFoundException
         mockMvc.perform(delete(BASE_URL + "/2/image/100"))
                 .andExpect(status().isNotFound());
     }
@@ -114,7 +98,6 @@ public class ImageControllerIntegrationTest {
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void deleteImage_WhenUserIsNotSelf_ShouldReturn403() throws Exception {
-        // User 1 cố gắng xóa ảnh qua API của User 2 (bị @PreAuthorize chặn)
         mockMvc.perform(delete(BASE_URL + "/2/image/100"))
                 .andExpect(status().isForbidden());
     }

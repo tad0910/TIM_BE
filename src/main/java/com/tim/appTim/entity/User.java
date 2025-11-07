@@ -105,8 +105,8 @@ public class User {
     }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public String getKeycloakId() { return keycloakId; } // Sửa getter cho khớp với field keycloakId
-    public void setKeycloakId(String keycloakId) { this.keycloakId = keycloakId; } // Sửa setter
+    public String getKeycloakId() { return keycloakId; } 
+    public void setKeycloakId(String keycloakId) { this.keycloakId = keycloakId; } 
     public String getRefreshToken() {
         return refreshToken;
     }

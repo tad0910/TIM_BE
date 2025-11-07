@@ -138,8 +138,7 @@ public class ClassModuleScheduleService {
         entity.setEndDate(dto.getEndDate());
         entity.setInstructorId(dto.getInstructorId());
         entity.setStatus(ClassModuleSchedule.ScheduleStatus.planned);
-        
-        // Validate classModuleId if provided
+
         if (dto.getClassModuleId() != null) {
             if (!classModuleRepository.existsById(dto.getClassModuleId())) {
                 throw new ResourceNotFoundException("ClassModule không tồn tại với ID: " + dto.getClassModuleId());
@@ -240,11 +239,6 @@ public class ClassModuleScheduleService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lấy TẤT CẢ schedules của một giáo viên (bao gồm cả vai trò chính và phụ)
-     * - Schedules từ ClassModuleSchedule.instructorId (giáo viên chính)
-     * - Schedules từ ClassModuleScheduleTeacher (giáo viên phụ/supporter/observer)
-     */
     public List<ClassModuleScheduleDTO> getAllSchedulesByTeacher(Long teacherId, LocalDate startDate, LocalDate endDate) {
         if (!userRepository.existsById(teacherId)) {
             throw new ResourceNotFoundException("Giảng viên không tồn tại với ID: " + teacherId);
@@ -252,7 +246,6 @@ public class ClassModuleScheduleService {
 
         java.util.Set<Long> scheduleIds = new java.util.HashSet<>();
 
-        // 1. Lấy schedules từ vai trò chính (instructorId)
         List<ClassModuleSchedule> mainInstructorSchedules;
         if (startDate != null && endDate != null) {
             mainInstructorSchedules = scheduleRepository.findByInstructorIdAndStartDateBetween(teacherId, startDate, endDate);
@@ -261,13 +254,11 @@ public class ClassModuleScheduleService {
         }
         mainInstructorSchedules.forEach(s -> scheduleIds.add(s.getId()));
 
-        // 2. Lấy schedules từ vai trò phụ (ClassModuleScheduleTeacher)
         List<com.tim.appTim.entity.ClassModuleScheduleTeacher> teacherAssignments = 
             scheduleTeacherRepository.findByUserId(teacherId);
         
         teacherAssignments.forEach(assignment -> {
             Long scheduleId = assignment.getClassModuleScheduleId();
-            // Lọc theo ngày nếu có
             if (scheduleId != null) {
                 if (startDate != null && endDate != null) {
                     scheduleRepository.findById(scheduleId)
@@ -282,7 +273,6 @@ public class ClassModuleScheduleService {
             }
         });
 
-        // 3. Lấy tất cả schedules và convert sang DTO
         List<ClassModuleSchedule> allSchedules = scheduleIds.stream()
                 .map(scheduleRepository::findById)
                 .filter(java.util.Optional::isPresent)

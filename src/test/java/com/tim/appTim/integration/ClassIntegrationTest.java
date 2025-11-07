@@ -81,7 +81,7 @@ public class ClassIntegrationTest {
     void updateClass_WhenUserIsTeacherOfClass_ShouldReturn200() throws Exception {
         ClassDTO update = new ClassDTO(10L, "Lớp 10A Updated", "Mô tả mới", new ArrayList<>(), 100, null);
 
-        mockMvc.perform(put(BASE_URL + "/10") // Lớp 10
+        mockMvc.perform(put(BASE_URL + "/10") 
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isOk())

@@ -50,7 +50,7 @@ public class ModuleSessionIntegrationTest {
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void createSession_WhenDuplicateSessionNumber_ShouldReturn400() throws Exception {
         CreateModuleSessionRequest req = new CreateModuleSessionRequest();
-        req.setSessionNumber(1); // Đã tồn tại trong test-data.sql
+        req.setSessionNumber(1); 
 
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)

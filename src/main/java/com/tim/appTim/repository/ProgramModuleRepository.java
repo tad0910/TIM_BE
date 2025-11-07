@@ -12,8 +12,7 @@ public interface ProgramModuleRepository extends JpaRepository<ProgramModule, Pr
     List<ProgramModule> findByProgramId(Integer programId);
     List<ProgramModule> findByModuleId(Integer moduleId);
     List<ProgramModule> findByProgramIdOrderByPositionAsc(Integer programId);
-    
-    // Query tối ưu với JOIN FETCH để load module data cùng lúc, tránh N+1 problem
+
     @Query("SELECT pm FROM ProgramModule pm " +
            "LEFT JOIN FETCH pm.module " +
            "WHERE pm.program.id = :programId " +

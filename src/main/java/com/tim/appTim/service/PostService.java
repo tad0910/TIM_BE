@@ -1,5 +1,3 @@
-// PostService.java
-
 package com.tim.appTim.service;
 
 
@@ -31,12 +29,6 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.net.URISyntaxException;
 import java.io.IOException;
-
-
-
-
-
-
 
 @Service
 public class PostService {
@@ -221,7 +213,7 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("post:update_all")); // Giả sử quyền admin
+                .anyMatch(a -> a.getAuthority().equals("post:update_all")); 
         boolean isOwner = post.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
@@ -279,7 +271,7 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("post:update_all")); // Giả sử quyền admin
+                .anyMatch(a -> a.getAuthority().equals("post:update_all")); 
         boolean isOwner = post.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
@@ -292,7 +284,7 @@ public class PostService {
     public boolean isOwner(String username, Long postId) {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) {
-            return false; // User không tồn tại -> không phải owner
+            return false; 
         }
 
         return postRepository.findById(postId)

@@ -16,7 +16,7 @@ import com.tim.appTim.entity.User;
 public class JwtUtil {
 
     private final String SECRET_KEY = "12345678901234567890123456789012";
-    private final long EXPIRATION_MS = 1000 * 60 * 60; // 1 giờ
+    private final long EXPIRATION_MS = 1000 * 60 * 60; 
 
     @Autowired
     private UserService userService;

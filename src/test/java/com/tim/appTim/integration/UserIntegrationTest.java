@@ -152,7 +152,6 @@ public class UserIntegrationTest {
         ProfileResponse mockResponse = new ProfileResponse();
         mockResponse.setEmail(existingEmail);
         mockResponse.setUsername(correspondingUsername);
-        //mockResponse.setId(1L); // Giả sử DTO của bạn cũng có ID
 
         doReturn(mockResponse).when(userService).getUserProfileByEmail(eq(existingEmail));
 

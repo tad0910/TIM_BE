@@ -1,6 +1,5 @@
 package com.tim.appTim.config;
 
-// Import các thư viện cần thiết
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -21,7 +20,7 @@ import java.util.Map;
 
 @TestConfiguration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true) // Rất quan trọng để @PreAuthorize hoạt động
+@EnableMethodSecurity(prePostEnabled = true) 
 public class TestSecurityConfig {
 
     @Bean
@@ -29,24 +28,18 @@ public class TestSecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth ->
-                        // Yêu cầu xác thực, để @WithMockUser có tác dụng
+
                         auth.anyRequest().authenticated()
                 )
-                // --- PHẦN QUAN TRỌNG NHẤT ĐỂ FIX LỖI 500 ---
+
                 .exceptionHandling(exceptions -> exceptions
-                        // Xử lý khi user đã đăng nhập nhưng không có quyền (403 Forbidden)
                         .accessDeniedHandler(accessDeniedHandler())
-                        // Xử lý khi user chưa đăng nhập (401 Unauthorized)
                         .authenticationEntryPoint(authenticationEntryPoint())
                 );
 
         return http.build();
     }
 
-    /**
-     * Bean này sẽ "bắt" lỗi AuthorizationDeniedException
-     * và trả về 403 JSON thay vì 500.
-     */
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
@@ -60,10 +53,6 @@ public class TestSecurityConfig {
         };
     }
 
-    /**
-     * Bean này xử lý khi truy cập mà không có @WithMockUser
-     * (trả về 401 JSON).
-     */
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
