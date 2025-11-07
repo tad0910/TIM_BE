@@ -106,11 +106,13 @@ public class PostService {
     @Transactional
     public PostDTO createPostWithFiles(Long userId, String content, Post.Privacy privacy, List<File> filesFromController) {
 
-        if (userId == null) {
-            throw new UnprocessableException("User ID không được để trống");
+        boolean isFilesEmpty = (filesFromController == null || filesFromController.isEmpty());
+
+        if ((content == null || content.trim().isEmpty()) && isFilesEmpty) {
+            throw new UnprocessableException("Bài viết phải có nội dung hoặc tệp đính kèm.");
         }
-        if (content == null || content.trim().isEmpty()) {
-            throw new UnprocessableException("Nội dung bài viết không được để trống");
+        if (content == null) {
+            content = "";
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User không tồn tại với id: " + userId));
@@ -223,6 +225,9 @@ public class PostService {
             throw new ForbiddenException("User does not have permission to update this post");
         }
 
+        if (content != null) {
+            post.setContent(content);
+        }
         post.setContent(content);
         post.setPrivacy(privacy);
         post.setUpdatedAt(LocalDateTime.now());
