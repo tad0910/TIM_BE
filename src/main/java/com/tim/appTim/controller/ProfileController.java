@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.tim.appTim.dto.UserUpdateDTO;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,8 +26,8 @@ public class ProfileController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ProfileResponse> getProfile(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getUserProfile(userId));
+    public ResponseEntity<ProfileResponse> getProfile(@PathVariable Long userId, Pageable pageable) {
+        return ResponseEntity.ok(userService.getUserProfile(userId, pageable));
     }
 
     @PutMapping("/{id}")

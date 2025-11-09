@@ -23,6 +23,7 @@ import com.tim.appTim.dto.FileDTO;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Lazy;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,15 +41,15 @@ public class CommentService {
     private final UserService userService;
     private final ReactionRepository reactionRepository;
     private final FileRepository fileRepository;
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
     @Autowired
     public CommentService(CommentRepository commentRepository,
                           ReplyCommentRepository replyCommentRepository,
-                          UserService userService,
+                          @Lazy UserService userService,
                           PostRepository postRepository,
                           UserRepository userRepository,
-                          NotificationService notificationService,
+                          @Lazy NotificationService notificationService,
                           ReactionRepository reactionRepository,
                           FileRepository fileRepository) {
         this.commentRepository = commentRepository;

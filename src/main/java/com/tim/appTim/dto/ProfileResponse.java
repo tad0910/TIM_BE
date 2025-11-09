@@ -2,7 +2,7 @@ package com.tim.appTim.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
+import org.springframework.data.domain.Page;
 import com.tim.appTim.entity.User;
 
 public class ProfileResponse {
@@ -13,11 +13,11 @@ public class ProfileResponse {
     private String profileImage;
     private String role;
     private LocalDateTime createdAt;
-    private List<PostDTO> posts;
+    private Page<PostDTO> posts;
     private List<UserImageDTO> images;
     private List<ProgramsDTO> programs;
 
-    public ProfileResponse(User user, List<PostDTO> posts, List<UserImageDTO> images, List<ProgramsDTO> programs) {
+    public ProfileResponse(User user, Page<PostDTO> posts, List<UserImageDTO> images, List<ProgramsDTO> programs) {
         this.userId = user.getId();
         this.username = user.getUsername();
         this.email = user.getEmail();
@@ -48,8 +48,8 @@ public class ProfileResponse {
     public void setRole(String role) { this.role = role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public List<PostDTO> getPosts() { return posts; }
-    public void setPosts(List<PostDTO> posts) { this.posts = posts; }
+    public Page<PostDTO> getPosts() { return posts; }
+    public void setPosts(Page<PostDTO> posts) { this.posts = posts; }
     public List<UserImageDTO> getImages() { return images; }
     public void setImages(List<UserImageDTO> images) { this.images = images; }
     public List<ProgramsDTO> getPrograms() { return programs; }

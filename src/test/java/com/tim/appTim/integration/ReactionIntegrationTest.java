@@ -2,6 +2,7 @@ package com.tim.appTim.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tim.appTim.service.KeycloakSyncService;
+import com.tim.appTim.service.PostService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -31,6 +32,9 @@ public class ReactionIntegrationTest {
 
     @MockBean
     private KeycloakSyncService keycloakSyncService;
+
+    @MockBean
+    private PostService postService;
 
     private final String BASE_URL = "/schedules";
 
@@ -234,7 +238,7 @@ public class ReactionIntegrationTest {
         mockMvc.perform(post("/reactions/posts/" + postId)
                         .param("emotionType", "love"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.emotionType").value("love"))
+                .andExpect(jsonPath("$.emotionType").   value("love"))
                 .andExpect(jsonPath("$.userId").value(2L));
     }
 

@@ -5,10 +5,7 @@ import com.tim.appTim.dto.ModuleDTO;
 import com.tim.appTim.dto.CreateModuleSessionRequest;
 import com.tim.appTim.dto.ModuleSessionDTO;
 import com.tim.appTim.exception.ResourceNotFoundException;
-import com.tim.appTim.service.KeycloakSyncService;
-import com.tim.appTim.service.ModuleService;
-import com.tim.appTim.service.ModuleSessionService;
-import com.tim.appTim.service.UserService;
+import com.tim.appTim.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +59,9 @@ public class ModuleIntegrationTest {
 
     @SpyBean
     private UserService userService;
+
+    @MockBean
+    private PostService postService;
 
     private final String BASE_URL = "/module";
     private ModuleDTO testModule;

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import com.tim.appTim.entity.*; 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,12 +22,29 @@ import com.tim.appTim.repository.UserRepository;
 @Service
 @Transactional
 public class ReactionService {
-    @Autowired private ReactionRepository reactionRepository;
-    @Autowired private PostRepository postRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private CommentRepository commentRepository;
-    @Autowired private ReplyCommentRepository replyCommentRepository;
-    @Autowired private NotificationService notificationService;
+    private final ReactionRepository reactionRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
+    private final ReplyCommentRepository replyCommentRepository;
+    private final NotificationService notificationService;
+
+    @Autowired
+    public ReactionService(
+            ReactionRepository reactionRepository,
+            PostRepository postRepository,
+            UserRepository userRepository,
+            CommentRepository commentRepository,
+            ReplyCommentRepository replyCommentRepository,
+            @Lazy NotificationService notificationService
+    ) {
+        this.reactionRepository = reactionRepository;
+        this.postRepository = postRepository;
+        this.userRepository = userRepository;
+        this.commentRepository = commentRepository;
+        this.replyCommentRepository = replyCommentRepository;
+        this.notificationService = notificationService;
+    }
 
     @Transactional
     public ReactionDTO createOrUpdateReaction(Long postId, Long userId, Reaction.EmotionType emotionType) {

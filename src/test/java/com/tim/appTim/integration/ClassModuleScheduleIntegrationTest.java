@@ -3,6 +3,7 @@ package com.tim.appTim.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tim.appTim.dto.ClassModuleScheduleDTO;
 import com.tim.appTim.service.KeycloakSyncService;
+import com.tim.appTim.service.PostService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,6 +33,9 @@ public class ClassModuleScheduleIntegrationTest {
 
     @MockBean
     private KeycloakSyncService keycloakSyncService;
+
+    @MockBean
+    private PostService postService;
 
     private final String BASE_URL = "/schedules";
 

@@ -18,6 +18,7 @@ import com.tim.appTim.entity.ClassMember;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,8 +56,8 @@ public class UserController {
     }
 
     @GetMapping("/profile/{email}")
-    public ResponseEntity<ProfileResponse> getUserProfileByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(userService.getUserProfileByEmail(email));
+    public ResponseEntity<ProfileResponse> getUserProfileByEmail(@PathVariable String email, Pageable pageable) {
+        return ResponseEntity.ok(userService.getUserProfileByEmail(email, pageable));
     }
 
     @PostMapping
