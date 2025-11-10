@@ -11,20 +11,20 @@ public class Notification {
     private Long id;
 
     @Column(name = "receiver_id", nullable = false)
-    private Long receiverId; // Người nhận thông báo
+    private Long receiverId; 
 
     @Column(name = "sender_id")
-    private Long senderId; // Người gửi thông báo (có thể null cho thông báo hệ thống)
+    private Long senderId; 
 
     @Enumerated(EnumType.STRING)
     @Column(name = "notification_type", nullable = false)
     private NotificationType notificationType;
 
     @Column(name = "target_type", length = 50)
-    private String targetType; // "POST", "COMMENT", "REPLY_COMMENT", "USER"
+    private String targetType; 
 
     @Column(name = "target_id")
-    private Long targetId; // ID của đối tượng liên quan
+    private Long targetId; 
 
     @Column(name = "title", nullable = false)
     private String title;
@@ -41,7 +41,6 @@ public class Notification {
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
-    // Relations
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "receiver_id", referencedColumnName = "id", insertable = false, updatable = false)
     private User receiver;
@@ -50,20 +49,18 @@ public class Notification {
     @JoinColumn(name = "sender_id", referencedColumnName = "id", insertable = false, updatable = false)
     private User sender;
 
-    // Enum cho các loại thông báo
     public enum NotificationType {
-        POST_REACTION,           // Ai đó like bài viết của bạn
-        POST_COMMENT,        // Ai đó comment bài viết của bạn
-        COMMENT_REACTION,        // Ai đó like comment của bạn
-        COMMENT_REPLY,       // Ai đó reply comment của bạn
-        REPLY_REACTION,          // Ai đó like reply của bạn
-        USER_FOLLOW,         // Ai đó follow bạn
-        POST_MENTION,        // Được mention trong bài viết
-        COMMENT_MENTION,     // Được mention trong comment
-        SYSTEM_ANNOUNCEMENT  // Thông báo hệ thống
+        POST_REACTION,           
+        POST_COMMENT,        
+        COMMENT_REACTION,        
+        COMMENT_REPLY,       
+        REPLY_REACTION,          
+        USER_FOLLOW,         
+        POST_MENTION,        
+        COMMENT_MENTION,     
+        SYSTEM_ANNOUNCEMENT  
     }
 
-    // Constructors
     public Notification() {}
 
     public Notification(Long receiverId, Long senderId, NotificationType notificationType,
@@ -79,7 +76,6 @@ public class Notification {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

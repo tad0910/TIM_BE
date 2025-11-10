@@ -42,7 +42,6 @@ public class Comment {
     @JoinColumn(name = "nguoi_dung_id", nullable = false)
     private User user;
 
-    // --- THÊM TRƯỜNG MỚI ĐỂ XÓA CASCADE ---
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReplyComment> replies = new ArrayList<>();
 
@@ -52,8 +51,6 @@ public class Comment {
     public enum Emotion {
         like, love, haha, sad, angry
     }
-
-    // --- Cập nhật Getters/Setters ---
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

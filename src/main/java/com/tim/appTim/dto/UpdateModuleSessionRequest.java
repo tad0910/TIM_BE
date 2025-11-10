@@ -1,14 +1,9 @@
 package com.tim.appTim.dto;
 
-import java.time.LocalDateTime;
-
 public class UpdateModuleSessionRequest {
     private Integer sessionNumber;
     private String title;
     private String content;
-    private LocalDateTime scheduledAt;
-    private LocalDateTime endDate;
-    private String status;
 
     public UpdateModuleSessionRequest() {
     }
@@ -35,29 +30,5 @@ public class UpdateModuleSessionRequest {
 
     public void setContent(String content) {
         this.content = content;
-    }
-
-    public LocalDateTime getScheduledAt() {
-        return scheduledAt;
-    }
-
-    public void setScheduledAt(LocalDateTime scheduledAt) {
-        this.scheduledAt = scheduledAt;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 }

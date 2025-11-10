@@ -66,18 +66,6 @@ public class ModuleSessionService {
         session.setSessionNumber(request.getSessionNumber());
         session.setTitle(request.getTitle());
         session.setContent(request.getContent());
-        session.setScheduledAt(request.getScheduledAt());
-        session.setEndDate(request.getEndDate());
-
-        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
-            try {
-                session.setStatus(ModuleSession.SessionStatus.valueOf(request.getStatus()));
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Status không hợp lệ. Chỉ chấp nhận: planned, ongoing, completed");
-            }
-        } else {
-            session.setStatus(ModuleSession.SessionStatus.planned);
-        }
 
         ModuleSession savedSession = moduleSessionRepository.save(session);
         return toDTO(savedSession);
@@ -103,19 +91,6 @@ public class ModuleSessionService {
         if (request.getContent() != null) {
             session.setContent(request.getContent());
         }
-        if (request.getScheduledAt() != null) {
-            session.setScheduledAt(request.getScheduledAt());
-        }
-        if (request.getEndDate() != null) {
-            session.setEndDate(request.getEndDate());
-        }
-        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
-            try {
-                session.setStatus(ModuleSession.SessionStatus.valueOf(request.getStatus()));
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Status không hợp lệ. Chỉ chấp nhận: planned, ongoing, completed");
-            }
-        }
 
         ModuleSession updatedSession = moduleSessionRepository.save(session);
         return toDTO(updatedSession);
@@ -128,6 +103,7 @@ public class ModuleSessionService {
         }
         moduleSessionRepository.deleteById(sessionId);
     }
+
 
     @Transactional
     public ModuleDTO addSessionsToModule(Integer moduleId, List<Long> sessionIds) {
@@ -145,7 +121,7 @@ public class ModuleSessionService {
                 moduleSessionRepository.save(s);
             }
         }
-        // Tạo ModuleDTO trả về
+
         ModuleDTO dto = new ModuleDTO();
         dto.setId(module.getId());
         dto.setName(module.getName());
@@ -161,9 +137,7 @@ public class ModuleSessionService {
         dto.setSessionNumber(session.getSessionNumber());
         dto.setTitle(session.getTitle());
         dto.setContent(session.getContent());
-        dto.setScheduledAt(session.getScheduledAt());
-        dto.setEndDate(session.getEndDate());
-        dto.setStatus(session.getStatus() != null ? session.getStatus().name() : null);
+
         return dto;
     }
 }

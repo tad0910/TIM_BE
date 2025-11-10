@@ -16,6 +16,9 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "users")
@@ -31,6 +34,8 @@ public class User {
     private String lastName;
 
     @Column(unique = true, nullable = false)
+    @NotBlank(message = "Username không được để trống")
+    @Size(min = 3, message = "Username phải có ít nhất 3 ký tự")
     private String username;
 
     @Column(nullable = false)
@@ -39,6 +44,8 @@ public class User {
     private Instant refreshTokenExpiry;
 
     @Column(unique = true, nullable = false)
+    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Định dạng email không hợp lệ")
     private String email;
 
     @Column(name = "so_dien_thoai")
@@ -98,8 +105,8 @@ public class User {
     }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public String getKeycloakId() { return keycloakId; } // Sửa getter cho khớp với field keycloakId
-    public void setKeycloakId(String keycloakId) { this.keycloakId = keycloakId; } // Sửa setter
+    public String getKeycloakId() { return keycloakId; } 
+    public void setKeycloakId(String keycloakId) { this.keycloakId = keycloakId; } 
     public String getRefreshToken() {
         return refreshToken;
     }

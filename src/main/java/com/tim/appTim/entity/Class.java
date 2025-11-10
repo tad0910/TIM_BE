@@ -27,6 +27,9 @@ public class Class {
     @OneToMany(mappedBy = "classEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ClassModuleSchedule> schedules;
 
+    @OneToMany(mappedBy = "classEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ClassModule> classModules;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getClassName() { return className; }
@@ -50,5 +53,13 @@ public class Class {
 
     public void setProgram(Programs program) {
         this.program = program;
+    }
+
+    public List<ClassModule> getClassModules() {
+        return classModules;
+    }
+
+    public void setClassModules(List<ClassModule> classModules) {
+        this.classModules = classModules;
     }
 }

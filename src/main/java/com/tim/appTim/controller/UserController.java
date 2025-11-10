@@ -13,15 +13,18 @@ import com.tim.appTim.service.UserService;
 import com.tim.appTim.service.ClassService;
 import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.UserClassDTO;
+import com.tim.appTim.dto.UserUpdateDTO;
 import com.tim.appTim.entity.ClassMember;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
 import com.tim.appTim.service.UserImageService;
-import com.tim.appTim.exception.*; // << Thêm dòng này
+import com.tim.appTim.exception.*;
 
 @RestController
 @RequestMapping("/users")
@@ -53,8 +56,8 @@ public class UserController {
     }
 
     @GetMapping("/profile/{email}")
-    public ResponseEntity<ProfileResponse> getUserProfileByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(userService.getUserProfileByEmail(email));
+    public ResponseEntity<ProfileResponse> getUserProfileByEmail(@PathVariable String email, Pageable pageable) {
+        return ResponseEntity.ok(userService.getUserProfileByEmail(email, pageable));
     }
 
     @PostMapping
@@ -66,8 +69,10 @@ public class UserController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #id)")
-    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
-        return ResponseEntity.ok(userService.update(id, user));
+    public ResponseEntity<User> update(@PathVariable Long id,
+                                       @Valid @RequestBody UserUpdateDTO userDTO) {
+
+        return ResponseEntity.ok(userService.update(id, userDTO));
     }
 
     @DeleteMapping("/{id}")

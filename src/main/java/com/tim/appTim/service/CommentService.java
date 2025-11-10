@@ -23,6 +23,7 @@ import com.tim.appTim.dto.FileDTO;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Lazy;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,15 +41,15 @@ public class CommentService {
     private final UserService userService;
     private final ReactionRepository reactionRepository;
     private final FileRepository fileRepository;
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
     @Autowired
     public CommentService(CommentRepository commentRepository,
                           ReplyCommentRepository replyCommentRepository,
-                          UserService userService,
+                          @Lazy UserService userService,
                           PostRepository postRepository,
                           UserRepository userRepository,
-                          NotificationService notificationService,
+                          @Lazy NotificationService notificationService,
                           ReactionRepository reactionRepository,
                           FileRepository fileRepository) {
         this.commentRepository = commentRepository;
@@ -65,7 +66,7 @@ public class CommentService {
 
     @Transactional
     public CommentDTO createComment(Long postId, Long userId, String content,
-                                    Comment.Emotion emotion, List<File> filesFromController) { // Thêm List<File>
+                                    Comment.Emotion emotion, List<File> filesFromController) { 
 
         if ((content == null || content.trim().isEmpty()) && (filesFromController == null || filesFromController.isEmpty())) {
             throw new BadRequestException("Bạn phải cung cấp nội dung hoặc tệp đính kèm.");
@@ -153,7 +154,6 @@ public class CommentService {
             comment.getFiles().clear();
         }
 
-        // 2. Thêm files mới
         if (newFilesFromController != null && !newFilesFromController.isEmpty()) {
             for (File file : newFilesFromController) {
                 comment.addFile(file);
@@ -179,7 +179,6 @@ return convertToDTO(updatedComment);
             throw new ForbiddenException("Bạn không có quyền xóa bình luận này");
         }
 
-        // Cập nhật totalComments (giữ nguyên)
         Post post = comment.getPost();
         if (post != null) {
             Integer currentTotal = post.getTotalComments();
@@ -262,7 +261,6 @@ return convertToDTO(updatedComment);
             reply.getFiles().clear();
         }
 
-        // 2. Thêm files mới
         if (newFilesFromController != null && !newFilesFromController.isEmpty()) {
             for (File file : newFilesFromController) {
                 reply.addFile(file);

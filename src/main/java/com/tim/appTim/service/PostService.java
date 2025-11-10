@@ -1,10 +1,9 @@
-// PostService.java
-
 package com.tim.appTim.service;
 
 
 import com.tim.appTim.dto.CommentDTO;
 import com.tim.appTim.dto.ReactionDTO;
+import com.tim.appTim.repository.FileRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,12 +31,6 @@ import java.util.regex.Matcher;
 import java.net.URISyntaxException;
 import java.io.IOException;
 
-
-
-
-
-
-
 @Service
 public class PostService {
 
@@ -47,6 +40,7 @@ public class PostService {
     private final ReactionService reactionService;
     private final CommentRepository commentRepository;
     private final LinkPreviewService linkPreviewService;
+    private final FileRepository fileRepository;
 
     private static final Pattern URL_PATTERN = Pattern.compile(
         "\\b(https?://[\\w.-]+(?:\\:[0-9]+)?(?:/[^\\s]*)?)\\b",
@@ -55,13 +49,14 @@ public class PostService {
 
     public PostService(PostRepository postRepository, UserRepository userRepository, 
                        CommentService commentService, ReactionService reactionService, CommentRepository commentRepository,
-                       LinkPreviewService linkPreviewService) {
+                       LinkPreviewService linkPreviewService, FileRepository fileRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentService = commentService;
         this.reactionService = reactionService;
         this.commentRepository = commentRepository;
         this.linkPreviewService = linkPreviewService;
+        this.fileRepository = fileRepository;
     }
 
     private String extractFirstUrl(String content) {
@@ -111,11 +106,13 @@ public class PostService {
     @Transactional
     public PostDTO createPostWithFiles(Long userId, String content, Post.Privacy privacy, List<File> filesFromController) {
 
-        if (userId == null) {
-            throw new UnprocessableException("User ID không được để trống");
+        boolean isFilesEmpty = (filesFromController == null || filesFromController.isEmpty());
+
+        if ((content == null || content.trim().isEmpty()) && isFilesEmpty) {
+            throw new UnprocessableException("Bài viết phải có nội dung hoặc tệp đính kèm.");
         }
-        if (content == null || content.trim().isEmpty()) {
-            throw new UnprocessableException("Nội dung bài viết không được để trống");
+        if (content == null) {
+            content = "";
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User không tồn tại với id: " + userId));
@@ -204,14 +201,21 @@ public class PostService {
         return postPage.map(this::convertToDto);
     }
 
-    public List<PostDTO> getPostsByUserId(Long userId) {
+    public Page<PostDTO> getPostsByUserId(Long userId, Pageable pageable) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        return posts.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        if (!pageable.getSort().isSorted()) {
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by("createdAt").descending()
+            );
+        }
+
+        Page<Post> postsPage = postRepository.findByUserId(userId, pageable);
+
+        return postsPage.map(this::convertToDto);
     }
 
     @Transactional
@@ -221,13 +225,16 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("post:update_all")); // Giả sử quyền admin
+                .anyMatch(a -> a.getAuthority().equals("post:update_all")); 
         boolean isOwner = post.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
             throw new ForbiddenException("User does not have permission to update this post");
         }
 
+        if (content != null) {
+            post.setContent(content);
+        }
         post.setContent(content);
         post.setPrivacy(privacy);
         post.setUpdatedAt(LocalDateTime.now());
@@ -240,6 +247,7 @@ public class PostService {
         if (newFiles != null && !newFiles.isEmpty()) {
             for (File f : newFiles) {
                 post.addFile(f);
+                fileRepository.save(f);
             }
         }
 
@@ -279,7 +287,7 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("post:update_all")); // Giả sử quyền admin
+                .anyMatch(a -> a.getAuthority().equals("post:update_all")); 
         boolean isOwner = post.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
@@ -292,7 +300,7 @@ public class PostService {
     public boolean isOwner(String username, Long postId) {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) {
-            return false; // User không tồn tại -> không phải owner
+            return false; 
         }
 
         return postRepository.findById(postId)
@@ -301,11 +309,9 @@ public class PostService {
     }
 
     private PostDTO convertToDto(Post post) {
-        long totalComments = commentService.countCommentsByPostId(post.getId());
-        long totalReactions = reactionService.getReactionsByPostId(post.getId()).size();
 
-        List<CommentDTO> comments = commentService.getCommentsByPostId(post.getId());
-        List<ReactionDTO> reactions = reactionService.getReactionsByPostId(post.getId());
+        int totalReactions = post.getTotalReactions() != null ? post.getTotalReactions() : 0;
+        int totalComments = post.getTotalComments() != null ? post.getTotalComments() : 0;
 
         List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
                 .map(file -> new com.tim.appTim.dto.FileDTO(
@@ -322,11 +328,11 @@ public class PostService {
         LinkPreviewDTO linkPreview = null;
         if (post.getLinkUrl() != null && post.hasLinkPreview()) {
             linkPreview = new LinkPreviewDTO(
-                post.getLinkUrl(),
-                post.getLinkTitle(),
-                post.getLinkDescription(),
-                post.getLinkImageUrl(),
-                post.getLinkDomain()
+                    post.getLinkUrl(),
+                    post.getLinkTitle(),
+                    post.getLinkDescription(),
+                    post.getLinkImageUrl(),
+                    post.getLinkDomain()
             );
         }
 
@@ -337,10 +343,10 @@ public class PostService {
                 post.getPrivacy().name(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
-                (int) totalReactions,
-                (int) totalComments,
-                comments,
-                reactions,
+                totalReactions,
+                totalComments,
+                new ArrayList<>(),
+                new ArrayList<>(),
                 fileDTOs,
                 post.getUser().getProfileImage(),
                 post.getUser().getUsername(),
@@ -367,24 +373,17 @@ public class PostService {
 
         Long postOwnerId = post.getUser().getId();
 
-        // If the requesting user is the owner, always allow access
         if (requestingUserId.equals(postOwnerId)) {
             return convertToDto(post);
         }
-
-        // Check privacy settings for non-owners
         Post.Privacy privacy = post.getPrivacy();
 
         switch (privacy) {
             case only_me:
-                // Only owner can see
                 throw new ForbiddenException("You do not have permission to access this post");
             case friends:
-                // TODO: Implement friendship check
-                // For now, allow access but should check friendship status
                 return convertToDto(post);
             case open:
-                // Public post, anyone can see
                 return convertToDto(post);
             default:
                 throw new ForbiddenException("You do not have permission to access this post");
@@ -392,35 +391,26 @@ public class PostService {
     }
     private String getUserDisplayName(User user) {
         if (user == null) {
-            return "Người dùng"; // Hoặc giá trị mặc định khác
+            return "Người dùng"; 
         }
 
         String firstName = user.getFirstName();
         String lastName = user.getLastName();
         String username = user.getUsername();
 
-        // Ưu tiên hiển thị FirstName + LastName
         if (firstName != null && !firstName.trim().isEmpty() &&
                 lastName != null && !lastName.trim().isEmpty()) {
             return firstName + " " + lastName;
         }
-
-        // Nếu không có cả hai, hiển thị FirstName (nếu có)
         if (firstName != null && !firstName.trim().isEmpty()) {
             return firstName;
         }
-
-        // Nếu không có FirstName, hiển thị LastName (nếu có)
         if (lastName != null && !lastName.trim().isEmpty()) {
             return lastName;
         }
-
-        // Cuối cùng, hiển thị username
         if (username != null && !username.trim().isEmpty()) {
             return username;
         }
-
-        // Trường hợp không có thông tin gì
         return "Người dùng";
     }
 }

@@ -8,5 +8,5 @@ import com.tim.appTim.entity.UserImage;
 
 public interface UserImageRepository extends JpaRepository<UserImage, Long> {
     List<UserImage> findByUserId(Long userId);
-    UserImage findTopByUserIdOrderByCreatedAtDesc(Long userId); // Thêm method này
+    UserImage findTopByUserIdOrderByCreatedAtDesc(Long userId); 
 }

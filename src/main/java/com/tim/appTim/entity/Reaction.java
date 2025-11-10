@@ -10,16 +10,6 @@ public class Reaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // --- XÓA CÁC TRƯỜNG ID THỦ CÔNG ---
-    // @Column(name = "bai_viet_id")
-    // private Long postId;
-    // @Column(name = "comment_id")
-    // private Long commentId;
-    // @Column(name = "reply_comment_id")
-    // private Long replyCommentId;
-    // @Column(name = "nguoi_dung_id")
-    // private Long userId;
-
     @Column(name = "loai_cam_xuc")
     @Enumerated(EnumType.STRING)
     private EmotionType emotionType;
@@ -27,30 +17,26 @@ public class Reaction {
     @Column(name = "thoi_gian_tao")
     private LocalDateTime createdAt;
 
-    // --- SỬA LẠI CÁC MAPPING (XÓA insertable=false, updatable=false) ---
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bai_viet_id") // 'nullable = true' (vì reaction có thể cho comment)
+    @JoinColumn(name = "bai_viet_id") 
     private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "comment_id") // 'nullable = true'
+    @JoinColumn(name = "comment_id") 
     private Comment comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reply_comment_id") // 'nullable = true'
+    @JoinColumn(name = "reply_comment_id") 
     private ReplyComment replyComment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nguoi_dung_id", nullable = false) // User thì không được null
+    @JoinColumn(name = "nguoi_dung_id", nullable = false) 
     private User user;
 
-    // Giữ nguyên Enum của bạn
     public enum EmotionType {
         like, love, haha, wow, sad, angry
     }
 
-    // --- CẬP NHẬT GETTERS/SETTERS ---
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -73,13 +59,4 @@ public class Reaction {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
-    // --- XÓA CÁC GETTER/SETTER CŨ ---
-    // public Long getPostId() { return postId; }
-    // public void setPostId(Long postId) { this.postId = postId; }
-    // public Long getUserId() { return userId; }
-    // public void setUserId(Long userId) { this.userId = userId; }
-    // public Long getCommentId() { return commentId; }
-    // public void setCommentId(Long commentId) { this.commentId = commentId; }
-    // public Long getReplyCommentId() { return replyCommentId; }
-    // public void setReplyCommentId(Long replyCommentId) { this.replyCommentId = replyCommentId; }
 }

@@ -48,7 +48,6 @@ public class PasswordResetRequest {
     @Column(name = "user_agent")
     private String userAgent;
 
-    // Enum cho token_type
     public enum TokenType {
         OTP, LINK
     }

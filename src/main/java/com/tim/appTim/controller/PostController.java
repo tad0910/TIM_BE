@@ -49,7 +49,7 @@ public class PostController {
     @PreAuthorize("hasAuthority('post:create') ")
     public ResponseEntity<PostDTO> createPost(
             Authentication authentication,
-            @RequestParam("content") String content,
+            @RequestParam( value = "content", required = false) String content,
             @RequestParam("privacy") String privacy,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles
     ) {
@@ -110,8 +110,8 @@ public class PostController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PostDTO>> getPostsByUserId(@PathVariable Long userId) {
-        List<PostDTO> posts = postService.getPostsByUserId(userId);
+    public ResponseEntity<Page<PostDTO>> getPostsByUserId(@PathVariable Long userId, Pageable pageable) {
+        Page<PostDTO> posts = postService.getPostsByUserId(userId, pageable);
         return ResponseEntity.ok(posts);
     }
 
@@ -131,7 +131,7 @@ public class PostController {
     public ResponseEntity<PostDTO> updatePost(
             @PathVariable Long postId,
             Authentication authentication,
-            @RequestParam("content") String content,
+            @RequestParam(value = "content", required = false) String content,
             @RequestParam("privacy") String privacy,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles,
             @RequestParam(value = "fileIdsToDelete", required = false) List<Integer> fileIdsToDelete
@@ -177,7 +177,7 @@ public class PostController {
 
             PostDTO updatedPost = postService.updatePostWithFiles(
                     currentUser,
-                    authentication, // Thêm tham số này
+                    authentication,
                     postId,
                     content,
                     privacyEnum,

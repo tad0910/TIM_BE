@@ -6,7 +6,7 @@ public class ModuleDTO {
     private Integer id;
     private String name;
     private String description;
-    private Integer position; // Position in program
+    private Integer position; 
     private List<ModuleSessionDTO> sessions;
 
     public ModuleDTO() {

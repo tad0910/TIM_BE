@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.exception.BadRequestException;
 
 @Service
 public class ModuleServiceImpl implements ModuleService {
@@ -50,26 +52,15 @@ public class ModuleServiceImpl implements ModuleService {
 
         module = moduleRepository.save(module);
 
-        // Tạo sessions nếu có trong request
         if (dto.getSessions() != null && !dto.getSessions().isEmpty()) {
             List<ModuleSession> sessions = new ArrayList<>();
-            for (ModuleSessionDTO sessionDTO : dto.getSessions()) {
+            for (int i = 0; i < dto.getSessions().size(); i++) {
+                ModuleSessionDTO sessionDTO = dto.getSessions().get(i);
                 ModuleSession session = new ModuleSession();
                 session.setModuleId(module.getId());
                 session.setSessionNumber(sessionDTO.getSessionNumber());
                 session.setTitle(sessionDTO.getTitle());
                 session.setContent(sessionDTO.getContent());
-                session.setScheduledAt(sessionDTO.getScheduledAt());
-                session.setEndDate(sessionDTO.getEndDate());
-                if (sessionDTO.getStatus() != null && !sessionDTO.getStatus().isEmpty()) {
-                    try {
-                        session.setStatus(ModuleSession.SessionStatus.valueOf(sessionDTO.getStatus()));
-                    } catch (IllegalArgumentException e) {
-                        session.setStatus(ModuleSession.SessionStatus.planned);
-                    }
-                } else {
-                    session.setStatus(ModuleSession.SessionStatus.planned);
-                }
                 sessions.add(session);
             }
             moduleSessionRepository.saveAll(sessions);
@@ -82,7 +73,7 @@ public class ModuleServiceImpl implements ModuleService {
     @Transactional
     public ModuleDTO updateModule(Integer id, ModuleDTO dto) {
         Module module = moduleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Module not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Module not found with ID: " + id));
 
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
@@ -101,16 +92,13 @@ public class ModuleServiceImpl implements ModuleService {
         moduleRepository.deleteById(id);
     }
 
-    /**
-     * Convert Module entity to ModuleDTO with sessions
-     */
+
     private ModuleDTO toDTO(Module module) {
         ModuleDTO dto = new ModuleDTO();
         dto.setId(module.getId());
         dto.setName(module.getName());
         dto.setDescription(module.getDescription());
 
-        // Load sessions for this module
         List<ModuleSessionDTO> sessions = moduleSessionRepository
                 .findByModuleIdOrderBySessionNumberAsc(module.getId())
                 .stream()
@@ -121,9 +109,6 @@ public class ModuleServiceImpl implements ModuleService {
         return dto;
     }
 
-    /**
-     * Convert ModuleSession entity to ModuleSessionDTO
-     */
     private ModuleSessionDTO sessionToDTO(ModuleSession session) {
         ModuleSessionDTO dto = new ModuleSessionDTO();
         dto.setId(session.getId());
@@ -131,9 +116,7 @@ public class ModuleServiceImpl implements ModuleService {
         dto.setSessionNumber(session.getSessionNumber());
         dto.setTitle(session.getTitle());
         dto.setContent(session.getContent());
-        dto.setScheduledAt(session.getScheduledAt());
-        dto.setEndDate(session.getEndDate());
-        dto.setStatus(session.getStatus() != null ? session.getStatus().name() : null);
+
         return dto;
     }
 }

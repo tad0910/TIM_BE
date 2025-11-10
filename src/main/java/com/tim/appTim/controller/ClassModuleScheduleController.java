@@ -1,8 +1,10 @@
 package com.tim.appTim.controller;
 
 import com.tim.appTim.dto.ClassModuleScheduleDTO;
+import com.tim.appTim.dto.ClassModuleScheduleTeacherDTO;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.ClassModuleScheduleService;
+import com.tim.appTim.service.ClassModuleScheduleTeacherService;
 import com.tim.appTim.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,16 +14,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/schedules")
 public class ClassModuleScheduleController {
 
     private final ClassModuleScheduleService scheduleService;
+    private final ClassModuleScheduleTeacherService scheduleTeacherService;
     private final UserService userService;
 
-    public ClassModuleScheduleController(ClassModuleScheduleService scheduleService, UserService userService) {
+    public ClassModuleScheduleController(ClassModuleScheduleService scheduleService, 
+                                        ClassModuleScheduleTeacherService scheduleTeacherService,
+                                        UserService userService) {
         this.scheduleService = scheduleService;
+        this.scheduleTeacherService = scheduleTeacherService;
         this.userService = userService;
     }
 
@@ -68,6 +75,17 @@ public class ClassModuleScheduleController {
         return ResponseEntity.ok(schedules);
     }
 
+    @GetMapping("/teacher/{teacherId}/all")
+    @PreAuthorize("hasAuthority('schedule:read_all') or @userService.isSelf(authentication, #teacherId)")
+    public ResponseEntity<List<ClassModuleScheduleDTO>> getAllSchedulesByTeacher(
+            @PathVariable Long teacherId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+
+        List<ClassModuleScheduleDTO> schedules = scheduleService.getAllSchedulesByTeacher(teacherId, startDate, endDate);
+        return ResponseEntity.ok(schedules);
+    }
+
     @DeleteMapping("/{scheduleId}")
     @PreAuthorize("hasAuthority('schedule:delete')")
     public ResponseEntity<Void> deleteSchedule(@PathVariable Long scheduleId) {
@@ -75,5 +93,41 @@ public class ClassModuleScheduleController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{scheduleId}/teachers")
+    @PreAuthorize("hasAuthority('schedule:update')")
+    public ResponseEntity<ClassModuleScheduleTeacherDTO> assignTeacherToSchedule(
+            @PathVariable Long scheduleId,
+            @RequestBody ClassModuleScheduleTeacherDTO dto) {
+        ClassModuleScheduleTeacherDTO assigned = scheduleTeacherService.assignTeacherToSchedule(scheduleId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(assigned);
+    }
+
+    @GetMapping("/{scheduleId}/teachers")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ClassModuleScheduleTeacherDTO>> getScheduleTeachers(@PathVariable Long scheduleId) {
+        List<ClassModuleScheduleTeacherDTO> teachers = scheduleTeacherService.getScheduleTeachers(scheduleId);
+        return ResponseEntity.ok(teachers);
+    }
+
+    @DeleteMapping("/{scheduleId}/teachers/{userId}")
+    @PreAuthorize("hasAuthority('schedule:update')")
+    public ResponseEntity<Map<String, String>> removeTeacherFromSchedule(
+            @PathVariable Long scheduleId,
+            @PathVariable Long userId) {
+        scheduleTeacherService.removeTeacherFromSchedule(scheduleId, userId);
+        return ResponseEntity.ok(Map.of("message", "Xóa giáo viên khỏi buổi học thành công"));
+    }
+
+    @PutMapping("/{scheduleId}/teachers/{userId}/role")
+    @PreAuthorize("hasAuthority('schedule:update')")
+    public ResponseEntity<ClassModuleScheduleTeacherDTO> updateScheduleTeacherRole(
+            @PathVariable Long scheduleId,
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+        com.tim.appTim.entity.ClassModuleScheduleTeacher.ScheduleTeacherRole role = 
+            com.tim.appTim.entity.ClassModuleScheduleTeacher.ScheduleTeacherRole.valueOf(request.get("role"));
+        ClassModuleScheduleTeacherDTO updated = scheduleTeacherService.updateTeacherRole(scheduleId, userId, role);
+        return ResponseEntity.ok(updated);
+    }
 
 }

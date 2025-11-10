@@ -65,11 +65,14 @@ public class File {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         File file = (File) o;
-        return id != null && Objects.equals(id, file.id);
+        if (id == null || file.id == null) {
+            return false;
+        }
+        return Objects.equals(id, file.id);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return id != null ? id.hashCode() : 31;
     }
 }

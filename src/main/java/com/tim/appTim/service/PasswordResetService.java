@@ -132,7 +132,7 @@ public class PasswordResetService {
     String encodedPassword = passwordEncoder.encode(newPassword);
     user.setPassword(encodedPassword);
     user.setPasswordChangedAt(Instant.now());
-    userService.update(user.getId(), user);
+    userService.internalSave(user);
     request.setUsed(true);
     resetRepo.save(request);
     sendConfirmationEmail(user.getEmail());
