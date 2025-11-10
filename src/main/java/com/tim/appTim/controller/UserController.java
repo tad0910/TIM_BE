@@ -62,7 +62,7 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('user:create')")
-    public ResponseEntity<User> create(@RequestBody User user) {
+    public ResponseEntity<User> create(@Valid @RequestBody User user) {
         User created = userService.create(user);
         return ResponseEntity.created(URI.create("/users/" + created.getId())).body(created);
     }

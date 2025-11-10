@@ -6,12 +6,15 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.validation.FieldError;
 import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.exception.ForbiddenException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -63,6 +66,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String message = String.format("Tham số '%s' có giá trị không hợp lệ: %s",
                 ex.getName(), ex.getValue());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
+    }
+
+    // 400 - Validation errors từ @Valid annotation
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+        
+        String message = errors.values().stream()
+                .collect(Collectors.joining(", "));
+        
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
     }
 
