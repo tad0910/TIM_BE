@@ -3,6 +3,7 @@ package com.tim.appTim.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.Set;
 
 public class UserUpdateDTO {
 
@@ -19,6 +20,8 @@ public class UserUpdateDTO {
 
     private String phoneNumber;
 
+    private Set<String> role;
+
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
 
@@ -33,4 +36,7 @@ public class UserUpdateDTO {
 
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    
+    public Set<String> getRole() { return role; }
+    public void setRole(Set<String> role) { this.role = role; }
 }
