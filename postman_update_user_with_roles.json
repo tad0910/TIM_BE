@@ -1,0 +1,9 @@
+{
+  "username": "updateduser",
+  "email": "updateduser@example.com",
+  "firstName": "Nguyen",
+  "lastName": "Van A",
+  "phoneNumber": "0123456789",
+  "roleNames": ["ROLE_USER"]
+}
+
