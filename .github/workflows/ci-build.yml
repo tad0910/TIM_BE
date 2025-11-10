@@ -22,8 +22,8 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build and Test with Maven
-        run: mvn -B package --file pom.xml
+      - name: Build and Test with Maven (UTF-8)
+        run: mvn -B clean package -DskipTests -Dproject.build.sourceEncoding=UTF-8 --file pom.xml
 
       # Lưu file .jar để job sau dùng
       - name: Upload JAR artifact
