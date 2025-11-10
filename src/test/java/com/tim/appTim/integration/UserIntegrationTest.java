@@ -8,16 +8,14 @@ import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
 import com.tim.appTim.exception.ResourceNotFoundException;
-import com.tim.appTim.service.ClassService;
-import com.tim.appTim.service.KeycloakSyncService;
-import com.tim.appTim.service.UserImageService;
-import com.tim.appTim.service.UserService;
+import com.tim.appTim.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -62,6 +60,9 @@ public class UserIntegrationTest {
 
     @SpyBean
     private UserService userService;
+
+    @MockBean
+    private PostService postService;
 
     private final String BASE_URL = "/users";
     private User testUser1;
@@ -154,9 +155,11 @@ public class UserIntegrationTest {
         mockResponse.setEmail(existingEmail);
         mockResponse.setUsername(correspondingUsername);
 
-        doReturn(mockResponse).when(userService).getUserProfileByEmail(eq(existingEmail));
+        doReturn(mockResponse).when(userService).getUserProfileByEmail(eq(existingEmail), any(Pageable.class));
 
         mockMvc.perform(get(BASE_URL + "/profile/" + existingEmail)
+                        .param("page", "0")
+                        .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(existingEmail))
@@ -168,10 +171,13 @@ public class UserIntegrationTest {
         String nonExistentEmail = "nonexistent@example.com";
 
         String errorMessage = "User not found with email: " + nonExistentEmail;
+
         doThrow(new ResourceNotFoundException(errorMessage))
-                .when(userService).getUserProfileByEmail(eq(nonExistentEmail));
+                .when(userService).getUserProfileByEmail(eq(nonExistentEmail), any(Pageable.class));
 
         mockMvc.perform(get(BASE_URL + "/profile/" + nonExistentEmail)
+                        .param("page", "0")
+                        .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value(errorMessage));

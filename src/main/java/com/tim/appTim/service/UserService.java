@@ -18,6 +18,10 @@
     import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
     import org.springframework.security.oauth2.jwt.Jwt; 
     import org.springframework.stereotype.Service;
+    import org.springframework.data.domain.Page;
+    import org.springframework.data.domain.Pageable;
+    import org.springframework.data.domain.PageRequest;
+    import org.springframework.data.domain.Sort;
 
     import com.tim.appTim.repository.ProgramsRepository;
     import com.tim.appTim.repository.ProgramModuleRepository;
@@ -63,7 +67,8 @@
         private final ClassRepository classRepository;
         private final BCryptPasswordEncoder passwordEncoder;
         private final FileRepository fileRepository;
-        private final RoleRepository roleRepository; 
+        private final RoleRepository roleRepository;
+        private final PostService postService;
         
     
         public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
@@ -71,7 +76,7 @@
                            UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
                            ProgramsRepository programsRepository, ProgramModuleRepository programModuleRepository,
                            ClassRepository classRepository, @Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository,
-                           RoleRepository roleRepository 
+                           RoleRepository roleRepository, PostService postService
         ) {
             this.userRepository = userRepository;
             this.postRepository = postRepository;
@@ -85,7 +90,8 @@
             this.classRepository = classRepository;
             this.passwordEncoder = passwordEncoder;
             this.fileRepository = fileRepository;
-            this.roleRepository = roleRepository; 
+            this.roleRepository = roleRepository;
+            this.postService = postService;
         }
     
         public void register(User user) {
@@ -203,199 +209,49 @@
         public User findByEmail(String email) {
             return userRepository.findByEmail(email).orElse(null);
         }
-    
-        public ProfileResponse getUserProfileByEmail(String email) {
+
+        public ProfileResponse getUserProfileByEmail(String email, Pageable pageable) {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-    
-            List<PostDTO> posts = postRepository.findByUserId(user.getId()).stream().map(post -> {
-                List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
-                    List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
-                            .map(reply -> { 
-                                String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null; 
-                                return new ReplyCommentDTO(
-                                        reply.getId(),
-                                        reply.getComment().getId(),
-                                        reply.getUser().getId(),
-                                        reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
-                                        reply.getContent(),
-                                        emotionName,
-                                        reply.getCreatedAt(),
-                                        reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
-                                        reply.getFiles() != null ? reply.getFiles().stream()
-                                                .map(file -> new FileDTO(/*...*/))
-                                                .collect(Collectors.toList()) : new java.util.ArrayList<FileDTO>()
-                                );
-                            })
-                            .collect(Collectors.toList());
-                    return new CommentDTO(
-                            comment.getId(),
-                            comment.getUser().getId(),
-                            comment.getUser().getUsername(),
-                            comment.getContent(),
-                            comment.getUser().getProfileImage(),
-                            comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                            comment.getCreatedAt(),
-                            replyComments,
-                            comment.getFiles() != null ? comment.getFiles().stream()
-                                    .map(file -> new FileDTO(/*...*/))
-                                    .collect(Collectors.toList()) : new java.util.ArrayList<FileDTO>()
-                    );
-                }).collect(Collectors.toList());
-    
-                List<ReactionDTO> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post)
-                        .stream()
-                        .map(reaction -> new ReactionDTO(
-                                reaction.getId(),
-                                reaction.getUser().getId(), 
-                                reaction.getUser().getUsername(),
-                                reaction.getUser().getProfileImage(),
-                                reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
-                                reaction.getCreatedAt()))
-                        .collect(Collectors.toList());
-    
-                List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
-                        .map(file -> new com.tim.appTim.dto.FileDTO(
-                                file.getId(),
-                                file.getFileUrl(),
-                                file.getFileType().name(),
-                                file.getFileName() != null ? file.getFileName() : extractFileName(file.getFileUrl()),
-                                file.getFileSize() != null ? file.getFileSize() : 0L
-                        ))
-                        .collect(Collectors.toList());
-                        
-                    return new PostDTO(
-                        post.getId(),
-                        post.getUser().getId(),
-                        post.getContent(),
-                        post.getPrivacy() != null ? post.getPrivacy().name() : null,
-                        post.getCreatedAt(),
-                        post.getUpdatedAt(),
-                        reactions != null ? reactions.size() : 0,
-                        comments != null ? comments.size() : 0,
-                        comments,
-                        reactions,
-                        fileDTOs,
-                        post.getUser().getProfileImage(),
-                        post.getUser().getUsername(),
-                        getUserDisplayName(post.getUser()),
-                        post.hasLinkPreview() ? new LinkPreviewDTO(
-                                post.getLinkUrl(),
-                                post.getLinkTitle(),
-                                post.getLinkDescription(),
-                                post.getLinkImageUrl(),
-                                post.getLinkDomain()
-                        ) : null
-                                            
+
+            if (!pageable.getSort().isSorted()) {
+                pageable = PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        Sort.by("createdAt").descending()
                 );
-    
-            }).collect(Collectors.toList());
-    
+            }
+
+            Page<PostDTO> postsPage = postService.getPostsByUserId(user.getId(), pageable);
+
             List<UserImageDTO> images = userImageRepository.findByUserId(user.getId()).stream()
                     .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
                     .collect(Collectors.toList());
-    
+
             List<ProgramsDTO> programs = getUserPrograms(user.getId());
-    
-            return new ProfileResponse(user, posts, images, programs);
+
+            return new ProfileResponse(user, postsPage, images, programs);
         }
-    
-    
-        public ProfileResponse getUserProfile(Long userId) {
+
+
+
+        public ProfileResponse getUserProfile(Long userId, Pageable pageable) {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-    
-            List<PostDTO> posts = postRepository.findByUserId(userId).stream().map(post -> {
-                List<CommentDTO> comments = commentRepository.findByPostId(post.getId()).stream().map(comment -> {
-                    List<ReplyCommentDTO> replyComments = replyCommentRepository.findByCommentId(comment.getId()).stream()
-                            .map(reply -> {
-                                String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null; 
-                                return new ReplyCommentDTO(
-                                        reply.getId(),
-                                        reply.getComment().getId(),
-                                        reply.getUser().getId(),
-                                        reply.getUser() != null ? reply.getUser().getUsername() : "Unknown",
-                                        reply.getContent(),
-                                        emotionName, 
-                                        // reply.getFileId(), 
-                                        reply.getCreatedAt(),
-                                        reply.getUser() != null ? reply.getUser().getProfileImage() : " ",
-                                        reply.getFiles() != null ? reply.getFiles().stream()
-                                                .map(file -> new FileDTO(/*...*/))
-                                                .collect(Collectors.toList()) : new java.util.ArrayList<FileDTO>()
-                                );
-                            })
-                            .collect(Collectors.toList());
-                    return new CommentDTO(
-                            comment.getId(),
-                            comment.getUser().getId(),
-                            comment.getUser().getUsername(),
-                            comment.getContent(),
-                            comment.getUser().getProfileImage(),
-                            comment.getEmotion() != null ? comment.getEmotion().name() : null,
-                            // comment.getFileId(), 
-                            comment.getCreatedAt(),
-                            replyComments,
-                            comment.getFiles() != null ? comment.getFiles().stream()
-                                    .map(file -> new FileDTO(/*...*/))
-                                    .collect(Collectors.toList()) : new java.util.ArrayList<FileDTO>()
-                    );
-                }).collect(Collectors.toList());
-    
-                List<ReactionDTO> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post)
-                        .stream()
-                        .map(reaction -> new ReactionDTO(
-                                reaction.getId(),
-                                reaction.getUser().getId(), 
-                                reaction.getUser().getUsername(),
-                                reaction.getUser().getProfileImage(),
-                                reaction.getEmotionType() != null ? reaction.getEmotionType().name() : null,
-                                reaction.getCreatedAt()))
-                        .collect(Collectors.toList());
-    
-            List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
-                    .map(file -> new com.tim.appTim.dto.FileDTO(
-                            file.getId(),
-                            file.getFileUrl(),
-                            file.getFileType().name(),
-                            file.getFileName() != null ? file.getFileName() : extractFileName(file.getFileUrl()),
-                            file.getFileSize() != null ? file.getFileSize() : 0L
-                    ))
-                    .collect(Collectors.toList());
-                    return new PostDTO(
-                        post.getId(),
-                        post.getUser().getId(),
-                        post.getContent(),
-                        post.getPrivacy() != null ? post.getPrivacy().name() : null,
-                        post.getCreatedAt(),
-                        post.getUpdatedAt(),
-                        reactions != null ? reactions.size() : 0,
-                        comments != null ? comments.size() : 0,
-                        comments,
-                        reactions,
-                        fileDTOs,
-                        post.getUser().getProfileImage(),
-                        post.getUser().getUsername(),
-                        getUserDisplayName(post.getUser()),
-                        post.hasLinkPreview() ? new LinkPreviewDTO(
-                                post.getLinkUrl(),
-                                post.getLinkTitle(),
-                                post.getLinkDescription(),
-                                post.getLinkImageUrl(),
-                                post.getLinkDomain()
-                        ) : null
-                        
+            if (!pageable.getSort().isSorted()) {
+                pageable = PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        Sort.by("createdAt").descending()
                 );
-    
-            }).collect(Collectors.toList());
-    
+            }
+            Page<PostDTO> postsPage = postService.getPostsByUserId(userId, pageable);
             List<UserImageDTO> images = userImageRepository.findByUserId(userId).stream()
                     .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
                     .collect(Collectors.toList());
-    
+
             List<ProgramsDTO> programs = getUserPrograms(userId);
-    
-            return new ProfileResponse(user, posts, images, programs);
+            return new ProfileResponse(user, postsPage, images, programs);
         }
     
         public List<UserImageDTO> getUserImages(Long userId) {

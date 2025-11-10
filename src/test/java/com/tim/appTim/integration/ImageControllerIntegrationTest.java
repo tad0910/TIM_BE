@@ -2,6 +2,7 @@ package com.tim.appTim.integration;
 
 import com.tim.appTim.entity.UserImage;
 import com.tim.appTim.service.KeycloakSyncService;
+import com.tim.appTim.service.PostService;
 import com.tim.appTim.service.UserImageService;
 import com.tim.appTim.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,9 @@ public class ImageControllerIntegrationTest {
     @Autowired
     @SuppressWarnings("unused")
     private UserService userService;
+
+    @MockBean
+    private PostService postService;
 
     private final String BASE_URL = "/api/users";
     private UserImage testImage;

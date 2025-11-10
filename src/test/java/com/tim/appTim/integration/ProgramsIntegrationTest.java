@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tim.appTim.dto.ProgramsDTO;
 import com.tim.appTim.entity.Programs;
 import com.tim.appTim.service.KeycloakSyncService;
+import com.tim.appTim.service.PostService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,6 +27,7 @@ public class ProgramsIntegrationTest {
 
     @Autowired private MockMvc mockMvc;
     @MockBean private KeycloakSyncService keycloakSyncService;
+    @MockBean private PostService postService;
 
     private final String BASE_URL = "/programs";
 

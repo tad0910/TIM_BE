@@ -201,14 +201,21 @@ public class PostService {
         return postPage.map(this::convertToDto);
     }
 
-    public List<PostDTO> getPostsByUserId(Long userId) {
+    public Page<PostDTO> getPostsByUserId(Long userId, Pageable pageable) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        return posts.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        if (!pageable.getSort().isSorted()) {
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by("createdAt").descending()
+            );
+        }
+
+        Page<Post> postsPage = postRepository.findByUserId(userId, pageable);
+
+        return postsPage.map(this::convertToDto);
     }
 
     @Transactional
@@ -302,11 +309,9 @@ public class PostService {
     }
 
     private PostDTO convertToDto(Post post) {
-        long totalComments = commentService.countCommentsByPostId(post.getId());
-        long totalReactions = reactionService.getReactionsByPostId(post.getId()).size();
 
-        List<CommentDTO> comments = commentService.getCommentsByPostId(post.getId());
-        List<ReactionDTO> reactions = reactionService.getReactionsByPostId(post.getId());
+        int totalReactions = post.getTotalReactions() != null ? post.getTotalReactions() : 0;
+        int totalComments = post.getTotalComments() != null ? post.getTotalComments() : 0;
 
         List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
                 .map(file -> new com.tim.appTim.dto.FileDTO(
@@ -323,11 +328,11 @@ public class PostService {
         LinkPreviewDTO linkPreview = null;
         if (post.getLinkUrl() != null && post.hasLinkPreview()) {
             linkPreview = new LinkPreviewDTO(
-                post.getLinkUrl(),
-                post.getLinkTitle(),
-                post.getLinkDescription(),
-                post.getLinkImageUrl(),
-                post.getLinkDomain()
+                    post.getLinkUrl(),
+                    post.getLinkTitle(),
+                    post.getLinkDescription(),
+                    post.getLinkImageUrl(),
+                    post.getLinkDomain()
             );
         }
 
@@ -338,10 +343,10 @@ public class PostService {
                 post.getPrivacy().name(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
-                (int) totalReactions,
-                (int) totalComments,
-                comments,
-                reactions,
+                totalReactions,
+                totalComments,
+                new ArrayList<>(),
+                new ArrayList<>(),
                 fileDTOs,
                 post.getUser().getProfileImage(),
                 post.getUser().getUsername(),

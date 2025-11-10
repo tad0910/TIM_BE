@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tim.appTim.controller.KeycloakController.UpdateUserDTO;
 import com.tim.appTim.security.WithMockJwt;
 import com.tim.appTim.service.KeycloakSyncService;
+import com.tim.appTim.service.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,9 @@ public class KeycloakIntegrationTest {
 
     @MockBean
     private KeycloakSyncService keycloakSyncService;
+
+    @MockBean
+    private PostService postService;
 
     private final String BASE_URL = "/api/v1/keycloak/users";
     private final String SELF_USER_ID = "keycloak-id-cua-user-1";

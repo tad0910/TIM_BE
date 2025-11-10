@@ -110,8 +110,8 @@ public class PostController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PostDTO>> getPostsByUserId(@PathVariable Long userId) {
-        List<PostDTO> posts = postService.getPostsByUserId(userId);
+    public ResponseEntity<Page<PostDTO>> getPostsByUserId(@PathVariable Long userId, Pageable pageable) {
+        Page<PostDTO> posts = postService.getPostsByUserId(userId, pageable);
         return ResponseEntity.ok(posts);
     }
 
