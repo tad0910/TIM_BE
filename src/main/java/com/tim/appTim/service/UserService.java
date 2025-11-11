@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tim.appTim.repository.ProgramsRepository;
 import com.tim.appTim.repository.ProgramModuleRepository;
@@ -573,5 +574,16 @@ public class UserService implements UserDetailsService {
         dto.setName(program.getName());
         dto.setDescription(program.getDescription());
         return dto;
+    }
+
+    @Transactional
+    public void restoreUser(Long id) {
+        userRepository.findDeletedById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng đã xóa với ID: " + id));
+        userRepository.restoreById(id);
+    }
+
+    public List<User> findAllUsersIncludingDeleted() {
+        return userRepository.findAllIncludingDeleted();
     }
 }

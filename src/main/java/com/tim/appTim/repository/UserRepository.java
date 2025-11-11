@@ -1,8 +1,12 @@
 package com.tim.appTim.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tim.appTim.entity.User;
 
@@ -14,4 +18,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE users SET deleted = 0 WHERE id = ?1", nativeQuery = true)
+    void restoreById(Long id);
+
+    @Query(value = "SELECT * FROM users", nativeQuery = true)
+    List<User> findAllIncludingDeleted();
+
+    @Query(value = "SELECT * FROM users WHERE id = ?1 AND deleted = 1", nativeQuery = true)
+    Optional<User> findDeletedById(Long id);
 }
