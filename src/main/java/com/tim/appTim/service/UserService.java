@@ -270,8 +270,8 @@ public class UserService implements UserDetailsService {
     }
 
 
-    public java.util.List<User> findAll() {
-        return userRepository.findAll();
+    public Page<User> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     public User findByUsernameOrEmail(String usernameOrEmail) {
@@ -615,7 +615,7 @@ public class UserService implements UserDetailsService {
         userRepository.restoreById(id);
     }
 
-    public List<User> findAllUsersIncludingDeleted() {
-        return userRepository.findAllIncludingDeleted();
+    public Page<User> findAllUsersIncludingDeleted(Pageable pageable) {
+        return userRepository.findAllIncludingDeleted(pageable);
     }
 }

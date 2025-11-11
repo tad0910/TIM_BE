@@ -811,21 +811,15 @@ public class UserIntegrationTest {
         Long targetUserId = 2L;
         String restoreEndpoint = BASE_URL + "/" + targetUserId + "/restore";
 
-        // 1. Xóa user
-        // Vì context đã "sạch", userService là một spy mới toanh
-        // nó sẽ tự động gọi hàm thật. Chúng ta không cần doCallRealMethod() nữa.
         mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
                 .andExpect(status().isNoContent());
 
-        // 2. Xác nhận đã biến mất
         mockMvc.perform(get(BASE_URL + "/" + targetUserId))
                 .andExpect(status().isNotFound());
 
-        // 3. Khôi phục (API này sẽ gọi hàm @Transactional thật)
         mockMvc.perform(post(restoreEndpoint))
                 .andExpect(status().isOk());
 
-        // 4. Kiểm tra lại (Bây giờ phải là 200)
         mockMvc.perform(get(BASE_URL + "/" + targetUserId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("another_user"));
@@ -843,14 +837,14 @@ public class UserIntegrationTest {
         mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
                 .andExpect(status().isNoContent());
 
-        doCallRealMethod().when(userService).findAll();
+        doCallRealMethod().when(userService).findAll(any(Pageable.class));
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(totalUsersInSql - 1));
+                .andExpect(jsonPath("$.totalElements").value(totalUsersInSql - 1));
 
-        doCallRealMethod().when(userService).findAllUsersIncludingDeleted();
+        doCallRealMethod().when(userService).findAllUsersIncludingDeleted(any(Pageable.class));
         mockMvc.perform(get(adminAllEndpoint))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(totalUsersInSql));
+                .andExpect(jsonPath("$.totalElements").value(totalUsersInSql));
     }
 }
