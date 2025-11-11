@@ -2,6 +2,7 @@ package com.tim.appTim.service;
     
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -117,7 +118,7 @@ public class UserService implements UserDetailsService {
         Role defaultRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
 
-        user.setRoles(Set.of(defaultRole));
+        user.setRoles(new HashSet<>(Collections.singleton(defaultRole)));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         userRepository.save(user);
@@ -154,11 +155,30 @@ public class UserService implements UserDetailsService {
             throw new UnprocessableException("Password is required");
         }
 
-        if (user.getRoles() == null || user.getRoles().isEmpty()) {
-            Role defaultRole = roleRepository.findByName("ROLE_USER")
-                    .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
-            user.setRoles(Set.of(defaultRole));
+        if (user.getPhoneNumber() != null && !user.getPhoneNumber().isEmpty()) {
+            if (!user.getPhoneNumber().matches("^[0-9]*$")) {
+                throw new UnprocessableException("Số điện thoại chỉ được chứa số");
+            }
+            if (user.getPhoneNumber().length() > 11) {
+                throw new UnprocessableException("Số điện thoại không được quá 11 số");
+            }
+
+            if (userRepository.existsByPhoneNumber(user.getPhoneNumber())) {
+                throw new ConflictException("Số điện thoại đã được sử dụng");
+            }
         }
+
+        Role selectedRole;
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            if (user.getRoles().size() > 1) {
+                throw new UnprocessableException("Chỉ được chọn một role duy nhất");
+            }
+            selectedRole = user.getRoles().iterator().next();
+        } else {
+            selectedRole = roleRepository.findByName("ROLE_USER")
+                    .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
+        }
+        user.setRoles(new HashSet<>(Collections.singleton(selectedRole)));
         
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         if (user.getCreatedAt() == null) {
@@ -180,14 +200,24 @@ public class UserService implements UserDetailsService {
             existingUser.setUsername(userDTO.getUsername());
         }
 
-        if (userDTO.getEmail() == null || userDTO.getEmail().isEmpty()) {
-            throw new UnprocessableException("Email is required");
-        }
-        if (!existingUser.getEmail().equals(userDTO.getEmail())) {
-            if (userRepository.existsByEmail(userDTO.getEmail())) {
-                throw new ConflictException("Email already exists");
+        if (userDTO.getPhoneNumber() != null && !userDTO.getPhoneNumber().isEmpty()) {
+            if (!userDTO.getPhoneNumber().matches("^[0-9]*$")) {
+                throw new UnprocessableException("Số điện thoại chỉ được chứa số");
             }
-            existingUser.setEmail(userDTO.getEmail());
+            if (userDTO.getPhoneNumber().length() > 11) {
+                throw new UnprocessableException("Số điện thoại không được quá 11 số");
+            }
+
+            String currentPhoneNumber = existingUser.getPhoneNumber();
+            if (currentPhoneNumber == null || !currentPhoneNumber.equals(userDTO.getPhoneNumber())) {
+                if (userRepository.existsByPhoneNumber(userDTO.getPhoneNumber())) {
+
+                    Optional<User> userWithPhone = userRepository.findByPhoneNumber(userDTO.getPhoneNumber());
+                    if (userWithPhone.isPresent() && !userWithPhone.get().getId().equals(id)) {
+                        throw new ConflictException("Số điện thoại đã được sử dụng bởi người dùng khác");
+                    }
+                }
+            }
         }
 
         existingUser.setFirstName(userDTO.getFirstName());
@@ -195,25 +225,27 @@ public class UserService implements UserDetailsService {
         existingUser.setPhoneNumber(userDTO.getPhoneNumber());
 
         if (userDTO.getRole() != null && !userDTO.getRole().isEmpty()) {
-            Set<Role> roles = new HashSet<>();
-            for (String roleName : userDTO.getRole()) {
-                Role role = roleRepository.findByName(roleName)
-                        .orElseThrow(() -> new ResourceNotFoundException("Role không tồn tại: " + roleName));
-                roles.add(role);
-            }
-            existingUser.setRoles(roles);
+            Role role = roleRepository.findByName(userDTO.getRole())
+                    .orElseThrow(() -> new ResourceNotFoundException("Role không tồn tại: " + userDTO.getRole()));
+            existingUser.setRoles(new HashSet<>(Collections.singleton(role)));
         } else {
+
             if (existingUser.getRoles() == null || existingUser.getRoles().isEmpty()) {
                 Role defaultRole = roleRepository.findByName("ROLE_USER")
                         .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
-                existingUser.setRoles(Set.of(defaultRole));
+                existingUser.setRoles(new HashSet<>(Collections.singleton(defaultRole)));
             }
         }
 
         try {
             return userRepository.save(existingUser);
         } catch (Exception e) {
-            throw new InternalServerErrorException("Không thể cập nhật thông tin người dùng: " + e.getMessage());
+            String errorMessage = e.getMessage();
+            if (errorMessage == null || errorMessage.isEmpty()) {
+                errorMessage = e.getClass().getSimpleName() + ": " + (e.getCause() != null ? e.getCause().getMessage() : "Unknown error");
+            }
+            e.printStackTrace(); 
+            throw new InternalServerErrorException("Không thể cập nhật thông tin người dùng: " + errorMessage);
         }
     }
 

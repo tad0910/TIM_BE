@@ -1,7 +1,6 @@
 package com.tim.appTim.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.JsonPath;
 import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.UserUpdateDTO;
 import com.tim.appTim.entity.ClassMember;
@@ -253,7 +252,6 @@ public class UserIntegrationTest {
         UserUpdateDTO userUpdatePayload = new UserUpdateDTO();
         userUpdatePayload.setFirstName("AdminUpdatedName");
         userUpdatePayload.setUsername("post_owner");
-        userUpdatePayload.setEmail("owner@example.com");
 
         User updatedUserFromService = new User();
         updatedUserFromService.setId(targetUserId);
@@ -279,7 +277,6 @@ public class UserIntegrationTest {
 
         validPayload.setFirstName("HackerName");
         validPayload.setUsername("valid_username_abc");
-        validPayload.setEmail("valid_email@example.com");
 
         mockMvc.perform(put(BASE_URL + "/" + targetUserId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -295,7 +292,6 @@ public class UserIntegrationTest {
 
         validPayload.setFirstName("GhostName");
         validPayload.setUsername("valid_username");
-        validPayload.setEmail("valid_email@example.com");
 
         doThrow(new ResourceNotFoundException("User không tồn tại"))
                 .when(userService).update(eq(nonExistentUserId), any(UserUpdateDTO.class));

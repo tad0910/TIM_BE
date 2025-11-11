@@ -47,7 +47,6 @@ public class ClassModuleScheduleTeacherService {
             throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + dto.getUserId());
         }
 
-        // Kiểm tra trùng lặp
         if (scheduleTeacherRepository.existsByClassModuleScheduleIdAndUserId(scheduleId, dto.getUserId())) {
             throw new ConflictException("Giáo viên đã được gán vào buổi học này");
         }
@@ -102,7 +101,6 @@ public class ClassModuleScheduleTeacherService {
         return convertToDTO(updated);
     }
 
-    // Helper method
     private ClassModuleScheduleTeacherDTO convertToDTO(ClassModuleScheduleTeacher teacher) {
         ClassModuleScheduleTeacherDTO dto = new ClassModuleScheduleTeacherDTO();
         dto.setId(teacher.getId());
