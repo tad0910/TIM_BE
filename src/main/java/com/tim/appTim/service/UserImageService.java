@@ -1,14 +1,18 @@
 package com.tim.appTim.service;
 
-import java.util.List;
+import com.tim.appTim.repository.UserImageRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.tim.appTim.entity.UserImage;
 
 public interface UserImageService {
+
     UserImage save(UserImage userImage);
     UserImage findById(Long id);
     UserImage findLatestByUserId(Long userId);
     void delete(Long id);
-    List<UserImage> findAllByUserId(Long userId);
     void deleteAllByUserId(Long userId);
+
+    Page<UserImage> findAllByUserId(Long userId, Pageable pageable);
 }

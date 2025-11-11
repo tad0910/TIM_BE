@@ -19,10 +19,13 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import java.util.Collections;
+import java.util.List;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -63,20 +66,21 @@ public class ImageControllerIntegrationTest {
 
         testImage = new UserImage();
         testImage.setId(100L);
-        testImage.setUserId(1L); 
+        testImage.setUserId(1L);
         testImage.setImageUrl("/uploads/image-cua-user-1.jpg");
     }
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getAllImages_WhenImagesExist_ShouldReturn200() throws Exception {
-        when(userImageService.findAllByUserId(1L)).thenReturn(List.of(testImage));
+        Page<UserImage> imagePage = new PageImpl<>(List.of(testImage));
+        when(userImageService.findAllByUserId(eq(1L), any(Pageable.class))).thenReturn(imagePage);
 
         mockMvc.perform(get(BASE_URL + "/1/image"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(100L))
-                .andExpect(jsonPath("$[0].userId").value(1L));
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(100L))
+                .andExpect(jsonPath("$.content[0].userId").value(1L));
     }
 
     @Test
@@ -125,25 +129,28 @@ public class ImageControllerIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ========== GET /api/users/{userId}/image - Additional tests ==========
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void getAllImages_WhenNoImagesExist_ShouldReturn404() throws Exception {
-        when(userImageService.findAllByUserId(2L)).thenReturn(List.of());
+    void getAllImages_WhenNoImagesExist_ShouldReturn200AndEmptyPage() throws Exception {
+        Page<UserImage> emptyPage = new PageImpl<>(Collections.emptyList());
+        when(userImageService.findAllByUserId(eq(2L), any(Pageable.class))).thenReturn(emptyPage);
+
         mockMvc.perform(get(BASE_URL + "/2/image"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void getAllImages_WhenUserDoesNotExist_ShouldReturn404() throws Exception {
-        when(userImageService.findAllByUserId(999L)).thenReturn(List.of());
+    void getAllImages_WhenUserDoesNotExist_ShouldReturn200AndEmptyPage() throws Exception {
+        Page<UserImage> emptyPage = new PageImpl<>(Collections.emptyList());
+        when(userImageService.findAllByUserId(eq(999L), any(Pageable.class))).thenReturn(emptyPage);
 
         mockMvc.perform(get(BASE_URL + "/999/image"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
-    // ========== POST /api/users/{userId}/image - uploadImage ==========
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void uploadImage_WhenUserIsSelf_ShouldReturn200() throws Exception {

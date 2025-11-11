@@ -18,6 +18,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
@@ -90,12 +92,10 @@ public class ImageController {
     }
 
     @GetMapping("/{userId}/image")
-    public ResponseEntity<List<UserImage>> getAllImages(@PathVariable Long userId) {
-        List<UserImage> userImages = userImageService.findAllByUserId(userId);
-        if (userImages == null || userImages.isEmpty()) {
-            throw new ResourceNotFoundException("Không tìm thấy ảnh nào cho userId: " + userId);
-        }
-        return ResponseEntity.ok(userImages);
+    public ResponseEntity<Page<UserImage>> getAllImages(@PathVariable Long userId,
+                                                         Pageable pageable) {
+        Page<UserImage> userImagesPage = userImageService.findAllByUserId(userId, pageable);
+        return ResponseEntity.ok(userImagesPage);
     }
 
     @DeleteMapping("/{userId}/image/{imageId}")
