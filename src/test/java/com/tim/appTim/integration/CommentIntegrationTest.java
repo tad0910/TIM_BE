@@ -253,35 +253,42 @@ public class CommentIntegrationTest {
 
     // ========== GET /comments/posts/{postId} ==========
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void getCommentsByPostId_WhenPostExists_ShouldReturn200() throws Exception {
-        Long postId = 10L;
+        @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+        void getCommentsByPostId_WhenPostExists_ShouldReturn200() throws Exception {
+        Long postId = 10L;   
 
-        mockMvc.perform(get("/comments/posts/" + postId))
+        mockMvc.perform(get("/comments/posts/{postId}", postId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
-    }
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].id").value(20))
+                .andExpect(jsonPath("$.content[0].username").value("another_user"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+        }
 
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void getCommentsByPostId_WhenPostDoesNotExist_ShouldReturn200WithEmptyList() throws Exception {
-        Long nonExistentPostId = 999L;
+        @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+        void getCommentsByPostId_WhenPostDoesNotExist_ShouldReturn200WithEmptyList() throws Exception {
+        Long postId = 999L;
 
-        mockMvc.perform(get("/comments/posts/" + nonExistentPostId))
+        mockMvc.perform(get("/comments/posts/{postId}", postId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty());
-    }
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0));
+        }
 
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void getCommentsByPostId_WhenPostHasNoComments_ShouldReturn200WithEmptyList() throws Exception {
-        Long postId = 12L; // Assuming post 12 has no comments
+        @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+        void getCommentsByPostId_WhenPostHasNoComments_ShouldReturn200WithEmptyList() throws Exception {
+        Long postId = 11L;  
 
-        mockMvc.perform(get("/comments/posts/" + postId))
+        mockMvc.perform(get("/comments/posts/{postId}", postId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
-    }
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0));
+        }
 
     // ========== POST /comments/posts/{postId} - Additional tests ==========
     @Test
@@ -318,7 +325,7 @@ public class CommentIntegrationTest {
                         .param("emotion", emotion))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value(content))
-                .andExpect(jsonPath("$.emotion").value(emotion)); // Emotion is stored as enum name (lowercase)
+                .andExpect(jsonPath("$.emotion").value(emotion)); 
     }
 
     @Test
@@ -403,7 +410,7 @@ public class CommentIntegrationTest {
                         .param("emotion", emotion))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value(content))
-                .andExpect(jsonPath("$.emotion").value(emotion)); // Emotion is stored as enum name (lowercase)
+                .andExpect(jsonPath("$.emotion").value(emotion)); 
     }
 
     @Test
@@ -432,35 +439,41 @@ public class CommentIntegrationTest {
 
     // ========== GET /comments/{commentId}/replies ==========
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void getReplyCommentsByCommentId_WhenCommentExists_ShouldReturn200() throws Exception {
-        Long commentId = 20L;
+        @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+        void getReplyCommentsByCommentId_WhenCommentExists_ShouldReturn200() throws Exception {
+        Long commentId = 20L;  
 
-        mockMvc.perform(get("/comments/" + commentId + "/replies"))
+        mockMvc.perform(get("/comments/{commentId}/replies", commentId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
-    }
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].id").value(30))
+                .andExpect(jsonPath("$.totalElements").value(1));
+        }
 
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void getReplyCommentsByCommentId_WhenCommentDoesNotExist_ShouldReturn200WithEmptyList() throws Exception {
-        Long nonExistentCommentId = 999L;
+        @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+        void getReplyCommentsByCommentId_WhenCommentDoesNotExist_ShouldReturn200WithEmptyList() throws Exception {
+        Long commentId = 999L;
 
-        mockMvc.perform(get("/comments/" + nonExistentCommentId + "/replies"))
+        mockMvc.perform(get("/comments/{commentId}/replies", commentId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty()); 
-    }
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0));
+        }
 
     @Test
-    @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void getReplyCommentsByCommentId_WhenCommentHasNoReplies_ShouldReturn200WithEmptyList() throws Exception {
-        Long commentId = 21L; 
+        @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
+        void getReplyCommentsByCommentId_WhenCommentHasNoReplies_ShouldReturn200WithEmptyList() throws Exception {
+        Long commentId = 21L;  
 
-        mockMvc.perform(get("/comments/" + commentId + "/replies"))
+        mockMvc.perform(get("/comments/{commentId}/replies", commentId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
-    }
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0));
+        }
 
     // ========== DELETE /comments/{commentId} - Additional tests ==========
     @Test

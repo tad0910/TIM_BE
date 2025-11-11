@@ -28,6 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @RestController
 @RequestMapping("/comments")
@@ -163,8 +166,8 @@ User currentUser = getUserFromAuthentication(authentication);
     }
 
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<List<CommentDTO>> getCommentsByPostId(@PathVariable Long postId) {
-        return ResponseEntity.ok(commentService.getCommentsByPostId(postId));
+    public ResponseEntity<Page<CommentDTO>> getCommentsByPostId(@PathVariable Long postId, Pageable pageable) {
+        return ResponseEntity.ok(commentService.getCommentsByPostId(postId, pageable));
     }
 
     @PutMapping("/{commentId}")
@@ -251,13 +254,13 @@ User currentUser = getUserFromAuthentication(authentication);
     }
 
     @GetMapping("/{commentId}/replies")
-    public ResponseEntity<List<ReplyCommentDTO>> getReplyCommentsByCommentId(@PathVariable Long commentId) {
-        return ResponseEntity.ok(commentService.getReplyCommentsByCommentId(commentId));
+    public ResponseEntity<Page<ReplyCommentDTO>> getReplyCommentsByCommentId(@PathVariable Long commentId, Pageable pageable) {
+        return ResponseEntity.ok(commentService.getReplyCommentsByCommentId(commentId, pageable));
     }
 
     @PutMapping("/replies/{replyCommentId}")
     @PreAuthorize("isAuthenticated()")
-public ResponseEntity<ReplyCommentDTO> updateReplyComment(
+    public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
             @RequestParam(required = false) String content,
             @RequestParam(required = false) String emotion,

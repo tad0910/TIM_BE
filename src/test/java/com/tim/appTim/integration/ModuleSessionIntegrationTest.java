@@ -46,7 +46,6 @@ public class ModuleSessionIntegrationTest {
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void getSessionsByModule_WhenModuleNotFound_ShouldReturn404() throws Exception {
-        // [MỚI]
         mockMvc.perform(get("/modules/9999/sessions"))
                 .andExpect(status().isNotFound());
     }

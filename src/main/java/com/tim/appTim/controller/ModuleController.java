@@ -7,6 +7,8 @@ import com.tim.appTim.service.ModuleSessionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,8 +27,8 @@ public class ModuleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ModuleDTO>> getAllModules() {
-        List<ModuleDTO> modules = moduleService.getAllModules();
+    public ResponseEntity<Page<ModuleDTO>> getAllModules(Pageable pageable) {
+        Page<ModuleDTO> modules = moduleService.getAllModules(pageable);
         return ResponseEntity.ok(modules);
     }
 

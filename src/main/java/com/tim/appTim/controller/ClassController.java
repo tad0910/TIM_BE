@@ -17,6 +17,8 @@ import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.service.ClassService;
 import com.tim.appTim.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/classes")
@@ -32,8 +34,8 @@ public class ClassController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('class:read_all')")
-    public ResponseEntity<List<ClassDTO>> getAllClasses() {
-        List<ClassDTO> classes = classService.getAllClasses();
+    public ResponseEntity<Page<ClassDTO>> getAllClasses(Pageable pageable) {
+        Page<ClassDTO> classes = classService.getAllClasses(pageable);
         return ResponseEntity.ok(classes);
     }
     
