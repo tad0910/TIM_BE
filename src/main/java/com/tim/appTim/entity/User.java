@@ -19,9 +19,13 @@ import jakarta.persistence.ManyToMany;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 @Entity
 @Table(name = "users")
+@SQLDelete(sql = "UPDATE users SET deleted = true WHERE id = ?")
+@Where(clause = "deleted = false")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,7 +37,7 @@ public class User {
     @Column(name = "lastname")
     private String lastName;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = false, nullable = false)
     @NotBlank(message = "Username không được để trống")
     @Size(min = 3, message = "Username phải có ít nhất 3 ký tự")
     private String username;
@@ -43,7 +47,7 @@ public class User {
 
     private Instant refreshTokenExpiry;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = false, nullable = false)
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Định dạng email không hợp lệ")
     private String email;
@@ -76,6 +80,9 @@ public class User {
 
     @Column(name = "keycloak_id", unique = true)
     private String keycloakId;
+
+    @Column(name = "deleted")
+    private boolean deleted = false;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -123,4 +130,11 @@ public class User {
         this.refreshTokenExpiry = refreshTokenExpiry;
     }
 
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 }

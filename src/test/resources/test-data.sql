@@ -56,14 +56,14 @@ INSERT INTO permissions (id, name) VALUES
 (27, 'class:update_all');
 
 
-INSERT INTO users (id, username, password, email) VALUES
-(1, 'post_owner', '{noop}password', 'owner@example.com'),
-(2, 'another_user', '{noop}password', 'another@example.com'),
-(3, 'admin_user', '{noop}password', 'admin@example.com'),
+INSERT INTO users (id, username, password, email, deleted) VALUES
+(1, 'post_owner', '{noop}password', 'owner@example.com', false),
+(2, 'another_user', '{noop}password', 'another@example.com', false),
+(3, 'admin_user', '{noop}password', 'admin@example.com', false),
 
-(5, 'giaovien1', '{noop}password', 'gv1@example.com'),
-(6, 'giaovien2', '{noop}password', 'gv2@example.com'),
-(7, 'giaovien3', '{noop}password', 'gv3@example.com');
+(5, 'giaovien1', '{noop}password', 'gv1@example.com', false),
+(6, 'giaovien2', '{noop}password', 'gv2@example.com', false),
+(7, 'giaovien3', '{noop}password', 'gv3@example.com', false);
 
 
 INSERT INTO user_roles (user_id, role_id) VALUES

@@ -62,6 +62,7 @@ public class KeycloakSyncService {
                 .build();
     }
 
+    @Transactional
     @Scheduled(fixedDelay = 300_000)
     public List<User> syncUsers() {
         List<User> syncedUsers = new ArrayList<>();
@@ -71,23 +72,60 @@ public class KeycloakSyncService {
             RealmResource realmResource = keycloak.realm(realm);
             List<UserRepresentation> kcUsers = realmResource.users().list();
 
-            for (UserRepresentation kcUser : kcUsers) {
-                boolean exists = userRepository.findByUsername(kcUser.getUsername()).isPresent()
-                        || userRepository.findByEmail(kcUser.getEmail()).isPresent();
+            Role defaultRole = roleRepository.findByName("ROLE_USER")
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Role 'ROLE_USER' trong DB"));
 
-                if (!exists) {
+            for (UserRepresentation kcUser : kcUsers) {
+
+                User userToSync = userRepository.findByKeycloakId(kcUser.getId())
+                        .or(() -> userRepository.findByEmail(kcUser.getEmail()))
+                        .orElse(null);
+
+                if (userToSync != null) {
+
+                    boolean needsUpdate = false;
+
+                    if (userToSync.getKeycloakId() == null) {
+                        userToSync.setKeycloakId(kcUser.getId());
+                        needsUpdate = true;
+                    }
+
+                    if (kcUser.getUsername() != null && !kcUser.getUsername().equals(userToSync.getUsername())) {
+                        userToSync.setUsername(kcUser.getUsername());
+                        needsUpdate = true;
+                    }
+                    if (kcUser.getEmail() != null && !kcUser.getEmail().equals(userToSync.getEmail())) {
+                        userToSync.setEmail(kcUser.getEmail());
+                        needsUpdate = true;
+                    }
+                    if (kcUser.getFirstName() != null && !kcUser.getFirstName().equals(userToSync.getFirstName())) {
+                        userToSync.setFirstName(kcUser.getFirstName());
+                        needsUpdate = true;
+                    }
+                    if (kcUser.getLastName() != null && !kcUser.getLastName().equals(userToSync.getLastName())) {
+                        userToSync.setLastName(kcUser.getLastName());
+                        needsUpdate = true;
+                    }
+
+                    if (needsUpdate) {
+                        userRepository.save(userToSync);
+                        System.out.println("🔄 Synced/Updated existing user in DB: " + kcUser.getUsername());
+                    }
+
+                } else {
                     User newUser = new User();
+                    newUser.setKeycloakId(kcUser.getId());
                     newUser.setUsername(kcUser.getUsername());
                     newUser.setEmail(kcUser.getEmail());
+                    newUser.setFirstName(kcUser.getFirstName());
+                    newUser.setLastName(kcUser.getLastName());
                     newUser.setCreatedAt(LocalDateTime.now());
                     newUser.setPassword("KEYCLOAK_MANAGED");
-                    Role defaultRole = roleRepository.findByName("ROLE_USER")
-                            .orElseThrow(() -> new RuntimeException("Không tìm thấy Role trong DB"));
                     newUser.setRoles(Set.of(defaultRole));
 
                     userRepository.save(newUser);
                     syncedUsers.add(newUser);
-                    System.out.println("✅ Synced user to DB: " + kcUser.getUsername());
+                    System.out.println("✅ Synced new user to DB: " + kcUser.getUsername());
                 }
             }
             return syncedUsers;

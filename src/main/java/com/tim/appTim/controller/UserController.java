@@ -243,4 +243,17 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('user:create')")
+    public ResponseEntity<?> restoreUser(@PathVariable Long id) {
+        userService.restoreUser(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority('user:read_all')")
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.findAllUsersIncludingDeleted());
+    }
 }

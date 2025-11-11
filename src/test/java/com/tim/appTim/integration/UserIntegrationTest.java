@@ -23,8 +23,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.web.context.WebApplicationContext;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -779,5 +781,76 @@ public class UserIntegrationTest {
         Long targetUserId = 1L;
         mockMvc.perform(get(BASE_URL + "/" + targetUserId + "/cover-image"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void softDelete_WhenAdminDeletesUser_UserShouldBeHiddenFromStandardAPIs() throws Exception {
+        Long targetUserId = 2L;
+        String targetUsername = "another_user";
+
+        doCallRealMethod().when(userService).findById(targetUserId);
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value(targetUsername));
+
+        doCallRealMethod().when(userService).delete(targetUserId);
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNoContent());
+
+        doCallRealMethod().when(userService).findById(targetUserId);
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD) // <-- THÊM DÒNG NÀY
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void restoreUser_WhenAdminRestores_UserShouldReappear() throws Exception {
+        Long targetUserId = 2L;
+        String restoreEndpoint = BASE_URL + "/" + targetUserId + "/restore";
+
+        // 1. Xóa user
+        // Vì context đã "sạch", userService là một spy mới toanh
+        // nó sẽ tự động gọi hàm thật. Chúng ta không cần doCallRealMethod() nữa.
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNoContent());
+
+        // 2. Xác nhận đã biến mất
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNotFound());
+
+        // 3. Khôi phục (API này sẽ gọi hàm @Transactional thật)
+        mockMvc.perform(post(restoreEndpoint))
+                .andExpect(status().isOk());
+
+        // 4. Kiểm tra lại (Bây giờ phải là 200)
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("another_user"));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getDeletedUsers_WhenAdminAsksForAll_ShouldReturnAllUsers() throws Exception {
+        Long targetUserId = 2L;
+        String adminAllEndpoint = BASE_URL + "/all";
+
+        int totalUsersInSql = 6;
+
+        doCallRealMethod().when(userService).delete(targetUserId);
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNoContent());
+
+        doCallRealMethod().when(userService).findAll();
+        mockMvc.perform(get(BASE_URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(totalUsersInSql - 1));
+
+        doCallRealMethod().when(userService).findAllUsersIncludingDeleted();
+        mockMvc.perform(get(adminAllEndpoint))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(totalUsersInSql));
     }
 }
