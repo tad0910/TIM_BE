@@ -83,7 +83,7 @@ public class UserIntegrationTest {
     void getAllUsers_WhenAdmin_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -833,14 +833,14 @@ public class UserIntegrationTest {
         mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
                 .andExpect(status().isNoContent());
 
-        doCallRealMethod().when(userService).findAll();
+        doCallRealMethod().when(userService).findAll(any(Pageable.class));
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(totalUsersInSql - 1));
+                .andExpect(jsonPath("$.totalElements").value(totalUsersInSql - 1));
 
-        doCallRealMethod().when(userService).findAllUsersIncludingDeleted();
+        doCallRealMethod().when(userService).findAllUsersIncludingDeleted(any(Pageable.class));
         mockMvc.perform(get(adminAllEndpoint))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(totalUsersInSql));
+                .andExpect(jsonPath("$.totalElements").value(totalUsersInSql));
     }
 }
