@@ -1,9 +1,7 @@
 package com.tim.appTim.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.util.Set;
 
 public class UserUpdateDTO {
 
@@ -14,13 +12,14 @@ public class UserUpdateDTO {
     @Size(min = 3, message = "Username phải có ít nhất 3 ký tự")
     private String username;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Định dạng email không hợp lệ")
-    private String email;
+    // Email không được sửa sau khi đã tạo
+    // Loại bỏ email khỏi DTO vì không cho phép update
 
+    // PhoneNumber validation được thực hiện trong service method
     private String phoneNumber;
 
-    private Set<String> role;
+    // Chỉ cho phép một role duy nhất
+    private String role;
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -31,12 +30,9 @@ public class UserUpdateDTO {
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     
-    public Set<String> getRole() { return role; }
-    public void setRole(Set<String> role) { this.role = role; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }
