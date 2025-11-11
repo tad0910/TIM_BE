@@ -46,9 +46,6 @@ public class ClassModuleService {
         this.programModuleRepository = programModuleRepository;
     }
 
-    /**
-     * Tạo ClassModule từ các module trong program của lớp
-     */
     @Transactional
     public List<ClassModuleDTO> createClassModulesFromProgram(Long classId) {
         Class classEntity = classRepository.findById(classId)
@@ -58,7 +55,6 @@ public class ClassModuleService {
             throw new BadRequestException("Lớp học chưa được gán chương trình đào tạo");
         }
 
-        // Lấy danh sách module từ program
         List<ProgramModule> programModules = programModuleRepository.findByProgramId(classEntity.getProgramId());
 
         if (programModules.isEmpty()) {
@@ -67,12 +63,11 @@ public class ClassModuleService {
 
         List<ClassModule> createdModules = programModules.stream()
                 .map(pm -> {
-                    // Kiểm tra xem đã tồn tại chưa
                     if (!classModuleRepository.existsByClassIdAndModuleId(classId, pm.getModule().getId())) {
                         ClassModule classModule = new ClassModule();
                         classModule.setClassId(classId);
                         classModule.setModuleId(pm.getModule().getId());
-                        classModule.setScheduleType(ClassModule.ScheduleType.fixed); // Default
+                        classModule.setScheduleType(ClassModule.ScheduleType.fixed); 
                         return classModuleRepository.save(classModule);
                     }
                     return null;
@@ -85,26 +80,20 @@ public class ClassModuleService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Tạo một ClassModule thủ công
-     */
     @Transactional
     public ClassModuleDTO createClassModule(ClassModuleDTO dto) {
         if (dto.getClassId() == null || dto.getModuleId() == null) {
             throw new BadRequestException("classId và moduleId là bắt buộc");
         }
 
-        // Kiểm tra class tồn tại
         if (!classRepository.existsById(dto.getClassId())) {
             throw new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + dto.getClassId());
         }
 
-        // Kiểm tra module tồn tại
         if (!moduleRepository.existsById(dto.getModuleId())) {
             throw new ResourceNotFoundException("Không tìm thấy module với ID: " + dto.getModuleId());
         }
 
-        // Kiểm tra trùng lặp
         if (classModuleRepository.existsByClassIdAndModuleId(dto.getClassId(), dto.getModuleId())) {
             throw new ConflictException("Module đã được gán vào lớp học này");
         }
@@ -186,7 +175,6 @@ public class ClassModuleService {
             throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + dto.getUserId());
         }
 
-        // Kiểm tra trùng lặp
         if (classModuleTeacherRepository.existsByClassModuleIdAndUserId(classModuleId, dto.getUserId())) {
             throw new ConflictException("Giáo viên đã được gán vào ClassModule này");
         }
@@ -200,9 +188,6 @@ public class ClassModuleService {
         return convertTeacherToDTO(saved);
     }
 
-    /**
-     * Lấy danh sách giáo viên của ClassModule
-     */
     @Transactional(readOnly = true)
     public List<ClassModuleTeacherDTO> getClassModuleTeachers(Long classModuleId) {
         if (!classModuleRepository.existsById(classModuleId)) {
@@ -214,9 +199,6 @@ public class ClassModuleService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Xóa giáo viên khỏi ClassModule
-     */
     @Transactional
     public void removeTeacherFromClassModule(Long classModuleId, Long userId) {
         ClassModuleTeacher teacher = classModuleTeacherRepository
@@ -226,9 +208,6 @@ public class ClassModuleService {
         classModuleTeacherRepository.delete(teacher);
     }
 
-    /**
-     * Cập nhật vai trò giáo viên trong ClassModule
-     */
     @Transactional
     public ClassModuleTeacherDTO updateTeacherRole(Long classModuleId, Long userId, ClassModuleTeacher.TeacherRole newRole) {
         ClassModuleTeacher teacher = classModuleTeacherRepository
@@ -240,7 +219,6 @@ public class ClassModuleService {
         return convertTeacherToDTO(updated);
     }
 
-    // Helper methods
     private ClassModuleDTO convertToDTO(ClassModule classModule) {
         ClassModuleDTO dto = new ClassModuleDTO();
         dto.setId(classModule.getId());
@@ -263,7 +241,6 @@ public class ClassModuleService {
                     .ifPresent(m -> dto.setModuleName(m.getName()));
         }
 
-        // Load teachers if needed
         if (classModule.getTeachers() != null && !classModule.getTeachers().isEmpty()) {
             List<ClassModuleTeacherDTO> teacherDTOs = classModule.getTeachers().stream()
                     .map(this::convertTeacherToDTO)

@@ -12,13 +12,8 @@ public class UserUpdateDTO {
     @Size(min = 3, message = "Username phải có ít nhất 3 ký tự")
     private String username;
 
-    // Email không được sửa sau khi đã tạo
-    // Loại bỏ email khỏi DTO vì không cho phép update
-
-    // PhoneNumber validation được thực hiện trong service method
     private String phoneNumber;
 
-    // Chỉ cho phép một role duy nhất
     private String role;
 
     public String getFirstName() { return firstName; }
