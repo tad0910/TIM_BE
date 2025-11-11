@@ -83,7 +83,7 @@ public class UserIntegrationTest {
     void getAllUsers_WhenAdmin_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
