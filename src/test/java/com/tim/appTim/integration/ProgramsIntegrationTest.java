@@ -36,8 +36,9 @@ public class ProgramsIntegrationTest {
     void getAllPrograms_WhenPublic_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Khóa học Backend"));
+                .andExpect(jsonPath("$.content").isArray())           
+                .andExpect(jsonPath("$.content[0].name").value("Khóa học Backend"))
+                .andExpect(jsonPath("$.totalElements").value(1));     
     }
 
     @Test

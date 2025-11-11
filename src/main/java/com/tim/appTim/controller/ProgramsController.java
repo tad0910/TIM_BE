@@ -6,6 +6,8 @@ import com.tim.appTim.service.ProgramsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -20,8 +22,8 @@ public class ProgramsController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProgramsDTO>> getAllPrograms() {
-        return ResponseEntity.ok(programsService.getAllPrograms());
+    public ResponseEntity<Page<ProgramsDTO>> getAllPrograms(Pageable pageable) {
+        return ResponseEntity.ok(programsService.getAllPrograms(pageable));
     }
 
     @GetMapping("/{id}")

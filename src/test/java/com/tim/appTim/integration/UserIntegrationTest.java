@@ -805,21 +805,17 @@ public class UserIntegrationTest {
 
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD) // <-- THÊM DÒNG NÀY
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD) 
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void restoreUser_WhenAdminRestores_UserShouldReappear() throws Exception {
         Long targetUserId = 2L;
         String restoreEndpoint = BASE_URL + "/" + targetUserId + "/restore";
-
         mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
                 .andExpect(status().isNoContent());
-
         mockMvc.perform(get(BASE_URL + "/" + targetUserId))
                 .andExpect(status().isNotFound());
-
         mockMvc.perform(post(restoreEndpoint))
                 .andExpect(status().isOk());
-
         mockMvc.perform(get(BASE_URL + "/" + targetUserId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("another_user"));

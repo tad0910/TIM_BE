@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 import java.util.ArrayList;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.BadRequestException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class ModuleServiceImpl implements ModuleService {
@@ -27,11 +29,9 @@ public class ModuleServiceImpl implements ModuleService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ModuleDTO> getAllModules() {
-        return moduleRepository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    public Page<ModuleDTO> getAllModules(Pageable pageable) {
+        Page<Module> modulePage = moduleRepository.findAll(pageable);
+        return modulePage.map(this::toDTO);
     }
 
     @Override

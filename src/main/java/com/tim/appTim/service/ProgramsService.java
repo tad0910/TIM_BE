@@ -12,6 +12,8 @@ import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,10 +39,9 @@ public class ProgramsService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProgramsDTO> getAllPrograms() {
-        return programsRepository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    public Page<ProgramsDTO> getAllPrograms(Pageable pageable) {
+        Page<Programs> programPage = programsRepository.findAll(pageable); 
+        return programPage.map(this::toDTO); 
     }
 
     @Transactional(readOnly = true)

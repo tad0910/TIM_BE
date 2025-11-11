@@ -1,6 +1,7 @@
 package com.tim.appTim.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,6 +27,9 @@ import com.tim.appTim.exception.InternalServerErrorException;
 import java.util.Map;
 import org.springframework.security.core.Authentication;
 import com.tim.appTim.dto.AddMemberDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @Service("classService")
 public class ClassService {
@@ -46,76 +50,63 @@ public class ClassService {
     }
 
     @Transactional(readOnly = true)
-    public List<ClassDTO> getAllClasses() {
+    public Page<ClassDTO> getAllClasses(Pageable pageable) {
         try {
-            List<Class> classes = classRepository.findAll();
+            Page<Class> classPage = classRepository.findAll(pageable);
 
-            if (classes == null || classes.isEmpty()) {
-                return new java.util.ArrayList<>();
+            if (classPage.isEmpty()) {
+                return Page.empty(pageable);
             }
 
-            List<Long> classIds = classes.stream()
+            List<Long> classIds = classPage.getContent().stream()
                     .filter(c -> c != null && c.getId() != null)
                     .map(Class::getId)
                     .collect(Collectors.toList());
-            List<ClassMember> allMembers = new java.util.ArrayList<>();
-            for (Long classId : classIds) {
-                try {
-                    List<ClassMember> members = classMemberRepository.findByClassId(classId);
-                    if (members != null) {
-                        allMembers.addAll(members);
-                    }
-                } catch (Exception e) {
-                    System.err.println("Error loading members for class " + classId + ": " + e.getMessage());
-                }
-            }
+
+            List<ClassMember> allMembers = classMemberRepository.findAllById(classIds);
 
             Map<Long, List<ClassMember>> membersByClassId = allMembers.stream()
                     .filter(m -> m != null && m.getClassId() != null)
                     .collect(Collectors.groupingBy(ClassMember::getClassId));
-            
-            return classes.stream()
-                    .filter(classEntity -> classEntity != null && classEntity.getId() != null)
-                    .map(classEntity -> {
-                        try {
-                            List<ClassMember> members = membersByClassId.getOrDefault(
-                                    classEntity.getId(), 
-                                    new java.util.ArrayList<>()
-                            );
-                            
-                            List<ClassDTO.MemberDTO> memberDTOs = members.stream()
-                                    .filter(m -> m != null && m.getRole() != null)
-                                    .map(member -> new ClassDTO.MemberDTO(
-                                            member.getUserId(),
-                                            member.getRole().name(),
-                                            member.getJoinDate()
-                                    ))
-                                    .collect(Collectors.toList());
-                            ProgramsDTO programDTO = null;
 
-                            ClassDTO classDTO = new ClassDTO(
-                                    classEntity.getId(),
-                                    classEntity.getClassName() != null ? classEntity.getClassName() : "",
-                                    classEntity.getDescription() != null ? classEntity.getDescription() : "",
-                                    memberDTOs,
-                                    classEntity.getProgramId(),
-                                    programDTO
-                            );
-                            
-                            return classDTO;
-                        } catch (Exception e) {
-                            System.err.println("Error processing class " + classEntity.getId() + ": " + e.getMessage());
-                            return new ClassDTO(
-                                    classEntity.getId(),
-                                    classEntity.getClassName() != null ? classEntity.getClassName() : "",
-                                    "",
-                                    new java.util.ArrayList<>(),
-                                    classEntity.getProgramId(),
-                                    null
-                            );
-                        }
-                    })
-                    .collect(Collectors.toList());
+            return classPage.map(classEntity -> {
+                try {
+                    List<ClassMember> members = membersByClassId.getOrDefault(
+                            classEntity.getId(), 
+                            new ArrayList<>()
+                    );
+
+                    List<ClassDTO.MemberDTO> memberDTOs = members.stream()
+                            .filter(m -> m != null && m.getRole() != null)
+                            .map(member -> new ClassDTO.MemberDTO(
+                                    member.getUserId(),
+                                    member.getRole().name(),
+                                    member.getJoinDate()
+                            ))
+                            .collect(Collectors.toList());
+
+                    ProgramsDTO programDTO = null;
+
+                    return new ClassDTO(
+                            classEntity.getId(),
+                            classEntity.getClassName() != null ? classEntity.getClassName() : "",
+                            classEntity.getDescription() != null ? classEntity.getDescription() : "",
+                            memberDTOs,
+                            classEntity.getProgramId(),
+                            programDTO
+                    );
+                } catch (Exception e) {
+                    System.err.println("Error processing class " + classEntity.getId() + ": " + e.getMessage());
+                    return new ClassDTO(
+                            classEntity.getId(),
+                            classEntity.getClassName() != null ? classEntity.getClassName() : "",
+                            "",
+                            new ArrayList<>(),
+                            classEntity.getProgramId(),
+                            null
+                    );
+                }
+            });
         } catch (Exception e) {
             System.err.println("Error in getAllClasses: " + e.getMessage());
             e.printStackTrace();
@@ -130,6 +121,7 @@ public class ClassService {
     public List<ClassMember> getClassMembersByClassId(Long classId) {
         return classMemberRepository.findByClassId(classId);
     }
+
     public boolean isClassMember(Authentication authentication, Long classId) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return false;
