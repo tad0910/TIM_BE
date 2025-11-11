@@ -204,6 +204,9 @@ public class UserService implements UserDetailsService {
             if (!userDTO.getPhoneNumber().matches("^[0-9]*$")) {
                 throw new UnprocessableException("Số điện thoại chỉ được chứa số");
             }
+            if (userDTO.getPhoneNumber().length() < 10) {
+                throw new UnprocessableException("Số điện thoại phải có ít nhất 10 số");
+            }
             if (userDTO.getPhoneNumber().length() > 11) {
                 throw new UnprocessableException("Số điện thoại không được quá 11 số");
             }
