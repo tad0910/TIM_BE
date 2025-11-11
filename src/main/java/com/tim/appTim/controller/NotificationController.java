@@ -50,19 +50,20 @@ public class NotificationController {
     @PreAuthorize("@userService.isSelf(authentication, #userId)")
     public ResponseEntity<Page<NotificationDTO>> getNotificationsByUserId(
             @PathVariable Long userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            Pageable pageable,
             Authentication authentication) {
 
-        Pageable pageable = PageRequest.of(page, size);
         Page<NotificationDTO> notifications = notificationService.getNotificationsByUserId(userId, pageable);
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/user/{userId}/unread")
     @PreAuthorize("@userService.isSelf(authentication, #userId)")
-    public ResponseEntity<List<NotificationDTO>> getUnreadNotifications(@PathVariable Long userId, Authentication authentication) {
-        List<NotificationDTO> notifications = notificationService.getUnreadNotificationsByUserId(userId);
+    public ResponseEntity<Page<NotificationDTO>> getUnreadNotifications(@PathVariable Long userId,
+                                                                         Pageable pageable,
+                                                                         Authentication authentication) {
+
+        Page<NotificationDTO> notifications = notificationService.getUnreadNotificationsByUserId(userId, pageable);
         return ResponseEntity.ok(notifications);
     }
 
@@ -99,13 +100,11 @@ public class NotificationController {
     public ResponseEntity<Page<NotificationDTO>> getNotificationsByType(
             @PathVariable Long userId,
             @PathVariable String notificationType,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            Pageable pageable,
             Authentication authentication) {
 
         try {
             Notification.NotificationType type = Notification.NotificationType.valueOf(notificationType.toUpperCase());
-            Pageable pageable = PageRequest.of(page, size);
             Page<NotificationDTO> notifications = notificationService.getNotificationsByType(userId, type, pageable);
             return ResponseEntity.ok(notifications);
         } catch (IllegalArgumentException e) {
