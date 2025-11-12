@@ -14,9 +14,15 @@ import com.tim.appTim.entity.Post;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.UserRepository;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+
 import com.tim.appTim.repository.CommentRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +36,8 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.net.URISyntaxException;
 import java.io.IOException;
+import org.springframework.security.oauth2.jwt.Jwt;
+  
 
 @Service
 public class PostService {
@@ -412,5 +420,61 @@ public class PostService {
             return username;
         }
         return "Người dùng";
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public boolean isPostOwner(Authentication authentication, Long postId) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        final String currentUsername = extractUsername(authentication);
+        if (currentUsername == null) {
+            return false;
+        }
+
+        return postRepository.findById(postId)
+                .map(post -> {
+                    User owner = post.getUser();
+                    return owner != null && currentUsername.equals(owner.getUsername());                
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+    }
+
+        private String extractUsername(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof UserDetails userDetails) {
+            return userDetails.getUsername();
+        }
+
+        if (principal instanceof String username) {
+            return username;
+        }
+
+        if (principal instanceof String token && token.startsWith("Bearer ")) {
+            token = token.substring(7); 
+        } else if (principal instanceof String token) {
+
+        } else {
+            return null;
+        }
+
+        try {
+            JwtParser parser = Jwts.parserBuilder()
+                    .build(); 
+
+            Claims claims = parser.parseClaimsJws((String) principal).getBody();
+
+            String preferredUsername = claims.get("preferred_username", String.class);
+            if (preferredUsername != null && !preferredUsername.isBlank()) {
+                return preferredUsername;
+            }
+            return claims.getSubject();
+
+        } catch (Exception e) {
+            System.err.println("Failed to parse JWT: " + e.getMessage());
+            return null;
+        }
     }
 }

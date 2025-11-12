@@ -127,7 +127,7 @@ public class PostController {
     }
 
     @PutMapping("/{postId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('post:update_all') or @postService.isPostOwner(authentication, #postId)")
     public ResponseEntity<PostDTO> updatePost(
             @PathVariable Long postId,
             Authentication authentication,
@@ -194,7 +194,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('post:delete_all') or @postService.isPostOwner(authentication, #postId)")
     public ResponseEntity<String> deletePost(
             @PathVariable Long postId,
             Authentication authentication) {
