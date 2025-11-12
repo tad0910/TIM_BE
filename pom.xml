@@ -32,14 +32,6 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
 
-        <sonar.host.url>http://localhost:9000</sonar.host.url>
-        <sonar.projectKey>com.tim.appTim</sonar.projectKey>
-        <sonar.projectName>AppTim Social Media</sonar.projectName>
-        <sonar.login>admin</sonar.login>
-        <sonar.password>123456</sonar.password>
-        <sonar.coverage.jacoco.xmlReportPath>
-            ${project.build.directory}/site/jacoco/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPath>
     </properties>
     <dependencies>
         <dependency>
@@ -138,14 +130,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
+
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -166,6 +151,7 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 
