@@ -37,10 +37,11 @@ public class ModuleSessionIntegrationTest {
     void getSessionsByModule_WhenModuleExists_ShouldReturn200() throws Exception {
         mockMvc.perform(get("/modules/200/sessions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].sessionNumber").value(1))
-                .andExpect(jsonPath("$[0].id").value(300));
+                .andExpect(jsonPath("$.content").isArray())           
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].sessionNumber").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(300))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
