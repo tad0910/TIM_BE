@@ -29,6 +29,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @Service("commentService")
 @Transactional
@@ -110,12 +113,9 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public List<CommentDTO> getCommentsByPostId(Long postId) {
-        List<Comment> comments = commentRepository.findByPostId(postId);
-
-        return comments.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<CommentDTO> getCommentsByPostId(Long postId, Pageable pageable) {
+        Page<Comment> commentPage = commentRepository.findByPostId(postId, pageable);
+        return commentPage.map(this::convertToDTO);
     }
 
     public Comment getCommentById(Long commentId) {
@@ -229,11 +229,9 @@ return convertToDTO(updatedComment);
         return convertReplyToDTO(savedReplyComment);
 }
     @Transactional(readOnly = true)
-    public List<ReplyCommentDTO> getReplyCommentsByCommentId(Long commentId) {
-        return replyCommentRepository.findByCommentId(commentId)
-                .stream()
-                .map(this::convertReplyToDTO)
-                .collect(Collectors.toList());
+    public Page<ReplyCommentDTO> getReplyCommentsByCommentId(Long commentId, Pageable pageable) {
+        Page<ReplyComment> replyPage = replyCommentRepository.findByCommentId(commentId, pageable);
+        return replyPage.map(this::convertReplyToDTO);
     }
 
     public ReplyCommentDTO updateReplyComment(User currentUser, Authentication authentication, Long replyCommentId, String content, ReplyComment.Emotion emotion, List<File> newFilesFromController) {

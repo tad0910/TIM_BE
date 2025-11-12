@@ -23,6 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.tim.appTim.service.UserImageService;
 import com.tim.appTim.exception.*;
 
@@ -45,8 +47,8 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('user:read_all')")
-    public ResponseEntity<List<User>> getAll() {
-        return ResponseEntity.ok(userService.findAll());
+    public ResponseEntity<Page<User>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(userService.findAll(pageable));
     }
 
     @GetMapping("/{id}")
@@ -62,7 +64,7 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('user:create')")
-    public ResponseEntity<User> create(@RequestBody User user) {
+    public ResponseEntity<User> create(@Valid @RequestBody User user) {
         User created = userService.create(user);
         return ResponseEntity.created(URI.create("/users/" + created.getId())).body(created);
     }
@@ -242,5 +244,18 @@ public class UserController {
         response.put("totalClasses", classDTOs.size());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('user:create')")
+    public ResponseEntity<?> restoreUser(@PathVariable Long id) {
+        userService.restoreUser(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority('user:read_all')")
+    public ResponseEntity<Page<User>> getAllUsers(Pageable pageable) {
+        return ResponseEntity.ok(userService.findAllUsersIncludingDeleted(pageable));
     }
 }

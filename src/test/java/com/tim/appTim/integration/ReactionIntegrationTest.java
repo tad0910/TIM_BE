@@ -96,13 +96,13 @@ public class ReactionIntegrationTest {
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void testGetReactionsByPostId_ShouldReturnReactionList() throws Exception {
+    void testGetReactionsByPostId_ShouldReturnReactionPage() throws Exception {
         Long postId = 10L;
         mockMvc.perform(get("/reactions/posts/" + postId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].emotionType").value("like"))
-                .andExpect(jsonPath("$[0].userId").value(2L));
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].emotionType").value("like"))
+                .andExpect(jsonPath("$.content[0].userId").value(2L));
     }
 
     @Test
@@ -117,12 +117,12 @@ public class ReactionIntegrationTest {
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void testGetReactionsByCommentId_ShouldReturnReactionList() throws Exception {
+    void testGetReactionsByCommentId_ShouldReturnReactionPage() throws Exception {
         Long commentId = 20L;
         mockMvc.perform(get("/reactions/comments/" + commentId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].userId").value(1L));
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].userId").value(1L));
     }
 
     @Test
@@ -149,13 +149,13 @@ public class ReactionIntegrationTest {
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
-    void testGetReactionsByReplyId_ShouldReturnReactionList() throws Exception {
+    void testGetReactionsByReplyId_ShouldReturnReactionPage() throws Exception {
         Long replyId = 30L;
         mockMvc.perform(get("/reactions/replies/" + replyId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].emotionType").value("haha"))
-                .andExpect(jsonPath("$[0].userId").value(1L));
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].emotionType").value("haha"))
+                .andExpect(jsonPath("$.content[0].userId").value(1L));
     }
 
     @Test

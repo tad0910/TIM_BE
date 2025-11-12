@@ -134,9 +134,8 @@ public class ClassModuleScheduleService {
             }
         }
 
-        // Nếu có moduleSessionId cụ thể, chỉ tạo schedule cho session đó
         if (dto.getModuleSessionId() != null) {
-            // Kiểm tra xem đã có schedule cho session này chưa
+
             boolean existsForSession = scheduleRepository.findByClassId(dto.getClassId()).stream()
                     .anyMatch(s -> s.getModuleSessionId() != null && s.getModuleSessionId().equals(dto.getModuleSessionId()));
             if (existsForSession) {
@@ -159,23 +158,20 @@ public class ClassModuleScheduleService {
             return convertToDTO(savedEntity);
         }
 
-        // Nếu không có moduleSessionId nhưng có instructorId, tự động tạo schedule cho tất cả ModuleSession
         if (dto.getInstructorId() != null) {
-            // Lấy tất cả ModuleSession của Module
+
             List<ModuleSession> moduleSessions = moduleSessionRepository.findByModuleIdOrderBySessionNumberAsc(dto.getModuleId().intValue());
             
             if (moduleSessions.isEmpty()) {
                 throw new InvalidRequestException("Module này chưa có ModuleSession nào.");
             }
 
-            // Kiểm tra xem đã có schedule cho bất kỳ ModuleSession nào của module này chưa
             List<ClassModuleSchedule> existingSchedules = scheduleRepository.findByClassId(dto.getClassId());
             java.util.Set<Long> existingSessionIds = existingSchedules.stream()
                     .filter(s -> s.getModuleId().equals(dto.getModuleId()) && s.getModuleSessionId() != null)
                     .map(ClassModuleSchedule::getModuleSessionId)
                     .collect(java.util.stream.Collectors.toSet());
-            
-            // Kiểm tra xem có schedule cho module (không có session cụ thể) chưa
+
             boolean moduleScheduledWithoutSession = existingSchedules.stream()
                     .anyMatch(s -> s.getModuleId().equals(dto.getModuleId()) && s.getModuleSessionId() == null);
             
@@ -186,7 +182,6 @@ public class ClassModuleScheduleService {
 
             checkInstructorConflict(dto.getInstructorId(), dto.getStartDate(), dto.getEndDate(), null);
 
-            // Tạo ClassModuleSchedule cho từng ModuleSession
             List<ClassModuleSchedule> schedules = new java.util.ArrayList<>();
             for (ModuleSession session : moduleSessions) {
                 ClassModuleSchedule entity = new ClassModuleSchedule();
@@ -202,11 +197,9 @@ public class ClassModuleScheduleService {
             }
 
             List<ClassModuleSchedule> savedSchedules = scheduleRepository.saveAll(schedules);
-            // Trả về schedule đầu tiên
             return convertToDTO(savedSchedules.get(0));
         }
 
-        // Nếu không có cả moduleSessionId và instructorId, chỉ tạo schedule cho module (không có session)
         if (scheduleRepository.existsByClassIdAndModuleId(dto.getClassId(), dto.getModuleId())) {
             throw new InvalidRequestException("Module này đã được lập lịch cho lớp học này.");
         }

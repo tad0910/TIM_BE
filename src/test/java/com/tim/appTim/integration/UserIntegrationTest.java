@@ -1,7 +1,6 @@
 package com.tim.appTim.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.JsonPath;
 import com.tim.appTim.dto.ProfileResponse;
 import com.tim.appTim.dto.UserUpdateDTO;
 import com.tim.appTim.entity.ClassMember;
@@ -24,8 +23,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.web.context.WebApplicationContext;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -82,7 +83,7 @@ public class UserIntegrationTest {
     void getAllUsers_WhenAdmin_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -251,7 +252,6 @@ public class UserIntegrationTest {
         UserUpdateDTO userUpdatePayload = new UserUpdateDTO();
         userUpdatePayload.setFirstName("AdminUpdatedName");
         userUpdatePayload.setUsername("post_owner");
-        userUpdatePayload.setEmail("owner@example.com");
 
         User updatedUserFromService = new User();
         updatedUserFromService.setId(targetUserId);
@@ -277,7 +277,6 @@ public class UserIntegrationTest {
 
         validPayload.setFirstName("HackerName");
         validPayload.setUsername("valid_username_abc");
-        validPayload.setEmail("valid_email@example.com");
 
         mockMvc.perform(put(BASE_URL + "/" + targetUserId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -293,7 +292,6 @@ public class UserIntegrationTest {
 
         validPayload.setFirstName("GhostName");
         validPayload.setUsername("valid_username");
-        validPayload.setEmail("valid_email@example.com");
 
         doThrow(new ResourceNotFoundException("User không tồn tại"))
                 .when(userService).update(eq(nonExistentUserId), any(UserUpdateDTO.class));
@@ -783,5 +781,66 @@ public class UserIntegrationTest {
         Long targetUserId = 1L;
         mockMvc.perform(get(BASE_URL + "/" + targetUserId + "/cover-image"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void softDelete_WhenAdminDeletesUser_UserShouldBeHiddenFromStandardAPIs() throws Exception {
+        Long targetUserId = 2L;
+        String targetUsername = "another_user";
+
+        doCallRealMethod().when(userService).findById(targetUserId);
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value(targetUsername));
+
+        doCallRealMethod().when(userService).delete(targetUserId);
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNoContent());
+
+        doCallRealMethod().when(userService).findById(targetUserId);
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD) 
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void restoreUser_WhenAdminRestores_UserShouldReappear() throws Exception {
+        Long targetUserId = 2L;
+        String restoreEndpoint = BASE_URL + "/" + targetUserId + "/restore";
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post(restoreEndpoint))
+                .andExpect(status().isOk());
+        mockMvc.perform(get(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("another_user"));
+    }
+
+    @Test
+    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+    void getDeletedUsers_WhenAdminAsksForAll_ShouldReturnAllUsers() throws Exception {
+        Long targetUserId = 2L;
+        String adminAllEndpoint = BASE_URL + "/all";
+
+        int totalUsersInSql = 6;
+
+        doCallRealMethod().when(userService).delete(targetUserId);
+        mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
+                .andExpect(status().isNoContent());
+
+        doCallRealMethod().when(userService).findAll(any(Pageable.class));
+        mockMvc.perform(get(BASE_URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(totalUsersInSql - 1));
+
+        doCallRealMethod().when(userService).findAllUsersIncludingDeleted(any(Pageable.class));
+        mockMvc.perform(get(adminAllEndpoint))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(totalUsersInSql));
     }
 }

@@ -21,6 +21,9 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -82,12 +85,15 @@ public class ModuleIntegrationTest {
     @Test
     @WithMockUser
     void getAllModules_ShouldReturn200() throws Exception {
-        when(moduleService.getAllModules()).thenReturn(List.of(testModule));
+        Page<ModuleDTO> modulePage = new PageImpl<>(List.of(testModule));
+        when(moduleService.getAllModules(any(Pageable.class))).thenReturn(modulePage);
 
-        mockMvc.perform(get(BASE_URL))
+        mockMvc.perform(get(BASE_URL)
+                        .param("page", "0")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(200));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].id").value(200));
     }
 
     @Test

@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.io.File;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+
 
 @Service
 public class UserImageServiceImpl implements UserImageService {
@@ -39,14 +41,8 @@ public class UserImageServiceImpl implements UserImageService {
 
     @Override
     public UserImage findLatestByUserId(Long userId) {
-        List<UserImage> userImages = userImageRepository.findByUserId(userId);
-        if (userImages == null || userImages.isEmpty()) {
-            throw new ResourceNotFoundException("Không tìm thấy ảnh nào cho userId: " + userId);
-        }
-        Optional<UserImage> latestImage = userImages.stream()
-                .max(Comparator.comparing(UserImage::getCreatedAt));
-        return latestImage.orElseThrow(() ->
-                new ResourceNotFoundException("Không tìm thấy ảnh mới nhất cho userId: " + userId));
+        return Optional.ofNullable(userImageRepository.findTopByUserIdOrderByCreatedAtDesc(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ảnh nào cho userId: " + userId));
     }
 
     @Override
@@ -67,8 +63,8 @@ public class UserImageServiceImpl implements UserImageService {
     }
 
     @Override
-    public List<UserImage> findAllByUserId(Long userId) {
-        return userImageRepository.findByUserId(userId);
+    public Page<UserImage> findAllByUserId(Long userId, Pageable pageable) {
+        return userImageRepository.findByUserId(userId, pageable);
     }
 
     @Override

@@ -136,9 +136,8 @@ public class NotificationIntegrationTest {
         Long currentUserId = 1L;
         mockMvc.perform(get("/notifications/user/" + currentUserId + "/unread"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value(50L));
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(50L));
     }
 
     @Test

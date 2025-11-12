@@ -62,9 +62,9 @@ public class NotificationService {
         return notifications.map(this::convertToDTO);
     }
 
-    public List<NotificationDTO> getUnreadNotificationsByUserId(Long userId) {
-        List<Notification> notifications = notificationRepository.findByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
-        return notifications.stream().map(this::convertToDTO).collect(Collectors.toList());
+    public Page<NotificationDTO> getUnreadNotificationsByUserId(Long userId, Pageable pageable) {
+        Page<Notification> notifications = notificationRepository.findByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId, pageable);
+        return notifications.map(this::convertToDTO);
     }
 
     public long getUnreadNotificationCount(Long userId) {

@@ -1,8 +1,14 @@
 package com.tim.appTim.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tim.appTim.entity.User;
 
@@ -11,7 +17,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     Optional<User> findByUsernameOrEmail(String username, String email);
     Optional<User> findByKeycloakId(String keycloakId);
+    Optional<User> findByPhoneNumber(String phoneNumber);
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    boolean existsByPhoneNumber(String phoneNumber);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE users SET deleted = 0 WHERE id = ?1", nativeQuery = true)
+    void restoreById(Long id);
+
+    @Query(value = "SELECT * FROM users", countQuery = "SELECT count(*) FROM users", nativeQuery = true)
+    Page<User> findAllIncludingDeleted(Pageable pageable);
+
+    @Query(value = "SELECT * FROM users WHERE id = ?1 AND deleted = 1", nativeQuery = true)
+    Optional<User> findDeletedById(Long id);
 }

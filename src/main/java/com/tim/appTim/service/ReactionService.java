@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.repository.CommentRepository;
@@ -141,25 +143,25 @@ public class ReactionService {
         return convertToDTO(savedReaction);
     }
 
-    public List<ReactionDTO> getReactionsByPostId(Long postId) {
+    public Page<ReactionDTO> getReactionsByPostId(Long postId, Pageable pageable) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
-        List<Reaction> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post);
-        return reactions.stream().map(this::convertToDTO).collect(Collectors.toList());
+        Page<Reaction> reactions = reactionRepository.findByPostAndCommentIsNullAndReplyCommentIsNull(post, pageable);
+        return reactions.map(this::convertToDTO);
     }
 
-    public List<ReactionDTO> getReactionsByCommentId(Long commentId) {
+    public Page<ReactionDTO> getReactionsByCommentId(Long commentId, Pageable pageable) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found: " + commentId));
-        List<Reaction> reactions = reactionRepository.findByCommentAndReplyCommentIsNull(comment);
-        return reactions.stream().map(this::convertToDTO).collect(Collectors.toList());
+        Page<Reaction> reactions = reactionRepository.findByCommentAndReplyCommentIsNull(comment, pageable);
+        return reactions.map(this::convertToDTO);
     }
 
-    public List<ReactionDTO> getReactionsByReplyCommentId(Long replyCommentId) {
+    public Page<ReactionDTO> getReactionsByReplyCommentId(Long replyCommentId, Pageable pageable) {
         ReplyComment reply = replyCommentRepository.findById(replyCommentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reply not found: " + replyCommentId));
-        return reactionRepository.findByReplyComment(reply)
-                .stream().map(this::convertToDTO).collect(Collectors.toList());
+        Page<Reaction> reactions = reactionRepository.findByReplyComment(reply, pageable);
+        return reactions.map(this::convertToDTO);
     }
 
     @Transactional

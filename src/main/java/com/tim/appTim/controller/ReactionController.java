@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/reactions")
@@ -52,8 +54,9 @@ public class ReactionController {
     }
 
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<List<ReactionDTO>> getReactionsByPostId(@PathVariable Long postId) {
-        return ResponseEntity.ok(reactionService.getReactionsByPostId(postId));
+    public ResponseEntity<Page<ReactionDTO>> getReactionsByPostId(@PathVariable Long postId,
+                                                                   Pageable pageable) {
+        return ResponseEntity.ok(reactionService.getReactionsByPostId(postId, pageable));
     }
 
     @DeleteMapping("/posts/{postId}")
@@ -103,8 +106,9 @@ public class ReactionController {
     }
 
     @GetMapping("/comments/{commentId}")
-    public ResponseEntity<List<ReactionDTO>> getReactionsByCommentId(@PathVariable Long commentId) {
-        return ResponseEntity.ok(reactionService.getReactionsByCommentId(commentId));
+    public ResponseEntity<Page<ReactionDTO>> getReactionsByCommentId(@PathVariable Long commentId,
+                                                                      Pageable pageable) {
+        return ResponseEntity.ok(reactionService.getReactionsByCommentId(commentId, pageable));
     }
 
     @DeleteMapping("/comments/{commentId}")
@@ -151,8 +155,9 @@ public class ReactionController {
     }
 
     @GetMapping("/replies/{replyCommentId}")
-    public ResponseEntity<List<ReactionDTO>> getReactionsByReplyCommentId(@PathVariable Long replyCommentId) {
-        return ResponseEntity.ok(reactionService.getReactionsByReplyCommentId(replyCommentId));
+    public ResponseEntity<Page<ReactionDTO>> getReactionsByReplyCommentId( @PathVariable Long replyCommentId,
+                                                                           Pageable pageable) {
+        return ResponseEntity.ok(reactionService.getReactionsByReplyCommentId(replyCommentId, pageable));
     }
 
     @DeleteMapping("/replies/{replyCommentId}")

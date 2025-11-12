@@ -152,9 +152,11 @@ public class ClassIntegrationTest {
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void getAllClasses_WhenUserIsAdmin_ShouldReturn200() throws Exception {
-        mockMvc.perform(get(BASE_URL))
+        mockMvc.perform(get(BASE_URL)
+                        .param("page", "0")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
