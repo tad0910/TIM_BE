@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import com.tim.appTim.dto.ModuleDTO;
@@ -24,10 +26,10 @@ public class ModuleSessionController {
     }
 
     @GetMapping("/{moduleId}/sessions")
-    public ResponseEntity<List<ModuleSessionDTO>> getSessionsByModule(@PathVariable Integer moduleId) {
-        List<ModuleSessionDTO> sessions = moduleSessionService.getSessionsByModule(moduleId);
+    public ResponseEntity<Page<ModuleSessionDTO>> getSessionsByModulePaged(@PathVariable Integer moduleId, Pageable pageable) {
+        Page<ModuleSessionDTO> sessions = moduleSessionService.getSessionsByModulePaged(moduleId, pageable);
         return ResponseEntity.ok(sessions);
-    }
+    }   
 
     @GetMapping("/sessions/{sessionId}")
     public ResponseEntity<ModuleSessionDTO> getSessionById(@PathVariable Long sessionId) {
