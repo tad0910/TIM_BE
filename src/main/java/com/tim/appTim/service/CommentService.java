@@ -17,10 +17,14 @@ import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.service.NotificationService;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import com.tim.appTim.repository.FileRepository;
 import com.tim.appTim.dto.FileDTO;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Lazy;
@@ -33,7 +37,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 
-@Service("commentService")
+@Service
 @Transactional
 public class CommentService {
 
@@ -141,8 +145,9 @@ public class CommentService {
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("comment:update_all"));
         boolean isOwner = comment.getUser().getId().equals(currentUser.getId());
+        boolean isPostOwner = comment.getPost().getUser().getId().equals(currentUser.getId());
 
-        if (!isAdmin && !isOwner) {
+        if (!isAdmin && !isOwner && !isPostOwner) {
             throw new ForbiddenException("Bạn không có quyền sửa bình luận này");
         }
 
@@ -163,7 +168,7 @@ public class CommentService {
         comment.setUpdatedAt(LocalDateTime.now());
 
         Comment updatedComment = commentRepository.save(comment);
-return convertToDTO(updatedComment);
+        return convertToDTO(updatedComment);
     }
 
     @Transactional
@@ -174,8 +179,9 @@ return convertToDTO(updatedComment);
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("comment:delete_all"));
         boolean isOwner = comment.getUser().getId().equals(currentUser.getId());
+        boolean isPostOwner = comment.getPost().getUser().getId().equals(currentUser.getId());
 
-        if (!isAdmin && !isOwner) {
+        if (!isAdmin && !isOwner && !isPostOwner) {
             throw new ForbiddenException("Bạn không có quyền xóa bình luận này");
         }
 
@@ -245,9 +251,9 @@ return convertToDTO(updatedComment);
 
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("comment:update_all"));
-        boolean isOwner = reply.getUser().getId().equals(currentUser.getId());
+        boolean hasReplyPermission = reply.getUser().getId().equals(currentUser.getId());
 
-        if (!isAdmin && !isOwner) {
+        if (!isAdmin && !hasReplyPermission) {
             throw new ForbiddenException("Bạn không có quyền sửa trả lời này");
         }
 
@@ -276,9 +282,9 @@ return convertToDTO(updatedComment);
 
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("comment:delete_all"));
-        boolean isOwner = replyComment.getUser().getId().equals(currentUser.getId());
+        boolean hasReplyPermission = replyComment.getUser().getId().equals(currentUser.getId());
 
-        if (!isAdmin && !isOwner) {
+        if (!isAdmin && !hasReplyPermission) {
             throw new ForbiddenException("Bạn không có quyền xóa trả lời này");
         }
 
@@ -356,7 +362,7 @@ fileDTOs = comment.getFiles().stream()
         return commentRepository.findById(commentId)
                 .map(comment -> comment.getUser().getId().equals(currentUser.getId()))
                 .orElse(false);
-    }
+    }   
 
     public boolean isReplyOwner(Authentication authentication, Long replyCommentId) {
         User currentUser = getUserFromAuthentication(authentication);
@@ -367,5 +373,86 @@ fileDTOs = comment.getFiles().stream()
 
     public long countCommentsByPostId(Long postId) {
         return commentRepository.countByPostId(postId);
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public boolean hasCommentPermission(Authentication authentication, Long commentId) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        final String currentUsername = extractUsername(authentication);
+        if (currentUsername == null) return false;
+
+        return commentRepository.findById(commentId)
+                .map(comment -> {
+                    User commentOwner = comment.getUser();
+                    User postOwner = comment.getPost().getUser();
+
+                    boolean isCommentOwner = commentOwner != null && currentUsername.equals(commentOwner.getUsername());
+                    boolean isPostOwner = postOwner != null && currentUsername.equals(postOwner.getUsername());
+                    boolean isAdmin = authentication.getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("comment:update_all") || a.getAuthority().equals("comment:delete_all"));
+
+                    return isCommentOwner || isPostOwner || isAdmin;
+                })
+                .orElse(false);
+    }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public boolean hasReplyPermission(Authentication authentication, Long replyId) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        final String currentUsername = extractUsername(authentication);
+        if (currentUsername == null) return false;
+
+        return replyCommentRepository.findById(replyId)
+                .map(reply -> {
+                    User replyOwner = reply.getUser();
+                    User postOwner = reply.getComment().getPost().getUser();
+
+                    boolean isReplyOwner = replyOwner != null && currentUsername.equals(replyOwner.getUsername());
+                    boolean isPostOwner = postOwner != null && currentUsername.equals(postOwner.getUsername());
+                    boolean isAdmin = authentication.getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("comment:update_all") || a.getAuthority().equals("comment:delete_all"));
+
+                    return isReplyOwner || isPostOwner || isAdmin;
+                })
+                .orElse(false);
+    }
+
+    private String extractUsername(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof UserDetails userDetails) {
+            return userDetails.getUsername();
+        }
+
+        if (principal instanceof String username) {
+            return username;
+        }
+
+        if (principal instanceof String token) {
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            try {
+                String[] parts = token.split("\\.");
+                if (parts.length >= 2) {
+                    String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"(sub|preferred_username)\"\\s*:\\s*\"([^\"]+)\"").matcher(payload);
+                    if (m.find()) {
+                        return m.group(2);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to extract username from JWT: " + e.getMessage());
+            }
+        }
+
+        return null;
     }
 }

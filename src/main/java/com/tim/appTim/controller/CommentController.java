@@ -171,7 +171,7 @@ User currentUser = getUserFromAuthentication(authentication);
     }
 
     @PutMapping("/{commentId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.hasCommentPermission(authentication, #commentId)")
     public ResponseEntity<CommentDTO> updateComment(
             @PathVariable Long commentId,
             Authentication authentication,
@@ -188,11 +188,11 @@ User currentUser = getUserFromAuthentication(authentication);
     }
 
     @DeleteMapping("/{commentId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('comment:delete_all') or @commentService.hasCommentPermission(authentication, #commentId)")
     public ResponseEntity<String> deleteComment(
             @PathVariable Long commentId,
             Authentication authentication) {
-User currentUser = getUserFromAuthentication(authentication);
+    User currentUser = getUserFromAuthentication(authentication);
         commentService.deleteComment(commentId, currentUser, authentication);
         return ResponseEntity.ok("Comment deleted successfully");
     }
@@ -259,7 +259,7 @@ User currentUser = getUserFromAuthentication(authentication);
     }
 
     @PutMapping("/replies/{replyCommentId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('comment:update_all') or @commentService.hasReplyPermission(authentication, #replyCommentId)")
     public ResponseEntity<ReplyCommentDTO> updateReplyComment(
             @PathVariable Long replyCommentId,
             @RequestParam(required = false) String content,
@@ -277,7 +277,7 @@ User currentUser = getUserFromAuthentication(authentication);
     }
 
     @DeleteMapping("/replies/{replyCommentId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('comment:delete_all') or @commentService.hasReplyPermission(authentication, #replyCommentId)")
     public ResponseEntity<String> deleteReplyComment(@PathVariable Long replyCommentId, Authentication authentication) {
         User currentUser = getUserFromAuthentication(authentication);
         commentService.deleteReplyComment(currentUser, authentication, replyCommentId);
