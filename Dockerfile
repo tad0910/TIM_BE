@@ -1,15 +1,21 @@
-# DÒNG SỬA LẠI CHÍNH XÁC
+# ====== BUILD STAGE ======
+FROM eclipse-temurin:21-jdk-alpine AS build
+WORKDIR /app
+
+# Copy toàn bộ project và build bằng Maven Wrapper
+COPY . .
+RUN ./mvnw clean package -DskipTests
+
+# ====== RUN STAGE ======
 FROM eclipse-temurin:21-jdk-alpine
+WORKDIR /app
 
-# Đặt tên cho file .jar sẽ được build
-ARG JAR_FILE=target/*.jar
+# Copy file JAR từ giai đoạn build
+COPY --from=build /app/target/*.jar app.jar
 
-# Copy file .jar từ thư mục 'target' vào bên trong image
-# và đổi tên thành 'app.jar' cho thống nhất
-COPY ${JAR_FILE} app.jar
-
-# Mở cổng 8080 (cổng mặc định của Spring Boot)
+# Render sẽ cung cấp biến môi trường PORT khi chạy
+ENV PORT=8080
 EXPOSE 8080
 
-# Giới hạn RAM Java sử dụng để chạy trên các gói Free
-ENTRYPOINT ["java", "-Xmx256m", "-jar", "/app.jar"]
+# Chạy app với port động Render cấp
+ENTRYPOINT ["sh", "-c", "java -Xmx256m -jar app.jar --server.port=${PORT}"]
