@@ -396,7 +396,7 @@ fileDTOs = comment.getFiles().stream()
 
                     return isCommentOwner || isPostOwner || isAdmin;
                 })
-                .orElse(false);
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId)); 
     }
 
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
@@ -420,7 +420,7 @@ fileDTOs = comment.getFiles().stream()
 
                     return isReplyOwner || isPostOwner || isAdmin;
                 })
-                .orElse(false);
+                .orElseThrow(() -> new ResourceNotFoundException("Reply comment not found with id: " + replyId));
     }
 
     private String extractUsername(Authentication authentication) {

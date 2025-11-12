@@ -438,7 +438,7 @@ public class PostService {
                     User owner = post.getUser();
                     return owner != null && currentUsername.equals(owner.getUsername());                
                 })
-                .orElse(false);
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
     }
 
         private String extractUsername(Authentication authentication) {
