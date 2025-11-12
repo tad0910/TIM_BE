@@ -1,5 +1,5 @@
-# Bước 1: Dùng image Java 21 làm nền (vì bạn dùng Java 21)
-FROM openjdk:21-jdk-slim
+# DÒNG SỬA LẠI CHÍNH XÁC
+FROM eclipse-temurin:21-jdk-slim
 
 # Đặt tên cho file .jar sẽ được build
 ARG JAR_FILE=target/*.jar
