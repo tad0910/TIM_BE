@@ -1,5 +1,5 @@
 # DÒNG SỬA LẠI CHÍNH XÁC
-FROM eclipse-temurin:21-jdk-slim
+FROM eclipse-temurin:21-jdk-alpine
 
 # Đặt tên cho file .jar sẽ được build
 ARG JAR_FILE=target/*.jar
