@@ -9,7 +9,6 @@ import com.tim.appTim.repository.ModuleSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
@@ -21,11 +20,16 @@ import org.springframework.data.domain.Pageable;
 @Service
 public class ModuleServiceImpl implements ModuleService {
 
-    @Autowired
-    private ModuleRepository moduleRepository;
+    private final ModuleRepository moduleRepository;
+    private final ModuleSessionRepository moduleSessionRepository;
 
-    @Autowired
-    private ModuleSessionRepository moduleSessionRepository;
+    public ModuleServiceImpl(
+            ModuleRepository moduleRepository,
+            ModuleSessionRepository moduleSessionRepository) {
+        this.moduleRepository = moduleRepository;
+        this.moduleSessionRepository = moduleSessionRepository;
+        
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -41,6 +45,17 @@ public class ModuleServiceImpl implements ModuleService {
                 .orElseThrow(() -> new RuntimeException("Module not found with ID: " + id));
 
         return toDTO(module);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ModuleDTO> searchModulesByName(String keyword, Pageable pageable) {
+        Page<Module> modules = moduleRepository.searchByName(keyword, pageable);
+        
+        if (modules.isEmpty()) {
+            throw new ResourceNotFoundException("Không tìm thấy module nào với từ khóa: " + keyword);
+        }    
+        return modules.map(this::toDTO);
     }
 
     @Override

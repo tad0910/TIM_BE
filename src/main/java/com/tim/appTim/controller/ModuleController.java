@@ -38,6 +38,20 @@ public class ModuleController {
         return ResponseEntity.ok(module);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<ModuleDTO>> searchModules(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            Pageable pageable) {
+
+        Page<ModuleDTO> modules;
+        if (keyword == null || keyword.trim().isEmpty()) {
+            modules = moduleService.getAllModules(pageable);
+        } else {
+            modules = moduleService.searchModulesByName(keyword.trim(), pageable);
+        }
+        return ResponseEntity.ok(modules);
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority('module:create')")
     public ResponseEntity<ModuleDTO> createModule(@RequestBody ModuleDTO request) {

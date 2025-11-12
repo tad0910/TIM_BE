@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface ModuleService {
     Page<ModuleDTO> getAllModules(Pageable pageable);
+    Page<ModuleDTO> searchModulesByName(String keyword, Pageable pageable);
     ModuleDTO getModuleById(Integer id);
     ModuleDTO createModule(ModuleDTO dto);
     ModuleDTO updateModule(Integer id, ModuleDTO dto);
