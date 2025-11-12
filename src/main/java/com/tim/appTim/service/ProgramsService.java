@@ -99,27 +99,47 @@ public class ProgramsService {
         Programs program = programsRepository.findById(programId)
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chương trình với id = " + programId));
 
-        List<ProgramModule> currentList = programModuleRepository.findByProgramId(programId);
-        java.util.Set<Integer> currentModuleIds = currentList.stream()
-                .map(pm -> pm.getModule().getId())
-                .collect(java.util.stream.Collectors.toSet());
-        int maxPosition = currentList.stream().mapToInt(pm -> pm.getPosition() != null ? pm.getPosition() : 0).max().orElse(0);
-        int added = 0;
-        for (Integer moduleId : moduleIds) {
-            if (!currentModuleIds.contains(moduleId)) {
-                com.tim.appTim.entity.Module module = moduleRepository.findById(moduleId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy module với id = " + moduleId));
-                ProgramModule pm = new ProgramModule();
-                ProgramModule.ProgramModuleId pmId = new ProgramModule.ProgramModuleId(programId, moduleId);
-                pm.setId(pmId);
-                pm.setProgram(program);
+        List<ProgramModule> currentList = programModuleRepository.findByProgramIdOrderByPositionAsc(programId);
 
-                pm.setModule(module);
+        java.util.LinkedHashSet<Integer> desiredModuleIds = moduleIds == null
+                ? new java.util.LinkedHashSet<>()
+                : new java.util.LinkedHashSet<>(moduleIds);
 
-                pm.setPosition(maxPosition + (++added));
-                programModuleRepository.save(pm);
+        if (moduleIds == null || moduleIds.isEmpty()) {
+            // remove all mappings if request is empty
+            for (ProgramModule pm : currentList) {
+                programModuleRepository.delete(pm);
+            }
+            return toDTO(program);
+        }
+
+        // Remove modules that are no longer desired
+        for (ProgramModule pm : currentList) {
+            Integer moduleId = pm.getModule() != null ? pm.getModule().getId() : null;
+            if (moduleId != null && !desiredModuleIds.contains(moduleId)) {
+                programModuleRepository.delete(pm);
             }
         }
+
+        int position = 1;
+        for (Integer moduleId : desiredModuleIds) {
+            if (moduleId == null) {
+                continue;
+            }
+            ProgramModule.ProgramModuleId pmId = new ProgramModule.ProgramModuleId(programId, moduleId);
+            ProgramModule pm = programModuleRepository.findById(pmId).orElse(null);
+            if (pm == null) {
+                com.tim.appTim.entity.Module module = moduleRepository.findById(moduleId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy module với id = " + moduleId));
+                pm = new ProgramModule();
+                pm.setId(pmId);
+                pm.setProgram(program);
+                pm.setModule(module);
+            }
+            pm.setPosition(position++);
+            programModuleRepository.save(pm);
+        }
+
         return toDTO(programsRepository.findById(programId).orElseThrow());
     }
 
