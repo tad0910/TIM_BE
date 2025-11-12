@@ -70,7 +70,7 @@ public class ProgramsIntegrationTest {
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void addModulesToProgram_ShouldReturn200() throws Exception {
-        String body = "[201, 202]";
+        String body = "[200,201,202]";
 
         mockMvc.perform(put(BASE_URL + "/100/modules")
                         .contentType(MediaType.APPLICATION_JSON)
