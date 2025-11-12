@@ -11,5 +11,5 @@ COPY ${JAR_FILE} app.jar
 # Mở cổng 8080 (cổng mặc định của Spring Boot)
 EXPOSE 8080
 
-# Lệnh để chạy ứng dụng khi container khởi động
-ENTRYPOINT ["java","-jar","/app.jar"]
+# Giới hạn RAM Java sử dụng để chạy trên các gói Free
+ENTRYPOINT ["java", "-Xmx256m", "-jar", "/app.jar"]
