@@ -108,8 +108,8 @@ VALUES (100, 200, 1), (100, 201, 2);
 
 INSERT INTO class_module_schedules (id, class_id, module_id, start_date, end_date, instructor_id, status)
 VALUES
-(1000, 10, 200, '2025-11-01', '2025-11-15', 5, 'planned'),
-(1001, 11, 201, '2025-12-01', '2025-12-10', 6, 'planned');
+(1000, 10, 200, '2025-11-01 00:00:00', '2025-11-08 00:00:00', 5, 'planned'),
+(1001, 11, 201, '2025-11-01 00:00:00', '2025-11-08 00:00:00', 6, 'planned');
 
 
 INSERT INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES

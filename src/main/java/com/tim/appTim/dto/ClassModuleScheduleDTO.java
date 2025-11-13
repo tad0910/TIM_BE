@@ -1,7 +1,7 @@
 package com.tim.appTim.dto;
 
 import com.tim.appTim.entity.ClassModuleSchedule.ScheduleStatus;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class ClassModuleScheduleDTO {
     private Long id;
@@ -13,8 +13,8 @@ public class ClassModuleScheduleDTO {
     private Long moduleSessionId;
     private Long instructorId;
     private String instructorName;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private ScheduleStatus status;
 
 
@@ -23,7 +23,7 @@ public class ClassModuleScheduleDTO {
 
     public ClassModuleScheduleDTO(Long id, Long classId, String className, Long moduleId, String moduleName,
                                   Long classModuleId, Long moduleSessionId, Long instructorId, String instructorName, 
-                                  LocalDate startDate, LocalDate endDate, ScheduleStatus status) {
+                                  LocalDateTime startDate, LocalDateTime endDate, ScheduleStatus status) {
         this.id = id;
         this.classId = classId;
         this.className = className;
@@ -66,11 +66,11 @@ public class ClassModuleScheduleDTO {
         return instructorName;
     }
 
-    public LocalDate getStartDate() {
+    public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public LocalDate getEndDate() {
+    public LocalDateTime getEndDate() {
         return endDate;
     }
 
@@ -106,11 +106,11 @@ public class ClassModuleScheduleDTO {
         this.instructorName = instructorName;
     }
 
-    public void setStartDate(LocalDate startDate) {
+    public void setStartDate(LocalDateTime startDate) {
         this.startDate = startDate;
     }
 
-    public void setEndDate(LocalDate endDate) {
+    public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
 

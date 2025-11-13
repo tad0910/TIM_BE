@@ -2,11 +2,11 @@ package com.tim.appTim.repository;
 
 import com.tim.appTim.entity.ClassModuleSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.jpa.repository.Query;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,10 +15,9 @@ public interface ClassModuleScheduleRepository extends JpaRepository<ClassModule
 
     List<ClassModuleSchedule> findByClassIdAndStartDateBetween(
             Long classId,
-            LocalDate startDate,
-            LocalDate endDate
+            LocalDateTime startDate,
+            LocalDateTime endDate
     );
-
 
     @Query("SELECT s FROM ClassModuleSchedule s " +
             "WHERE s.instructorId = :instructorId " +
@@ -28,17 +27,17 @@ public interface ClassModuleScheduleRepository extends JpaRepository<ClassModule
             ")")
     List<ClassModuleSchedule> findConflictingSchedules(
             @Param("instructorId") Long instructorId,
-            @Param("newStartDate") LocalDate newStartDate,
-            @Param("newEndDate") LocalDate newEndDate,
+            @Param("newStartDate") LocalDateTime newStartDate,
+            @Param("newEndDate") LocalDateTime newEndDate,
             @Param("scheduleId") Long scheduleId
     );
 
     default List<ClassModuleSchedule> findConflictingSchedules(
             Long instructorId,
-            LocalDate newStartDate,
-            LocalDate newEndDate
+            LocalDateTime newStartDate,
+            LocalDateTime newEndDate
     ) {
-        return findConflictingSchedules(instructorId, newStartDate, newEndDate, 0L);
+        return findConflictingSchedules(instructorId, newStartDate, newEndDate, 0L);  
     }
 
     boolean existsByClassIdAndModuleId(Long classId, Long moduleId);
@@ -51,8 +50,8 @@ public interface ClassModuleScheduleRepository extends JpaRepository<ClassModule
 
     List<ClassModuleSchedule> findByInstructorIdAndStartDateBetween(
             Long instructorId,
-            java.time.LocalDate startDate,
-            java.time.LocalDate endDate
+            LocalDateTime startDate,
+            LocalDateTime endDate
     );
 
     List<ClassModuleSchedule> findByClassModuleId(Long classModuleId);
