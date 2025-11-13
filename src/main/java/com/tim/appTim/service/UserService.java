@@ -142,13 +142,13 @@ public class UserService implements UserDetailsService {
         if (user.getUsername() == null || user.getUsername().isEmpty()) {
             throw new UnprocessableException("Username is required");
         }
-        if (userRepository.existsByUsername(user.getUsername())) {
+        if (userRepository.findIdByUsernameIncludingDeleted(user.getUsername()) != null) {
             throw new ConflictException("Username already exists");
         }
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
             throw new UnprocessableException("Email is required");
         }
-        if (userRepository.existsByEmail(user.getEmail())) {
+        if (userRepository.findIdByEmailIncludingDeleted(user.getEmail()) != null) {
             throw new ConflictException("Email already exists");
         }
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
@@ -163,7 +163,7 @@ public class UserService implements UserDetailsService {
                 throw new UnprocessableException("Số điện thoại không được quá 11 số");
             }
 
-            if (userRepository.existsByPhoneNumber(user.getPhoneNumber())) {
+            if (userRepository.findIdByPhoneNumberIncludingDeleted(user.getPhoneNumber()) != null) {
                 throw new ConflictException("Số điện thoại đã được sử dụng");
             }
         }

@@ -23,6 +23,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     boolean existsByPhoneNumber(String phoneNumber);
 
+    @Query(value = "SELECT id FROM users WHERE username = ?1 LIMIT 1", nativeQuery = true)
+    Long findIdByUsernameIncludingDeleted(String username);
+
+    @Query(value = "SELECT id FROM users WHERE email = ?1 LIMIT 1", nativeQuery = true)
+    Long findIdByEmailIncludingDeleted(String email);
+
+    @Query(value = "SELECT id FROM users WHERE so_dien_thoai = ?1 LIMIT 1", nativeQuery = true)
+    Long findIdByPhoneNumberIncludingDeleted(String phoneNumber);
+
     @Modifying
     @Transactional
     @Query(value = "UPDATE users SET deleted = 0 WHERE id = ?1", nativeQuery = true)
