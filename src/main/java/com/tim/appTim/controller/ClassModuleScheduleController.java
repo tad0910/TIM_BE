@@ -12,7 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;  
 import java.util.List;
 import java.util.Map;
 
@@ -57,8 +57,8 @@ public class ClassModuleScheduleController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ClassModuleScheduleDTO>> getSchedulesByClass(
             @PathVariable Long classId,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
+            @RequestParam(required = false) LocalDateTime startDate,  
+            @RequestParam(required = false) LocalDateTime endDate) {  
 
         List<ClassModuleScheduleDTO> schedules = scheduleService.getSchedulesByClass(classId, startDate, endDate);
         return ResponseEntity.ok(schedules);
@@ -68,8 +68,8 @@ public class ClassModuleScheduleController {
     @PreAuthorize("hasAuthority('schedule:read_all') or @userService.isSelf(authentication, #instructorId)")
     public ResponseEntity<List<ClassModuleScheduleDTO>> getSchedulesByInstructor(
             @PathVariable Long instructorId,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
+            @RequestParam(required = false) LocalDateTime startDate,  
+            @RequestParam(required = false) LocalDateTime endDate) {  
 
         List<ClassModuleScheduleDTO> schedules = scheduleService.getSchedulesByInstructor(instructorId, startDate, endDate);
         return ResponseEntity.ok(schedules);
@@ -79,8 +79,8 @@ public class ClassModuleScheduleController {
     @PreAuthorize("hasAuthority('schedule:read_all') or @userService.isSelf(authentication, #teacherId)")
     public ResponseEntity<List<ClassModuleScheduleDTO>> getAllSchedulesByTeacher(
             @PathVariable Long teacherId,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
+            @RequestParam(required = false) LocalDateTime startDate,  
+            @RequestParam(required = false) LocalDateTime endDate) {  
 
         List<ClassModuleScheduleDTO> schedules = scheduleService.getAllSchedulesByTeacher(teacherId, startDate, endDate);
         return ResponseEntity.ok(schedules);

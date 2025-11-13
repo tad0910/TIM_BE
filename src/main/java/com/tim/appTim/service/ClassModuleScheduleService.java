@@ -17,7 +17,7 @@ import com.tim.appTim.entity.ModuleSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -84,7 +84,7 @@ public class ClassModuleScheduleService {
         return dto;
     }
 
-    private void checkInstructorConflict(Long instructorId, LocalDate newStartDate, LocalDate newEndDate, Long currentScheduleId) {
+    private void checkInstructorConflict(Long instructorId, LocalDateTime newStartDate, LocalDateTime newEndDate, Long currentScheduleId) {
         if (instructorId == null) return;
 
         Long scheduleIdForQuery = currentScheduleId != null ? currentScheduleId : 0L;
@@ -106,7 +106,7 @@ public class ClassModuleScheduleService {
         }
     }
 
-    private void validateDateRange(LocalDate startDate, LocalDate endDate) {
+    private void validateDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         if (startDate == null || endDate == null) {
             throw new InvalidRequestException("Ngày bắt đầu và ngày kết thúc là bắt buộc.");
         }
@@ -276,7 +276,7 @@ public class ClassModuleScheduleService {
         scheduleRepository.deleteById(scheduleId);
     }
 
-    public List<ClassModuleScheduleDTO> getSchedulesByClass(Long classId, LocalDate startDate, LocalDate endDate) {
+    public List<ClassModuleScheduleDTO> getSchedulesByClass(Long classId, LocalDateTime startDate, LocalDateTime endDate) {
         List<ClassModuleSchedule> entities;
 
         if (startDate != null && endDate != null) {
@@ -290,7 +290,7 @@ public class ClassModuleScheduleService {
                 .collect(Collectors.toList());
     }
 
-    public List<ClassModuleScheduleDTO> getSchedulesByInstructor(Long instructorId, LocalDate startDate, LocalDate endDate) {
+    public List<ClassModuleScheduleDTO> getSchedulesByInstructor(Long instructorId, LocalDateTime startDate, LocalDateTime endDate) {
         if (!userRepository.existsById(instructorId)) {
             throw new ResourceNotFoundException("Giảng viên không tồn tại với ID: " + instructorId);
         }
@@ -308,7 +308,7 @@ public class ClassModuleScheduleService {
                 .collect(Collectors.toList());
     }
 
-    public List<ClassModuleScheduleDTO> getAllSchedulesByTeacher(Long teacherId, LocalDate startDate, LocalDate endDate) {
+    public List<ClassModuleScheduleDTO> getAllSchedulesByTeacher(Long teacherId, LocalDateTime startDate, LocalDateTime endDate) {
         if (!userRepository.existsById(teacherId)) {
             throw new ResourceNotFoundException("Giảng viên không tồn tại với ID: " + teacherId);
         }
