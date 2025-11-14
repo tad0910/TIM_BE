@@ -77,11 +77,15 @@ public class KeycloakSyncService {
 
             for (UserRepresentation kcUser : kcUsers) {
 
-                User userToSync = userRepository.findByKeycloakId(kcUser.getId())
-                        .or(() -> userRepository.findByEmail(kcUser.getEmail()))
+                User userToSync = userRepository.findAnyByKeycloakId(kcUser.getId())
+                        .or(() -> userRepository.findAnyByEmail(kcUser.getEmail()))
                         .orElse(null);
 
                 if (userToSync != null) {
+
+                    if (userToSync.isDeleted()) {
+                        userToSync.setDeleted(false);
+                    }
 
                     boolean needsUpdate = false;
 
