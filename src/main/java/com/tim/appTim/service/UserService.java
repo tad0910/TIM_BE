@@ -621,4 +621,8 @@ public class UserService implements UserDetailsService {
     public Page<User> findAllUsersIncludingDeleted(Pageable pageable) {
         return userRepository.findAllIncludingDeleted(pageable);
     }
+
+    public Page<User> findAllDeleted(Pageable pageable) {
+        return userRepository.findAllDeleted(pageable);
+    }
 }
