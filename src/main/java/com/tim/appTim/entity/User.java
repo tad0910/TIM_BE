@@ -81,7 +81,7 @@ public class User {
     @Column(name = "keycloak_id", unique = true)
     private String keycloakId;
 
-    @Column(name = "deleted")
+    @Column(name = "deleted", nullable = false)
     private boolean deleted = false;
 
     public Long getId() { return id; }
@@ -137,4 +137,5 @@ public class User {
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
     }
+
 }

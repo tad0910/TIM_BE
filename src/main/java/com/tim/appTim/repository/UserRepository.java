@@ -42,4 +42,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = "SELECT * FROM users WHERE id = ?1 AND deleted = 1", nativeQuery = true)
     Optional<User> findDeletedById(Long id);
+
+    @Query("SELECT u FROM User u WHERE u.email = :email")
+    Optional<User> findAnyByEmail(String email);
+
+    @Query("SELECT u FROM User u WHERE u.keycloakId = :keycloakId")
+    Optional<User> findAnyByKeycloakId(String keycloakId);
 }
