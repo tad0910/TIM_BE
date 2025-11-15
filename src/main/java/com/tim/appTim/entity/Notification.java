@@ -58,7 +58,9 @@ public class Notification {
         USER_FOLLOW,         
         POST_MENTION,        
         COMMENT_MENTION,     
-        SYSTEM_ANNOUNCEMENT  
+        SYSTEM_ANNOUNCEMENT,
+        GRADE_NEW,
+        GRADE_UPDATED
     }
 
     public Notification() {}

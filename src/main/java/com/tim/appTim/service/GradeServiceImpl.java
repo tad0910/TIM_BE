@@ -1,17 +1,9 @@
-package com.tim.appTim.service; // Đảm bảo đúng package
+package com.tim.appTim.service;
 
-// THÊM IMPORT CÒN THIẾU
-import com.tim.appTim.dto.GradeHistoryDTO;
-import com.tim.appTim.entity.Grade;
 
-import com.tim.appTim.dto.GradeUpdateDTO;
-import com.tim.appTim.dto.GradebookDTO;
-import com.tim.appTim.dto.StudentGradeDTO;
-import com.tim.appTim.entity.GradeHistory;
-import com.tim.appTim.entity.ClassMember;
-import com.tim.appTim.entity.ClassModule;
-import com.tim.appTim.entity.User;
-import com.tim.appTim.entity.Role;
+import com.tim.appTim.dto.*;
+import com.tim.appTim.entity.*;
+
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
@@ -34,17 +26,22 @@ public class GradeServiceImpl implements GradeService {
     private final ClassModuleTeacherRepository classModuleTeacherRepository;
     private final UserRepository userRepository;
     private final GradeHistoryRepository gradeHistoryRepository;
+    private final NotificationService notificationService;
 
     public GradeServiceImpl(GradeRepository gradeRepository,
                             ClassMemberRepository classMemberRepository,
                             ClassModuleRepository classModuleRepository,
-                            ClassModuleTeacherRepository classModuleTeacherRepository, UserRepository userRepository, GradeHistoryRepository gradeHistoryRepository) {
+                            ClassModuleTeacherRepository classModuleTeacherRepository,
+                            UserRepository userRepository,
+                            GradeHistoryRepository gradeHistoryRepository,
+                            NotificationService notificationService) {
         this.gradeRepository = gradeRepository;
         this.classMemberRepository = classMemberRepository;
         this.classModuleRepository = classModuleRepository;
         this.classModuleTeacherRepository = classModuleTeacherRepository;
         this.userRepository = userRepository;
         this.gradeHistoryRepository = gradeHistoryRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -170,6 +167,27 @@ public class GradeServiceImpl implements GradeService {
         grade.setEnteredBy(teacher);
         Grade updatedGrade = gradeRepository.save(grade);
 
+        try {
+            User student = updatedGrade.getStudent();
+            String moduleName = updatedGrade.getClassModule().getModule().getName();
+            String title = "Điểm của bạn đã được cập nhật";
+            String content = String.format(
+                    "Điểm [ %s ] môn [ %s ] của bạn đã được cập nhật thành: %.1f",
+                    updatedGrade.getComponentName(), moduleName, updatedGrade.getScore()
+            );
+
+            notificationService.createNotification(
+                    student.getId(),
+                    teacher.getId(),
+                    Notification.NotificationType.GRADE_UPDATED,
+                    "CLASS_MODULE",
+                    classModuleId,
+                    title,
+                    content
+            );
+        } catch (Exception e) {
+        }
+
         return new StudentGradeDTO(
                 updatedGrade.getId(),
                 updatedGrade.getComponentName(),
@@ -179,6 +197,54 @@ public class GradeServiceImpl implements GradeService {
                 updatedGrade.getUpdatedAt()
         );
     }
+
+    @Override
+    @Transactional
+    public StudentGradeDTO createGrade(GradeCreateDTO dto, User teacher) {
+
+        validateTeacherPermission(dto.getClassModuleId(), teacher.getId());
+
+        User student = userRepository.findById(dto.getStudentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + dto.getStudentId()));
+
+        ClassModule classModule = classModuleRepository.findById(dto.getClassModuleId())
+                .orElseThrow(() -> new ResourceNotFoundException("ClassModule not found with id: " + dto.getClassModuleId()));
+
+        Grade newGrade = new Grade();
+        newGrade.setStudent(student);
+        newGrade.setClassModule(classModule);
+        newGrade.setComponentName(dto.getComponentName());
+        newGrade.setScore(dto.getScore());
+        newGrade.setMaxScore(dto.getMaxScore());
+        newGrade.setWeightPercent(dto.getWeightPercent());
+        newGrade.setEnteredBy(teacher);
+
+        Grade savedGrade = gradeRepository.save(newGrade);
+
+        try {
+            Long classModuleId = savedGrade.getClassModule().getId();
+            String moduleName = savedGrade.getClassModule().getModule().getName();
+            String title = "Bạn có điểm mới";
+            String content = String.format(
+                    "Bạn có điểm mới [ %s ] môn [ %s ]: %.1f",
+                    savedGrade.getComponentName(), moduleName, savedGrade.getScore()
+            );
+
+            notificationService.createNotification(
+                    student.getId(),
+                    teacher.getId(),
+                    Notification.NotificationType.GRADE_NEW,
+                    "CLASS_MODULE",
+                    classModuleId,
+                    title,
+                    content
+            );
+        } catch (Exception e) {
+        }
+
+        return new StudentGradeDTO(savedGrade.getId(), savedGrade.getComponentName(), savedGrade.getScore(), savedGrade.getMaxScore(), savedGrade.getWeightPercent(), savedGrade.getUpdatedAt());
+    }
+
 
     @Override
     public List<GradeHistoryDTO> getGradeHistory(Long gradeId, User currentUser) {

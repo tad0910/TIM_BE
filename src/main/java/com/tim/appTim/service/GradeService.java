@@ -1,10 +1,7 @@
-package com.tim.appTim.service;// Thay đổi package cho đúng
+package com.tim.appTim.service;
 
 
-import com.tim.appTim.dto.GradeHistoryDTO;
-import com.tim.appTim.dto.GradeUpdateDTO;
-import com.tim.appTim.dto.GradebookDTO;
-import com.tim.appTim.dto.StudentGradeDTO;
+import com.tim.appTim.dto.*;
 import com.tim.appTim.entity.User;
 
 import java.util.List;
@@ -22,4 +19,6 @@ public interface GradeService {
     StudentGradeDTO updateGrade(Long gradeId, GradeUpdateDTO dto, User teacher);
 
     List<GradeHistoryDTO> getGradeHistory(Long gradeId, User currentUser);
+
+    StudentGradeDTO createGrade(GradeCreateDTO dto, User teacher);
 }

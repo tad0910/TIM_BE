@@ -34,3 +34,31 @@ CREATE TABLE IF NOT EXISTS `grade_history` (
   CONSTRAINT `fk_gh_grade_id` FOREIGN KEY (`grade_id`) REFERENCES `grades` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_gh_changed_by` FOREIGN KEY (`changed_by_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+ALTER TABLE notifications
+MODIFY COLUMN notification_type ENUM(
+    'POST_REACTION', 'POST_COMMENT', 'COMMENT_REACTION', 'COMMENT_REPLY',
+    'REPLY_REACTION', 'USER_FOLLOW', 'POST_MENTION', 'COMMENT_MENTION',
+    'SYSTEM_ANNOUNCEMENT',
+    'GRADE_NEW',
+    'GRADE_UPDATED'
+) NOT NULL;
+
+INSERT INTO permissions (id, name) VALUES
+    (34, 'grade:read_all'),
+    (35, 'grade:read_detail'),
+    (36, 'grade:update'),
+    (37, 'grade:create')
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name);
+
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+     (1, 31),
+     (3, 31),
+     (2, 32),
+     (3, 32),
+     (1, 33),
+     (2, 33),
+     (1, 34),
+     (2, 34)
+ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);

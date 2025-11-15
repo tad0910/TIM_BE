@@ -1,26 +1,23 @@
 package com.tim.appTim.controller; // Gói controller của bạn
 
-import com.tim.appTim.dto.GradeHistoryDTO;
-import com.tim.appTim.dto.GradeUpdateDTO;
-import com.tim.appTim.dto.GradebookDTO;
-import com.tim.appTim.dto.StudentGradeDTO;
+import com.tim.appTim.dto.*;
 import com.tim.appTim.entity.User; // Import User entity
 import com.tim.appTim.service.GradeService;
 import com.tim.appTim.service.UserService; // Import UserService
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 import java.util.stream.Collectors;
+import java.util.List;
+
 
 @RestController
 @RequestMapping("grades")
 public class GradeController {
-
     private final GradeService gradeService;
     private final UserService userService;
 
@@ -104,5 +101,18 @@ public class GradeController {
         List<GradeHistoryDTO> history = gradeService.getGradeHistory(gradeId, currentUser);
 
         return ResponseEntity.ok(history);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAuthority('grade:create')")
+    public ResponseEntity<StudentGradeDTO> createGrade(
+            @RequestBody GradeCreateDTO gradeCreateDTO,
+            Authentication authentication) {
+
+        User currentUser = getUserFromAuthentication(authentication);
+
+        StudentGradeDTO newGrade = gradeService.createGrade(gradeCreateDTO, currentUser);
+
+        return new ResponseEntity<>(newGrade, HttpStatus.CREATED);
     }
 }
