@@ -289,4 +289,41 @@ CREATE TABLE IF NOT EXISTS `program_modules` (
   CONSTRAINT `fk_pm_program` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE IF NOT EXISTS `attendance_sessions` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `schedule_id` BIGINT NOT NULL, 
+  `opened_by` INT NOT NULL,      
+  `opened_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `closed_at` DATETIME NULL,
+  `is_late` TINYINT(1) DEFAULT 0,
+  `late_threshold_minutes` INT DEFAULT 15,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_session_per_schedule` (`schedule_id`),
+  KEY `fk_as_schedule` (`schedule_id`),
+  KEY `fk_as_teacher` (`opened_by`),
+  CONSTRAINT `fk_as_schedule` FOREIGN KEY (`schedule_id`) 
+    REFERENCES `class_module_schedules` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_as_teacher` FOREIGN KEY (`opened_by`) 
+    REFERENCES `users` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `attendance_records` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `schedule_id` BIGINT NOT NULL,
+  `student_id` INT NOT NULL,
+  `status` ENUM('present', 'absent', 'late', 'excused') DEFAULT 'absent',
+  `marked_by` INT NOT NULL,     
+  `marked_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `notes` TEXT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_attendance` (`schedule_id`, `student_id`),
+  KEY `fk_att_schedule` (`schedule_id`),
+  KEY `fk_att_student` (`student_id`),
+  KEY `fk_att_marker` (`marked_by`),
+  CONSTRAINT `fk_att_schedule` FOREIGN KEY (`schedule_id`) 
+    REFERENCES `class_module_schedules` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_att_student` FOREIGN KEY (`student_id`) 
+    REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_att_marker` FOREIGN KEY (`marked_by`) 
+    REFERENCES `users` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
