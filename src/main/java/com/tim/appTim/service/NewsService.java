@@ -1,0 +1,120 @@
+package com.tim.appTim.service;
+
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.io.SyndFeedInput;
+import com.tim.appTim.dto.BlogDTO;
+import com.tim.appTim.dto.devto.DevToArticleDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class NewsService {
+
+    private static final Logger logger = LoggerFactory.getLogger(NewsService.class);
+
+    private static final String LATEST_BLOGS_URL = "https://blog.codegym.vn/category/java/feed/";
+
+    private static final String FEATURED_BLOGS_URL = "https://blog.codegym.vn/category/javascript/feed/";
+
+    private static final String DEV_TO_API_URL = "https://dev.to/api/articles?tag=java";
+
+    private final RestTemplate restTemplate;
+
+    public NewsService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    @Cacheable("latestBlogs")
+    public List<BlogDTO> getLatestBlogs() {
+        logger.info("Đang gọi RSS feed từ Codegym (Blog Mới)...");
+        return fetchFeedUsingRestTemplate(LATEST_BLOGS_URL);
+    }
+
+    @Cacheable("featuredBlogs")
+    public List<BlogDTO> getFeaturedBlogs() {
+        logger.info("Đang gọi RSS feed từ Codegym (Blog Hay)...");
+        return fetchFeedUsingRestTemplate(FEATURED_BLOGS_URL);
+    }
+
+    @Cacheable("techNews")
+    public List<BlogDTO> getTechNews() {
+        logger.info("Đang gọi JSON API từ Dev.to (Tech News)...");
+        try {
+            ResponseEntity<DevToArticleDTO[]> response =
+                    restTemplate.getForEntity(DEV_TO_API_URL, DevToArticleDTO[].class);
+
+            if (response.getBody() == null) {
+                return List.of();
+            }
+
+            return Arrays.stream(response.getBody())
+                    .map(this::convertDevToDTO)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            logger.error("Lỗi khi gọi Dev.to API: {}", e.getMessage(), e);
+            return List.of();
+        }
+    }
+
+    private List<BlogDTO> fetchFeedUsingRestTemplate(String feedUrl) {
+        try {
+            String rssData = restTemplate.getForObject(feedUrl, String.class);
+
+            if (rssData == null) {
+                logger.warn("Nhận được dữ liệu null từ RSS feed: {}", feedUrl);
+                return List.of();
+            }
+
+            SyndFeedInput input = new SyndFeedInput();
+            SyndFeed feed = input.build(new StringReader(rssData));
+
+            return feed.getEntries().stream()
+                    .map(this::convertEntryToDTO)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            logger.error("Lỗi khi đọc RSS feed (dùng RestTemplate) từ [{}]: {}", feedUrl, e.getMessage(), e);
+            return List.of();
+        }
+    }
+
+    private BlogDTO convertEntryToDTO(SyndEntry entry) {
+        BlogDTO dto = new BlogDTO();
+        dto.setTitle(entry.getTitle());
+        dto.setLink(entry.getLink());
+
+        if (entry.getPublishedDate() != null) {
+            dto.setPublishedDate(entry.getPublishedDate().toInstant());
+        }
+
+        if (entry.getDescription() != null && entry.getDescription().getValue() != null) {
+            String description = entry.getDescription().getValue().replaceAll("<[^>]*>", "");
+            dto.setDescription(description);
+        } else {
+            dto.setDescription("");
+        }
+
+        return dto;
+    }
+
+    private BlogDTO convertDevToDTO(DevToArticleDTO devToArticle) {
+        BlogDTO dto = new BlogDTO();
+        dto.setTitle(devToArticle.getTitle());
+        dto.setLink(devToArticle.getUrl());
+        dto.setPublishedDate(devToArticle.getPublishedAt());
+        String author = (devToArticle.getUser() != null) ? devToArticle.getUser().getName() : "Unknown";
+        dto.setDescription(devToArticle.getDescription() + " (by " + author + ")");
+        return dto;
+    }
+}

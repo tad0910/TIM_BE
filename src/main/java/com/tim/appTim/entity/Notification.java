@@ -60,7 +60,8 @@ public class Notification {
         COMMENT_MENTION,     
         SYSTEM_ANNOUNCEMENT,
         GRADE_NEW,
-        GRADE_UPDATED
+        GRADE_UPDATED,
+        BLOG_NEW
     }
 
     public Notification() {}
