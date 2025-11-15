@@ -1,4 +1,4 @@
-package com.tim.appTim.dto;
+package com.tim.appTim.dto.devto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
@@ -13,7 +13,7 @@ public class DevToArticleDTO {
     @JsonProperty("published_at")
     private Instant publishedAt;
 
-    @JsonProperty("user") // Lấy đối tượng user
+    @JsonProperty("user")
     private DevToUserDTO user;
 
     public String getTitle() { return title; }
