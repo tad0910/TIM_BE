@@ -214,6 +214,13 @@ public class NotificationService {
                 return baseUrl + "posts/" + getPostIdFromReply(notification.getTargetId());
             case USER_FOLLOW:
                 return baseUrl + "users/" + notification.getSenderId();
+            case GRADE_NEW:
+            case GRADE_UPDATED:
+                return baseUrl + "class-modules/" + notification.getTargetId() + "/my-grades";
+
+            case BLOG_NEW:
+                return baseUrl + "news";
+
             default:
                 return baseUrl;
         }
