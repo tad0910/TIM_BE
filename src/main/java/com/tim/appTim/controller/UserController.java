@@ -258,4 +258,10 @@ public class UserController {
     public ResponseEntity<Page<User>> getAllUsers(Pageable pageable) {
         return ResponseEntity.ok(userService.findAllUsersIncludingDeleted(pageable));
     }
+
+    @GetMapping("/deleted")
+    @PreAuthorize("hasAuthority('user:read_all')")
+    public ResponseEntity<Page<User>> getDeletedUsers(Pageable pageable) {
+        return ResponseEntity.ok(userService.findAllDeleted(pageable));
+    }
 }

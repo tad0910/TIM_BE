@@ -48,4 +48,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u WHERE u.keycloakId = :keycloakId")
     Optional<User> findAnyByKeycloakId(String keycloakId);
+
+    @Query(value = "SELECT * FROM users WHERE deleted = 1",
+            countQuery = "SELECT count(*) FROM users WHERE deleted = 1",
+            nativeQuery = true)
+    Page<User> findAllDeleted(Pageable pageable);
 }
