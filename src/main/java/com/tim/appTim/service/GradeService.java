@@ -3,6 +3,7 @@ package com.tim.appTim.service;
 
 import com.tim.appTim.dto.*;
 import com.tim.appTim.entity.User;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -12,7 +13,7 @@ public interface GradeService {
 
     List<StudentGradeDTO> getStudentGrades(Long classModuleId, Long studentId);
 
-    GradebookDTO getGradebook(Long classModuleId, Long teacherId);
+    GradebookDTO getGradebook(Long classModuleId, Long teacherId, Pageable pageable);
 
     void validateTeacherPermission(Long classModuleId, Long teacherId);
 

@@ -10,7 +10,11 @@ public class GradebookDTO {
     private String className;
     private String moduleName;
     private List<String> components;
+
     private List<StudentRow> students;
+    private int currentPage;
+    private long totalElements;
+    private int totalPages;
 
     public Long getClassModuleId() {
         return classModuleId;
@@ -51,6 +55,13 @@ public class GradebookDTO {
     public void setStudents(List<StudentRow> students) {
         this.students = students;
     }
+
+    public int getCurrentPage() { return currentPage; }
+    public void setCurrentPage(int currentPage) { this.currentPage = currentPage; }
+    public long getTotalElements() { return totalElements; }
+    public void setTotalElements(long totalElements) { this.totalElements = totalElements; }
+    public int getTotalPages() { return totalPages; }
+    public void setTotalPages(int totalPages) { this.totalPages = totalPages; }
 
     public static class StudentRow {
 
