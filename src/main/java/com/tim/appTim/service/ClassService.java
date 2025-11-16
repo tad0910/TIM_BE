@@ -16,6 +16,7 @@ import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.ClassRepository;
+import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.ProgramsService;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -27,6 +28,8 @@ import com.tim.appTim.exception.InternalServerErrorException;
 import java.util.Map;
 import org.springframework.security.core.Authentication;
 import com.tim.appTim.dto.AddMemberDTO;
+import com.tim.appTim.dto.AddMemberRequest;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -37,16 +40,22 @@ public class ClassService {
     private final UserService userService;
     private final ClassRepository classRepository;
     private final ClassMemberRepository classMemberRepository;
+    private final UserRepository userRepository;
     private final ProgramsService programsService;
+    private final ClassModuleService classModuleService;
 
     public ClassService(UserService userService,
                         ClassRepository classRepository,
                         ClassMemberRepository classMemberRepository,
-                        ProgramsService programsService) {
+                        UserRepository userRepository,
+                        ProgramsService programsService,
+                        ClassModuleService classModuleService) {
         this.userService = userService;
         this.classRepository = classRepository;
         this.classMemberRepository = classMemberRepository;
+        this.userRepository = userRepository;
         this.programsService = programsService;
+        this.classModuleService = classModuleService;
     }
 
     @Transactional(readOnly = true)
@@ -153,7 +162,7 @@ public class ClassService {
         return member.getRole() == ClassMember.Role.giao_vien;
     }
 
-    public ClassDTO createClass(ClassDTO classDTO, Authentication authentication) {
+    public ClassDTO createClass(ClassDTO classDTO, Authentication authentication, Long id) {
         User currentUser = userService.findByUsernameOrEmail(authentication.getName());
         if (currentUser == null) {
             throw new BadRequestException("Không tìm thấy thông tin người dùng hiện tại");
@@ -161,6 +170,13 @@ public class ClassService {
 
         if (classDTO.getClassName() == null || classDTO.getClassName().trim().isEmpty()) {
             throw new BadRequestException("Tên lớp học (className) là bắt buộc");
+        }
+        
+        boolean nameConflict = classRepository.findAll().stream()
+            .anyMatch(c -> !c.getId().equals(id) && 
+                        c.getClassName().equalsIgnoreCase(classDTO.getClassName()));
+        if (nameConflict) {
+            throw new ConflictException("Tên lớp học '" + classDTO.getClassName() + "' đã tồn tại");
         }
 
         Class newClass = new Class();
@@ -215,6 +231,7 @@ public class ClassService {
         }
 
         Class saved = classRepository.save(existingClass);
+        classModuleService.createClassModulesFromProgram(saved.getId());
 
         List<ClassMember> members = classMemberRepository.findByClassId(saved.getId());
         List<ClassDTO.MemberDTO> memberDTOs = members.stream()
@@ -243,6 +260,7 @@ public class ClassService {
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + classId));
         existingClass.setProgramId(programId);
         Class saved = classRepository.save(existingClass);
+        classModuleService.createClassModulesFromProgram(classId);
         ProgramsDTO programDTO = null;
         if (programId != null) {
             try {
@@ -298,6 +316,38 @@ public class ClassService {
         member.setJoinDate(LocalDateTime.now());
 
         return classMemberRepository.save(member);
+    }
+
+    @Transactional
+    public List<ClassMember> addMembersBatch(Long classId, List<AddMemberRequest> requests) {
+        Class classEntity = classRepository.findById(classId)
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với id: " + classId));
+
+        List<ClassMember> added = new ArrayList<>();
+
+        for (AddMemberRequest req : requests) {
+            if (req.getUserId() == null || req.getRole() == null) {
+                throw new BadRequestException("userId và role là bắt buộc");
+            }
+
+            if (!userRepository.existsById(req.getUserId())) {
+                throw new ResourceNotFoundException("Không tìm thấy user ID: " + req.getUserId());
+            }
+
+            if (classMemberRepository.existsByClassIdAndUserId(classId, req.getUserId())) {
+                continue; 
+            }
+
+            ClassMember member = new ClassMember();
+            member.setClassId(classId);
+            member.setUserId(req.getUserId());
+            member.setRole(req.getRole());
+            member.setJoinDate(LocalDateTime.now());
+
+            added.add(classMemberRepository.save(member));
+        }
+
+        return added;
     }
 
 

@@ -1,19 +1,18 @@
 package com.tim.appTim.dto;
 
 public class AttendanceStatsDto {
-    private Integer studentId;
+    private Long studentId;
     private String studentName;
-    private Integer attendedCount;
-    private Integer totalSessions;
+    private Long attendedCount;
+    private Long totalSessions;
     private Double attendanceRate;
 
-    // --- Getter & Setter ---
 
-    public Integer getStudentId() {
+    public Long getStudentId() {
         return studentId;
     }
 
-    public void setStudentId(Integer studentId) {
+    public void setStudentId(Long studentId) {
         this.studentId = studentId;
     }
 
@@ -25,19 +24,19 @@ public class AttendanceStatsDto {
         this.studentName = studentName;
     }
 
-    public Integer getAttendedCount() {
+    public Long getAttendedCount() {
         return attendedCount;
     }
 
-    public void setAttendedCount(Integer attendedCount) {
+    public void setAttendedCount(Long attendedCount) {
         this.attendedCount = attendedCount;
     }
 
-    public Integer getTotalSessions() {
+    public Long getTotalSessions() {
         return totalSessions;
     }
 
-    public void setTotalSessions(Integer totalSessions) {
+    public void setTotalSessions(Long totalSessions) {
         this.totalSessions = totalSessions;
     }
 

@@ -6,6 +6,10 @@ import com.tim.appTim.dto.AttendanceMarkDto;
 import com.tim.appTim.dto.AttendanceStatsDto;
 import com.tim.appTim.entity.AttendanceSession;
 import com.tim.appTim.entity.AttendanceRecord;
+import com.tim.appTim.exception.BadRequestException;
+import com.tim.appTim.exception.ConflictException;
+import com.tim.appTim.exception.ForbiddenException;
+import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.AttendanceSessionRepository;
 import com.tim.appTim.repository.AttendanceRecordRepository;
 import jakarta.persistence.EntityManager;
@@ -14,8 +18,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,9 +50,16 @@ public class AttendanceService {
             dto.setModuleName((String) row[1]);
             dto.setSessionNumber((Integer) row[2]);
             dto.setSessionTitle((String) row[3]);
-            dto.setSessionDate((LocalDate) row[4]);
-            dto.setOpenedAt((LocalDateTime) row[5]);
-            dto.setClosedAt((LocalDateTime) row[6]);
+
+        Timestamp sessionTs = (Timestamp) row[4];
+        dto.setSessionDatetime(sessionTs != null ? sessionTs.toLocalDateTime() : null);
+
+        Timestamp openedAtTs = (Timestamp) row[5];
+        dto.setOpenedAt(openedAtTs != null ? openedAtTs.toLocalDateTime() : null);
+
+        Timestamp closedAtTs = (Timestamp) row[6];
+        dto.setClosedAt(closedAtTs != null ? closedAtTs.toLocalDateTime() : null);
+        
             dto.setIsLate((Boolean) row[7]);
             dto.setOpenedByName((String) row[8]);
             dto.setMarkedByName((String) row[9]);
@@ -62,11 +73,19 @@ public class AttendanceService {
         List<AttendanceStatsDto> dtos = new ArrayList<>();
         for (Object[] row : results) {
             AttendanceStatsDto dto = new AttendanceStatsDto();
-            dto.setStudentId((Integer) row[0]);
+            dto.setStudentId(row[0] instanceof Number ? ((Number) row[0]).longValue() : null);
             dto.setStudentName((String) row[1]);
-            dto.setAttendedCount((Integer) row[2]);
-            dto.setTotalSessions((Integer) row[3]);
-            dto.setAttendanceRate((Double) row[4]);
+            dto.setAttendedCount(row[2] instanceof Number ? ((Number) row[2]).longValue() : null);
+            dto.setTotalSessions(row[3] instanceof Number ? ((Number) row[3]).longValue() : null);
+
+            Object rateObj = row[4];
+            if (rateObj instanceof BigDecimal) {
+                dto.setAttendanceRate(((BigDecimal) rateObj).doubleValue());
+            } else if (rateObj instanceof Double) {
+                dto.setAttendanceRate((Double) rateObj);
+            } else {
+                dto.setAttendanceRate(null);
+            }
             dtos.add(dto);
         }
         return dtos;
@@ -74,13 +93,17 @@ public class AttendanceService {
 
     @Transactional
     public AttendanceSession openAttendanceSession(Long scheduleId, Integer teacherId) {
+        if (teacherId == null) {
+            throw new BadRequestException("teacherId là bắt buộc");
+        }
+
         Optional<AttendanceSession> existing = sessionRepository.findByScheduleId(scheduleId);
         if (existing.isPresent()) {
-            throw new IllegalStateException("Buổi điểm danh đã được mở trước đó.");
+            throw new ConflictException("Buổi điểm danh đã được mở trước đó.");
         }
 
         if (!isTeacherAuthorized(scheduleId, teacherId)) {
-            throw new SecurityException("Bạn không có quyền mở điểm danh cho buổi học này.");
+            throw new ForbiddenException("Bạn không có quyền mở điểm danh cho buổi học này.");
         }
 
         LocalDateTime startDate = getScheduleStartDate(scheduleId);
@@ -98,21 +121,32 @@ public class AttendanceService {
     @Transactional
     public List<AttendanceRecord> markAttendanceBatch(Long scheduleId, MarkAttendanceRequest request) {
         Integer teacherId = request.getTeacherId();
+        if (teacherId == null) {
+            throw new BadRequestException("teacherId là bắt buộc");
+        }
 
         AttendanceSession session = sessionRepository.findByScheduleId(scheduleId)
-                .orElseThrow(() -> new IllegalStateException("Chưa mở buổi điểm danh."));
+                .orElseThrow(() -> new ResourceNotFoundException("Chưa mở buổi điểm danh."));
 
         if (!isTeacherAuthorized(scheduleId, teacherId)) {
-            throw new SecurityException("Không có quyền điểm danh.");
+            throw new ForbiddenException("Không có quyền điểm danh.");
         }
 
         List<AttendanceRecord> savedRecords = new ArrayList<>();
 
         for (AttendanceMarkDto dto : request.getRecords()) {
+            if (dto.getStudentId() == null || dto.getStatus() == null) {
+                throw new BadRequestException("studentId và status là bắt buộc cho mỗi bản ghi điểm danh.");
+            }
+
             AttendanceRecord record = new AttendanceRecord();
             record.setScheduleId(scheduleId);
             record.setStudentId(dto.getStudentId());
-            record.setStatus(AttendanceRecord.AttendanceStatus.valueOf(dto.getStatus()));
+            try {
+                record.setStatus(AttendanceRecord.AttendanceStatus.valueOf(dto.getStatus()));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Trạng thái không hợp lệ: " + dto.getStatus());
+            }
             record.setMarkedBy(teacherId);
             record.setNotes(dto.getNotes());
 

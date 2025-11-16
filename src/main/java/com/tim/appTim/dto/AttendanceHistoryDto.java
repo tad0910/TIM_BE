@@ -8,7 +8,7 @@ public class AttendanceHistoryDto {
     private String moduleName;
     private Integer sessionNumber;
     private String sessionTitle;
-    private LocalDate sessionDate;
+    private LocalDateTime sessionDatetime;
     private LocalDateTime openedAt;
     private LocalDateTime closedAt;
     private Boolean isLate;
@@ -49,12 +49,12 @@ public class AttendanceHistoryDto {
         this.sessionTitle = sessionTitle;
     }
 
-    public LocalDate getSessionDate() {
-        return sessionDate;
+    public LocalDateTime getSessionDatetime() {
+        return sessionDatetime;
     }
 
-    public void setSessionDate(LocalDate sessionDate) {
-        this.sessionDate = sessionDate;
+    public void setSessionDatetime(LocalDateTime sessionDatetime) {
+        this.sessionDatetime = sessionDatetime;
     }
 
     public LocalDateTime getOpenedAt() {
