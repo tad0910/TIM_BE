@@ -58,7 +58,10 @@ public class Notification {
         USER_FOLLOW,         
         POST_MENTION,        
         COMMENT_MENTION,     
-        SYSTEM_ANNOUNCEMENT  
+        SYSTEM_ANNOUNCEMENT,  
+        LATE_ATTENDANCE_OPENED,
+        ATTENDANCE_REMINDER_LATE,
+        ATTENDANCE_REMINDER_ENDING
     }
 
     public Notification() {}

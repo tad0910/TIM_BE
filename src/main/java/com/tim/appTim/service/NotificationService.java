@@ -3,14 +3,21 @@ package com.tim.appTim.service;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.dto.NotificationDTO;
+import com.tim.appTim.entity.AttendanceSession;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
+import com.tim.appTim.repository.AttendanceSessionRepository;
 import com.tim.appTim.repository.NotificationRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.UserService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
@@ -29,6 +36,12 @@ public class NotificationService {
     private final UserService userService;
     private final SseService sseService;
 
+    @Autowired
+    private AttendanceSessionRepository sessionRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+    
     public NotificationService(NotificationRepository notificationRepository, UserService userService, UserRepository userRepository, SseService sseService) {
         this.notificationRepository = notificationRepository;
         this.userService = userService;
@@ -200,6 +213,84 @@ public class NotificationService {
         );
     }
 
+    @Scheduled(fixedRate = 300000) 
+    @Transactional
+    public void remindTeachersToOpenAttendance() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Object[]> activeSchedules = getActiveSchedulesForReminder(now);
+
+        for (Object[] row : activeSchedules) {
+            Long scheduleId = ((Number) row[0]).longValue();
+            Integer teacherId = row[1] instanceof Number ? ((Number) row[1]).intValue() : null;
+            LocalDateTime startDate = row[2] instanceof java.sql.Timestamp
+                    ? ((java.sql.Timestamp) row[2]).toLocalDateTime() : null;
+            LocalDateTime endDate = row[3] instanceof java.sql.Timestamp
+                    ? ((java.sql.Timestamp) row[3]).toLocalDateTime() : null;
+            String moduleInfo = (String) row[4];
+
+            if (teacherId == null || startDate == null || endDate == null) continue;
+
+            boolean isOpened = sessionRepository.findByScheduleId(scheduleId).isPresent();
+            if (isOpened) continue;
+
+            String title = null;
+            String content = null;
+            Notification.NotificationType type = null;
+
+            if (now.isAfter(startDate.plusMinutes(15)) && now.isBefore(endDate)) {
+                title = "Bạn chưa mở điểm danh";
+                content = String.format("Buổi học %s đã bắt đầu hơn 15 phút nhưng chưa được mở điểm danh.", moduleInfo);
+                type = Notification.NotificationType.ATTENDANCE_REMINDER_LATE;
+            }
+
+            else if (now.isAfter(endDate.minusMinutes(10)) && now.isBefore(endDate.plusMinutes(1))) {
+                title = "Bạn chưa điểm danh cho buổi học này";
+                content = String.format("Buổi học %s sắp kết thúc (còn 10 phút) nhưng chưa được điểm danh.", moduleInfo);
+                type = Notification.NotificationType.ATTENDANCE_REMINDER_ENDING;
+            }
+
+            if (type != null && !notificationAlreadySent(teacherId.longValue(), scheduleId, title)) {
+                createNotification(
+                    teacherId.longValue(),
+                    null, 
+                    type,
+                    "ATTENDANCE_SCHEDULE",
+                    scheduleId,
+                    title,
+                    content
+                );
+            }
+        }
+    }
+
+    private boolean notificationAlreadySent(Long receiverId, Long targetId, String title) {
+        return notificationRepository.existsByReceiverIdAndTargetTypeAndTargetIdAndTitle(
+            receiverId, "ATTENDANCE_SCHEDULE", targetId, title
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Object[]> getActiveSchedulesForReminder(LocalDateTime now) {
+        String sql = """
+            SELECT 
+                cms.id,
+                cm.teacher_id,
+                cms.start_date,
+                cms.end_date,
+                CONCAT(cm.module_name, ' - Buổi ', cms.session_number)
+            FROM class_module_schedules cms
+            JOIN class_modules cm ON cms.class_module_id = cm.id
+            WHERE cms.start_date <= ? 
+              AND cms.end_date >= ?
+              AND cm.teacher_id IS NOT NULL
+            """;
+
+        return entityManager.createNativeQuery(sql)
+            .setParameter(1, now.plusMinutes(15))
+            .setParameter(2, now.minusMinutes(10))
+            .getResultList();
+    }
+
     private String generateActionUrl(Notification notification) {
         String baseUrl = "/"; 
 
@@ -214,6 +305,12 @@ public class NotificationService {
                 return baseUrl + "posts/" + getPostIdFromReply(notification.getTargetId());
             case USER_FOLLOW:
                 return baseUrl + "users/" + notification.getSenderId();
+            case LATE_ATTENDANCE_OPENED:
+                return baseUrl + "attendance/schedule/" + notification.getTargetId(); 
+            case ATTENDANCE_REMINDER_LATE:
+                return baseUrl + "attendance/schedule/" + notification.getTargetId(); 
+            case ATTENDANCE_REMINDER_ENDING:
+                return baseUrl + "attendance/schedule/" + notification.getTargetId();                
             default:
                 return baseUrl;
         }
