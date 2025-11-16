@@ -323,7 +323,7 @@ public class ClassModuleScheduleService {
         }
         mainInstructorSchedules.forEach(s -> scheduleIds.add(s.getId()));
 
-        List<com.tim.appTim.entity.ClassModuleScheduleTeacher> teacherAssignments = 
+        List<com.tim.appTim.entity.ClassModuleScheduleTeacher> teacherAssignments =
             scheduleTeacherRepository.findByUserId(teacherId);
         
         teacherAssignments.forEach(assignment -> {

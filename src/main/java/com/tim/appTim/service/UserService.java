@@ -1,7 +1,6 @@
 package com.tim.appTim.service;
     
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -45,7 +44,7 @@ import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
-import com.tim.appTim.repository.RoleRepository; 
+import com.tim.appTim.repository.RoleRepository;
 import com.tim.appTim.repository.UserImageRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.FileRepository;
@@ -620,5 +619,9 @@ public class UserService implements UserDetailsService {
 
     public Page<User> findAllUsersIncludingDeleted(Pageable pageable) {
         return userRepository.findAllIncludingDeleted(pageable);
+    }
+
+    public Page<User> findAllDeleted(Pageable pageable) {
+        return userRepository.findAllDeleted(pageable);
     }
 }

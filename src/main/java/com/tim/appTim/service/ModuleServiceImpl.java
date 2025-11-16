@@ -6,14 +6,12 @@ import com.tim.appTim.entity.Module;
 import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.repository.ModuleRepository;
 import com.tim.appTim.repository.ModuleSessionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import com.tim.appTim.exception.ResourceNotFoundException;
-import com.tim.appTim.exception.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

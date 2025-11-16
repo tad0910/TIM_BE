@@ -20,7 +20,6 @@ import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.ProgramsService;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.exception.ResourceNotFoundException;
-import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.InternalServerErrorException;
@@ -70,7 +69,7 @@ public class ClassService {
             List<Long> classIds = classPage.getContent().stream()
                     .filter(c -> c != null && c.getId() != null)
                     .map(Class::getId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             List<ClassMember> allMembers = classMemberRepository.findAllById(classIds);
 
@@ -92,7 +91,7 @@ public class ClassService {
                                     member.getRole().name(),
                                     member.getJoinDate()
                             ))
-                            .collect(Collectors.toList());
+                            .toList();
 
                     ProgramsDTO programDTO = null;
 
@@ -297,7 +296,7 @@ public class ClassService {
 
 
     public ClassMember addMember(Long classId, AddMemberDTO addMemberDTO) {
-        Class existingClass = classRepository.findById(classId)
+        classRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với id: " + classId));
 
         User user = userService.findById(addMemberDTO.getUserId());
@@ -433,7 +432,7 @@ public class ClassService {
                         );
                     }
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         ProgramsDTO programDTO = null;
         if (classInfo.getProgramId() != null) {

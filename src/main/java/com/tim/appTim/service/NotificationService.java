@@ -23,9 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.NoSuchElementException;
+import java.util.List;
 
 @Service("notificationService")
 @Transactional
@@ -311,6 +310,12 @@ public class NotificationService {
                 return baseUrl + "attendance/schedule/" + notification.getTargetId(); 
             case ATTENDANCE_REMINDER_ENDING:
                 return baseUrl + "attendance/schedule/" + notification.getTargetId();                
+            case GRADE_NEW, GRADE_UPDATED:
+                return baseUrl + "class-modules/" + notification.getTargetId() + "/my-grades";
+
+            case BLOG_NEW:
+                return baseUrl + "news";
+
             default:
                 return baseUrl;
         }

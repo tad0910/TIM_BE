@@ -1,6 +1,5 @@
 package com.tim.appTim.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tim.appTim.service.KeycloakSyncService;
 import com.tim.appTim.service.PostService;
 import org.junit.jupiter.api.Test;

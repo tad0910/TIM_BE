@@ -15,10 +15,6 @@ import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.ReactionRepository;
-import com.tim.appTim.service.NotificationService;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import com.tim.appTim.repository.FileRepository;

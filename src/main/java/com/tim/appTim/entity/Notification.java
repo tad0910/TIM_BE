@@ -61,7 +61,10 @@ public class Notification {
         SYSTEM_ANNOUNCEMENT,  
         LATE_ATTENDANCE_OPENED,
         ATTENDANCE_REMINDER_LATE,
-        ATTENDANCE_REMINDER_ENDING
+        ATTENDANCE_REMINDER_ENDING,
+        GRADE_NEW,
+        GRADE_UPDATED,
+        BLOG_NEW
     }
 
     public Notification() {}

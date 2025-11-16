@@ -2,7 +2,6 @@ package com.tim.appTim.config;
 
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.UserService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -90,6 +89,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/link-preview/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users/profile/**").permitAll()
+                        .requestMatchers("/news/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

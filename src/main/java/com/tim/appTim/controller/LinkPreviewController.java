@@ -2,9 +2,7 @@ package com.tim.appTim.controller;
 
 import com.tim.appTim.dto.LinkPreviewDTO;
 import com.tim.appTim.service.LinkPreviewService;
-import com.tim.appTim.service.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;

@@ -1,30 +1,34 @@
-
 DELETE FROM role_permissions;
 DELETE FROM user_roles;
 
+DELETE FROM grade_history;
+DELETE FROM grades;
+DELETE FROM class_module_teacher;
 DELETE FROM class_module_schedules;
 DELETE FROM module_sessions;
 DELETE FROM program_modules;
 DELETE FROM class_members;
+
+DELETE FROM class_module;
 DELETE FROM classes;
 DELETE FROM modules;
 DELETE FROM programs;
-
 
 DELETE FROM reactions;
 DELETE FROM files;
 DELETE FROM notifications;
 DELETE FROM reply_comments;
 DELETE FROM comments;
+
 DELETE FROM posts;
-
-
 DELETE FROM users;
 DELETE FROM roles;
 DELETE FROM permissions;
 
-
-INSERT INTO roles (id, name) VALUES (1, 'ROLE_USER'), (2, 'ROLE_ADMIN'),(3, 'ROLE_GIAO_VIEN');
+INSERT INTO roles (id, name) VALUES 
+(1, 'ROLE_USER'), 
+(2, 'ROLE_ADMIN'),
+(3, 'ROLE_GIAO_VIEN');
 
 INSERT INTO permissions (id, name) VALUES
 (1, 'post:create'),
@@ -53,30 +57,61 @@ INSERT INTO permissions (id, name) VALUES
 (24, 'notification:cleanup'),
 (25, 'notification:create_manual'),
 (26, 'module:delete'),
-(27, 'class:update_all');
-
+(27, 'class:update_all'),
+(28, 'grade:read_all'),
+(29, 'grade:update'),
+(30, 'grade:create'),
+(31, 'grade:read_detail');
 
 INSERT INTO users (id, username, password, email, deleted) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com', false),
 (2, 'another_user', '{noop}password', 'another@example.com', false),
 (3, 'admin_user', '{noop}password', 'admin@example.com', false),
-
 (5, 'giaovien1', '{noop}password', 'gv1@example.com', false),
 (6, 'giaovien2', '{noop}password', 'gv2@example.com', false),
 (7, 'giaovien3', '{noop}password', 'gv3@example.com', false);
 
-
 INSERT INTO user_roles (user_id, role_id) VALUES
-(1, 1), (2, 1), (3, 2),
-(5, 1), (6, 1), (7, 1);
+(1, 1), 
+(2, 1), 
+(3, 2),
+(5, 1), 
+(6, 1), 
+(7, 1);
 
 INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 11),
 (2, 12),
-(1, 1), (1, 4),
-(2, 2), (2, 3), (2, 5), (2, 6),
-(2, 7), (2, 8), (2, 9), (2, 10), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25), (2, 26), (2, 27);
-
+(1, 1), 
+(1, 4),
+(2, 2), 
+(2, 3), 
+(2, 5), 
+(2, 6),
+(2, 7), 
+(2, 8), 
+(2, 9), 
+(2, 10), 
+(2, 13),
+(2, 14), 
+(2, 15), 
+(2, 16), 
+(2, 17), 
+(2, 18),
+(2, 19), 
+(2, 20), 
+(2, 21), 
+(2, 22), 
+(2, 23),
+(2, 24), 
+(2, 25), 
+(2, 26), 
+(2, 27), 
+(2, 28),
+(2, 29),
+(3, 29), 
+(3, 30), 
+(3, 31);
 
 INSERT INTO programs (id, name, description) VALUES
 (100, 'Khóa học Backend', 'Phát triển ứng dụng với Spring Boot.');
@@ -86,8 +121,7 @@ INSERT INTO modules (id, name, description) VALUES
 (201, 'Module Spring Security', 'Hướng dẫn bảo mật ứng dụng.'),
 (202, 'Module Test Mới', 'Dùng cho test case CREATE thành công');
 
-INSERT INTO module_sessions (id, module_id, session_number, title, content)
-VALUES
+INSERT INTO module_sessions (id, module_id, session_number, title, content) VALUES
 (300, 200, 1, 'Buổi 1: Giới thiệu JPA', 'Nội dung buổi 1'),
 (301, 200, 2, 'Buổi 2: Quan hệ Entity', 'Nội dung buổi 2'),
 (302, 201, 1, 'Buổi 1: Giới thiệu Security', 'Nội dung buổi 1 Security'),
@@ -97,20 +131,23 @@ INSERT INTO classes (id, name, description, program_id) VALUES
 (10, 'BE Class K10', 'Lớp học Test A', 100),
 (11, 'FE Class K11', 'Lớp học Test B', 100);
 
+INSERT INTO class_module (id, class_id, module_id, schedule_type) VALUES
+(500, 10, 200, 'fixed');
+
 INSERT INTO class_members (lop_id, nguoi_dung_id, vai_tro, ngay_tham_gia) VALUES
 (10, 1, 'sinh_vien', NOW()),
 (10, 5, 'giao_vien', NOW()),
 (10, 2, 'sinh_vien', NOW());
 
-INSERT INTO program_modules (program_id, module_id, position)
-VALUES (100, 200, 1), (100, 201, 2);
+INSERT INTO program_modules (program_id, module_id, position) VALUES
+(100, 200, 1), 
+(100, 201, 2);
 
+INSERT INTO class_module_schedules (id, class_id, module_id, class_module_id, start_date, end_date, instructor_id, status) VALUES
+(1000, 10, 200, 500, '2025-11-01 00:00:00', '2025-11-08 00:00:00', 5, 'planned');
 
-INSERT INTO class_module_schedules (id, class_id, module_id, start_date, end_date, instructor_id, status)
-VALUES
-(1000, 10, 200, '2025-11-01 00:00:00', '2025-11-08 00:00:00', 5, 'planned'),
-(1001, 11, 201, '2025-11-01 00:00:00', '2025-11-08 00:00:00', 6, 'planned');
-
+INSERT INTO class_module_teacher (class_module_id, user_id) VALUES
+(500, 5);
 
 INSERT INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES
 (10, 1, 'Bài viết của owner', 'open'),
@@ -124,8 +161,7 @@ INSERT INTO comments (id, bai_viet_id, nguoi_dung_id, noi_dung, thoi_gian_tao) V
 INSERT INTO reply_comments (id, comments_id, nguoi_dung_id, noi_dung, thoi_gian_tao) VALUES
 (30, 20, 1, 'Reply của user 1', NOW());
 
-INSERT INTO reactions (id, nguoi_dung_id, bai_viet_id, comment_id, reply_comment_id, loai_cam_xuc)
-VALUES
+INSERT INTO reactions (id, nguoi_dung_id, bai_viet_id, comment_id, reply_comment_id, loai_cam_xuc) VALUES
 (100, 2, 10, null, null, 'like'),
 (101, 1, null, 20, null, 'love'),
 (102, 1, null, null, 30, 'haha');
@@ -133,3 +169,7 @@ VALUES
 INSERT INTO notifications (id, receiver_id, sender_id, notification_type, title, content, created_at, is_read, read_at, target_type, target_id) VALUES
 (50, 1, 2, 'POST_COMMENT', 'Thông báo mới', 'User 2 đã bình luận bài viết của bạn', NOW(), false, null, 'POST', 10),
 (51, 1, 3, 'SYSTEM_ANNOUNCEMENT', 'Thông báo hệ thống', 'Chào mừng bạn đến với hệ thống', DATEADD('DAY', -1, NOW()), true, DATEADD('HOUR', -12, NOW()), null, null);
+
+INSERT INTO grades (id, class_module_id, student_id, component_name, score, max_score, weight_percent, entered_by_user_id, created_at, updated_at) VALUES
+(1, 500, 1, 'Bài tập 1', 8.0, 10.0, 20.0, 5, NOW(), NOW()),
+(2, 500, 2, 'Bài tập 1', 7.0, 10.0, 20.0, 5, NOW(), NOW());
