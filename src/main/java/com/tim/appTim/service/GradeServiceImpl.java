@@ -59,10 +59,11 @@ public class GradeServiceImpl implements GradeService {
 
     @Override
     public GradebookDTO getGradebook(Long classModuleId, Long teacherId, Pageable pageable) {
-        validateTeacherPermission(classModuleId, teacherId);
 
         ClassModule classModule = classModuleRepository.findById(classModuleId)
                 .orElseThrow(() -> new ResourceNotFoundException("ClassModule not found"));
+
+        validateTeacherPermission(classModuleId, teacherId);
 
         List<String> components = gradeRepository.findDistinctComponentNamesByClassModuleId(classModuleId);
 

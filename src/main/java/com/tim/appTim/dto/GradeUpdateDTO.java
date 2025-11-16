@@ -1,9 +1,12 @@
-package com.tim.appTim.dto; // Đảm bảo đúng package
+package com.tim.appTim.dto;
+
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
 public class GradeUpdateDTO {
 
+    @NotNull(message = "Điểm mới không được để trống")
     private BigDecimal newScore;
     private String changeReason;
 

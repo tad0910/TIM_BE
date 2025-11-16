@@ -1,11 +1,11 @@
-package com.tim.appTim.entity; // Đảm bảo đúng package
+package com.tim.appTim.entity;
 
 import jakarta.persistence.*; // Hoặc javax.persistence.* nếu dùng Spring Boot 2
 import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "grades") // Ánh xạ với bảng CSDL 'grades'
+@Table(name = "grades")
 public class Grade {
 
     @Id
@@ -14,27 +14,27 @@ public class Grade {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_module_id", nullable = false)
-    private ClassModule classModule; // Tương ứng 'class_module_id'
+    private ClassModule classModule;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
-    private User student; // Tương ứng 'student_id'
+    private User student;
 
     @Column(name = "component_name", nullable = false)
-    private String componentName; // Tương ứng 'component_name'
+    private String componentName;
 
     @Column(name = "score", nullable = false, precision = 5, scale = 2)
-    private BigDecimal score; // Tương ứng 'score'
+    private BigDecimal score;
 
     @Column(name = "max_score", precision = 5, scale = 2)
-    private BigDecimal maxScore; // Tương ứng 'max_score'
+    private BigDecimal maxScore;
 
-    @Column(name = "weight_percent", precision = 5, scale = 4)
-    private BigDecimal weightPercent; // Tương ứng 'weight_percent'
+    @Column(name = "weight_percent", precision = 5, scale = 2)
+    private BigDecimal weightPercent;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entered_by_user_id")
-    private User enteredBy; // Tương ứng 'entered_by_user_id'
+    private User enteredBy;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
@@ -42,7 +42,6 @@ public class Grade {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    // Tự động set thời gian
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
@@ -54,7 +53,6 @@ public class Grade {
         updatedAt = Instant.now();
     }
 
-    // --- Getters và Setters (BẮT BUỘC) ---
 
     public Long getId() {
         return id;
