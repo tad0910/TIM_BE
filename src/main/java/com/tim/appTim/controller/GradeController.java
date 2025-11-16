@@ -1,10 +1,11 @@
-package com.tim.appTim.controller; // Gói controller của bạn
+package com.tim.appTim.controller;
 
 import com.tim.appTim.dto.*;
-import com.tim.appTim.entity.User; // Import User entity
+import com.tim.appTim.entity.User;
 import com.tim.appTim.service.GradeService;
-import com.tim.appTim.service.UserService; // Import UserService
+import com.tim.appTim.service.UserService;
 
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -82,7 +83,7 @@ public class GradeController {
     @PreAuthorize("hasAuthority('grade:update')")
     public ResponseEntity<StudentGradeDTO> updateGrade(
             @PathVariable Long gradeId,
-            @RequestBody GradeUpdateDTO gradeUpdateDTO,
+            @RequestBody @Valid GradeUpdateDTO gradeUpdateDTO,
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
@@ -108,7 +109,7 @@ public class GradeController {
     @PostMapping
     @PreAuthorize("hasAuthority('grade:create')")
     public ResponseEntity<StudentGradeDTO> createGrade(
-            @RequestBody GradeCreateDTO gradeCreateDTO,
+            @RequestBody @Valid GradeCreateDTO gradeCreateDTO,
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);

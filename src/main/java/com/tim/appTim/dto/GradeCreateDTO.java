@@ -1,13 +1,24 @@
 package com.tim.appTim.dto;
 
+import jakarta.validation.constraints.NotNull;
+
 import java.math.BigDecimal;
 
 public class GradeCreateDTO {
 
+    @NotNull(message = "Student ID không được để trống")
     private Long studentId;
+
+    @NotNull(message = "ClassModule ID không được để trống")
     private Long classModuleId;
+
+    @NotNull(message = "Tên thành phần điểm không được để trống")
     private String componentName;
+
+    @NotNull(message = "Điểm không được để trống")
     private BigDecimal score;
+
+    @NotNull(message = "Điểm tối đa không được để trống")
     private BigDecimal maxScore;
     private BigDecimal weightPercent;
 
