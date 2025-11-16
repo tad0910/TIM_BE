@@ -3,8 +3,6 @@ package com.tim.appTim.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.tim.appTim.entity.ReplyComment;
-
 public class ReplyCommentDTO {
     private Long id;
     private Long userId;

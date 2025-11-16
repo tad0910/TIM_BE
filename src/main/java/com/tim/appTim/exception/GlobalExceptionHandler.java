@@ -8,8 +8,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.validation.FieldError;
-import com.tim.appTim.exception.UnprocessableException;
-import com.tim.appTim.exception.ForbiddenException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

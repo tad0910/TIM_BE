@@ -1,8 +1,6 @@
 package com.tim.appTim.controller;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import com.tim.appTim.dto.AddMemberDTO;
 import com.tim.appTim.dto.ClassDTO;
 import com.tim.appTim.dto.UpdateMemberRequest;
-import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.service.ClassService;
 import com.tim.appTim.service.UserService;

@@ -1,14 +1,10 @@
 package com.tim.appTim.config;
 
 
-import com.tim.appTim.entity.Role;
-import com.tim.appTim.entity.Permission;
-import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.security.core.Authentication;
+
 import com.tim.appTim.entity.User;
-import com.tim.appTim.entity.Role;
 import com.tim.appTim.repository.UserRepository;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,8 +12,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class CustomJwtAuthenticationConverter implements Converter<Jwt, JwtAuthenticationToken> {
 

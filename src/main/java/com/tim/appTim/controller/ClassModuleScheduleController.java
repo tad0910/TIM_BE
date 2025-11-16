@@ -124,7 +124,7 @@ public class ClassModuleScheduleController {
             @PathVariable Long scheduleId,
             @PathVariable Long userId,
             @RequestBody Map<String, String> request) {
-        com.tim.appTim.entity.ClassModuleScheduleTeacher.ScheduleTeacherRole role = 
+        com.tim.appTim.entity.ClassModuleScheduleTeacher.ScheduleTeacherRole role =
             com.tim.appTim.entity.ClassModuleScheduleTeacher.ScheduleTeacherRole.valueOf(request.get("role"));
         ClassModuleScheduleTeacherDTO updated = scheduleTeacherService.updateTeacherRole(scheduleId, userId, role);
         return ResponseEntity.ok(updated);

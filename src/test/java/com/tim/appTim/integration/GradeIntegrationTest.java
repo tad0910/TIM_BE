@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.*;
 @AutoConfigureMockMvc
 @Sql("/test-data.sql")
 @ActiveProfiles("test")
-public class GradeIntegrationTest {
+    class GradeIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

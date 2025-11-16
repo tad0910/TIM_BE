@@ -39,7 +39,7 @@ public class GradeController {
             @PathVariable Long classModuleId,
             Authentication authentication) {
 
-        String authorities = authentication.getAuthorities().stream()
+         authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(", "));
 

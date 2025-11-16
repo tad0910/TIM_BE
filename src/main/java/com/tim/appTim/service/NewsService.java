@@ -59,7 +59,7 @@ public class NewsService {
 
             return Arrays.stream(response.getBody())
                     .map(this::convertDevToDTO)
-                    .collect(Collectors.toList());
+                    .toList();
 
         } catch (Exception e) {
             logger.error("Lỗi khi gọi Dev.to API: {}", e.getMessage(), e);
@@ -81,7 +81,7 @@ public class NewsService {
 
             return feed.getEntries().stream()
                     .map(this::convertEntryToDTO)
-                    .collect(Collectors.toList());
+                    .toList();
 
         } catch (Exception e) {
             logger.error("Lỗi khi đọc RSS feed (dùng RestTemplate) từ [{}]: {}", feedUrl, e.getMessage(), e);

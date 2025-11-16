@@ -1,7 +1,5 @@
 package com.tim.appTim.controller;
 
-import java.util.List;
-
 import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.entity.Reaction;
 import com.tim.appTim.entity.User;

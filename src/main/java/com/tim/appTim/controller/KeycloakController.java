@@ -1,7 +1,5 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.CreateUserDTO;
-import com.tim.appTim.entity.User;
 import com.tim.appTim.service.KeycloakSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import javax.ws.rs.ClientErrorException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/keycloak")
