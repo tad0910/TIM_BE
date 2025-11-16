@@ -67,7 +67,7 @@ public class GradeServiceImpl implements GradeService {
         List<String> components = gradeRepository.findDistinctComponentNamesByClassModuleId(classModuleId);
 
         Long classId = classModule.getClassEntity().getId();
-        Page<ClassMember> studentMemberPage = classMemberRepository.findByClassIdAndVaiTro(
+        Page<ClassMember> studentMemberPage = classMemberRepository.findByClassIdAndRole(
                 classId, ClassMember.Role.sinh_vien, pageable);
 
         List<User> studentsOnThisPage = studentMemberPage.getContent().stream()

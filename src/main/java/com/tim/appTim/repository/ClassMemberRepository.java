@@ -17,5 +17,5 @@ public interface ClassMemberRepository extends JpaRepository<ClassMember, Long> 
     List<ClassMember> findByUserId(Long userId);
     Optional<ClassMember> findByClassIdAndUserId(Long classId, Long userId);
     boolean existsByClassIdAndUserId(Long classId, Long userId);
-    Page<ClassMember> findByClassIdAndVaiTro(Long classId, ClassMember.Role vaiTro, Pageable pageable);
+    Page<ClassMember> findByClassIdAndRole(Long classId, ClassMember.Role role, Pageable pageable);
 }
