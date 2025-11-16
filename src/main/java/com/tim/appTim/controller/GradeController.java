@@ -5,6 +5,8 @@ import com.tim.appTim.entity.User; // Import User entity
 import com.tim.appTim.service.GradeService;
 import com.tim.appTim.service.UserService; // Import UserService
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -67,12 +69,12 @@ public class GradeController {
     @PreAuthorize("hasAuthority('grade:read_detail')")
     public ResponseEntity<GradebookDTO> getModuleGradebook(
             @PathVariable Long classModuleId,
-            Authentication authentication) {
+            Authentication authentication, @PageableDefault(size = 20, sort = "id") Pageable pageable) {
 
         User currentUser = getUserFromAuthentication(authentication);
         Long teacherId = currentUser.getId();
 
-        GradebookDTO gradebook = gradeService.getGradebook(classModuleId, teacherId);
+        GradebookDTO gradebook = gradeService.getGradebook(classModuleId, teacherId, pageable);
         return ResponseEntity.ok(gradebook);
     }
 

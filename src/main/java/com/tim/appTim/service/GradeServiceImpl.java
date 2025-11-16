@@ -7,6 +7,8 @@ import com.tim.appTim.entity.*;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,7 +58,7 @@ public class GradeServiceImpl implements GradeService {
     }
 
     @Override
-    public GradebookDTO getGradebook(Long classModuleId, Long teacherId) {
+    public GradebookDTO getGradebook(Long classModuleId, Long teacherId, Pageable pageable) {
         validateTeacherPermission(classModuleId, teacherId);
 
         ClassModule classModule = classModuleRepository.findById(classModuleId)
@@ -65,16 +67,22 @@ public class GradeServiceImpl implements GradeService {
         List<String> components = gradeRepository.findDistinctComponentNamesByClassModuleId(classModuleId);
 
         Long classId = classModule.getClassEntity().getId();
-        List<ClassMember> members = classMemberRepository.findByClassId(classId);
+        Page<ClassMember> studentMemberPage = classMemberRepository.findByClassIdAndRole(
+                classId, ClassMember.Role.sinh_vien, pageable);
 
-        List<User> students = members.stream()
-                .filter(member -> "sinh_vien".equals(member.getRole()))
+        List<User> studentsOnThisPage = studentMemberPage.getContent().stream()
                 .map(ClassMember::getUser)
                 .collect(Collectors.toList());
 
-        List<Grade> allGrades = gradeRepository.findByClassModuleId(classModuleId);
+        List<Long> studentIdsOnPage = studentsOnThisPage.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
 
-        Map<Long, Map<String, BigDecimal>> gradesByStudent = allGrades.stream()
+        List<Grade> gradesForThisPage = (studentIdsOnPage.isEmpty())
+                ? List.of()
+                : gradeRepository.findByClassModuleIdAndStudentIdIn(classModuleId, studentIdsOnPage);
+
+        Map<Long, Map<String, BigDecimal>> gradesByStudent = gradesForThisPage.stream()
                 .collect(Collectors.groupingBy(
                         grade -> grade.getStudent().getId(),
                         Collectors.toMap(Grade::getComponentName, Grade::getScore)
@@ -86,7 +94,7 @@ public class GradeServiceImpl implements GradeService {
         gradebook.setModuleName(classModule.getModule().getName());
         gradebook.setComponents(components);
 
-        List<GradebookDTO.StudentRow> studentRows = students.stream().map(student -> {
+        List<GradebookDTO.StudentRow> studentRows = studentsOnThisPage.stream().map(student -> {
             GradebookDTO.StudentRow row = new GradebookDTO.StudentRow();
             row.setStudentId(student.getId());
             row.setStudentName(student.getFirstName() + " " + student.getLastName());
@@ -97,6 +105,9 @@ public class GradeServiceImpl implements GradeService {
         }).collect(Collectors.toList());
 
         gradebook.setStudents(studentRows);
+        gradebook.setCurrentPage(studentMemberPage.getNumber());
+        gradebook.setTotalElements(studentMemberPage.getTotalElements());
+        gradebook.setTotalPages(studentMemberPage.getTotalPages());
         return gradebook;
     }
 
