@@ -17,7 +17,8 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.springframework.security.core.Authentication;
+import com.tim.appTim.entity.User;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -25,20 +26,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+
 @Service
 public class AttendanceService {
 
     private final AttendanceSessionRepository sessionRepository;
     private final AttendanceRecordRepository recordRepository;
+    private final UserService userService;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired
     public AttendanceService(AttendanceSessionRepository sessionRepository,
-                             AttendanceRecordRepository recordRepository) {
+                             AttendanceRecordRepository recordRepository, UserService userService) {
         this.sessionRepository = sessionRepository;
         this.recordRepository = recordRepository;
+        this.userService = userService;
     }
 
     public List<AttendanceHistoryDto> getAttendanceHistory(Integer classId) {
@@ -104,7 +108,8 @@ public class AttendanceService {
 
         if (!isTeacherAuthorized(scheduleId, teacherId)) {
             throw new ForbiddenException("Bạn không có quyền mở điểm danh cho buổi học này.");
-        }
+        } 
+
 
         LocalDateTime startDate = getScheduleStartDate(scheduleId);
         boolean isLate = startDate != null && LocalDateTime.now().isAfter(startDate.plusMinutes(15));
@@ -173,6 +178,20 @@ public class AttendanceService {
                sessionRepository.findByScheduleId(scheduleId)
                    .map(s -> s.getOpenedBy().equals(teacherId))
                    .orElse(false);
+    }
+
+    public boolean isScheduleTeacher(Authentication authentication, Long scheduleId) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) {
+            return false;
+        }
+
+        Integer teacherId = currentUser.getId().intValue();  
+        return isTeacherAuthorized(scheduleId, teacherId);
     }
 
     private LocalDateTime getScheduleStartDate(Long scheduleId) {
