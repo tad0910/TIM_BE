@@ -1,7 +1,6 @@
 package com.tim.appTim.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.JsonPath;
 import com.tim.appTim.dto.FileDTO;
 import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.Post;
@@ -26,7 +25,6 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

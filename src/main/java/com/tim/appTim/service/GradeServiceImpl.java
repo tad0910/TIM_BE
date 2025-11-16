@@ -73,11 +73,11 @@ public class GradeServiceImpl implements GradeService {
 
         List<User> studentsOnThisPage = studentMemberPage.getContent().stream()
                 .map(ClassMember::getUser)
-                .collect(Collectors.toList());
+                .toList();
 
         List<Long> studentIdsOnPage = studentsOnThisPage.stream()
                 .map(User::getId)
-                .collect(Collectors.toList());
+                .toList();
 
         List<Grade> gradesForThisPage = (studentIdsOnPage.isEmpty())
                 ? List.of()
@@ -103,7 +103,7 @@ public class GradeServiceImpl implements GradeService {
             Map<String, BigDecimal> studentScores = gradesByStudent.getOrDefault(student.getId(), Map.of());
             row.setGrades(studentScores);
             return row;
-        }).collect(Collectors.toList());
+        }).toList();
 
         gradebook.setStudents(studentRows);
         gradebook.setCurrentPage(studentMemberPage.getNumber());
@@ -297,6 +297,6 @@ public class GradeServiceImpl implements GradeService {
 
         return historyList.stream()
                 .map(GradeHistoryDTO::new)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

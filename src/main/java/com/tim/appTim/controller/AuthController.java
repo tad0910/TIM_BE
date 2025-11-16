@@ -26,8 +26,6 @@ import com.tim.appTim.service.AuthService;
 import com.tim.appTim.dto.LoginResponse;
 import com.tim.appTim.dto.UserResponse;
 
-import java.util.List;
-
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController

@@ -1,8 +1,7 @@
 package com.tim.appTim.config;
 
 import com.tim.appTim.repository.InvalidatedTokenRepository;
-import com.tim.appTim.util.JwtUtil; 
-import lombok.RequiredArgsConstructor;
+import com.tim.appTim.util.JwtUtil;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

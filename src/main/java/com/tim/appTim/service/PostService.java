@@ -1,8 +1,6 @@
 package com.tim.appTim.service;
 
 
-import com.tim.appTim.dto.CommentDTO;
-import com.tim.appTim.dto.ReactionDTO;
 import com.tim.appTim.repository.FileRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,7 +21,6 @@ import com.tim.appTim.repository.CommentRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -36,8 +33,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.net.URISyntaxException;
 import java.io.IOException;
-import org.springframework.security.oauth2.jwt.Jwt;
-  
+
 
 @Service
 public class PostService {
@@ -453,10 +449,9 @@ public class PostService {
         }
 
         if (principal instanceof String token && token.startsWith("Bearer ")) {
-            token = token.substring(7); 
-        } else if (principal instanceof String token) {
-
-        } else {
+            token.substring(7);
+        }
+        else {
             return null;
         }
 

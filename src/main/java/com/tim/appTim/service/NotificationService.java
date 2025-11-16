@@ -7,8 +7,6 @@ import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.NotificationRepository;
 import com.tim.appTim.repository.UserRepository;
-import com.tim.appTim.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.NoSuchElementException;
 
 @Service("notificationService")
@@ -214,8 +210,7 @@ public class NotificationService {
                 return baseUrl + "posts/" + getPostIdFromReply(notification.getTargetId());
             case USER_FOLLOW:
                 return baseUrl + "users/" + notification.getSenderId();
-            case GRADE_NEW:
-            case GRADE_UPDATED:
+            case GRADE_NEW, GRADE_UPDATED:
                 return baseUrl + "class-modules/" + notification.getTargetId() + "/my-grades";
 
             case BLOG_NEW:
