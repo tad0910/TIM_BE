@@ -281,11 +281,10 @@ public class ClassModuleScheduleIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ========== DELETE /schedules/{scheduleId} ==========
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void deleteSchedule_WhenUserHasPermission_ShouldReturn200() throws Exception {
-        Long scheduleId = 1001L;
+        Long scheduleId = 1000L;
 
         mockMvc.perform(delete(BASE_URL + "/{scheduleId}", scheduleId))
                 .andExpect(status().isOk());
