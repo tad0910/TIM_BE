@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import com.tim.appTim.entity.User;
+import com.tim.appTim.service.FileUploadService;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.service.ClassService;
 import com.tim.appTim.dto.ProfileResponse;
@@ -17,6 +18,7 @@ import com.tim.appTim.dto.UserUpdateDTO;
 import com.tim.appTim.entity.ClassMember;
 
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +37,10 @@ public class UserController {
     private final UserImageService userImageService;
     private final ClassService classService;
 
-    @Value("${upload.folder}")
-    private String uploadFolder;
+    @Autowired
+    private FileUploadService fileUploadService;
+
+
 
     public UserController(UserService userService, UserImageService userImageService, ClassService classService) {
         this.userService = userService;
@@ -90,37 +94,29 @@ public class UserController {
             throw new BadRequestException("File không được để trống");
         }
 
-        User user = userService.findById(id);
-        if (user == null) throw new ResourceNotFoundException("User không tồn tại");
+        try {
+            User user = userService.findById(id);
+            if (user == null) throw new ResourceNotFoundException("User không tồn tại");
 
-        File uploadDir = new File(uploadFolder);
-        if (!uploadDir.exists()) uploadDir.mkdirs();
+            String imageUrl = fileUploadService.uploadFile(file);
 
-        String originalFilename = file.getOriginalFilename();
-        String fileExtension = (originalFilename != null && originalFilename.contains("."))
-                ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                : ".jpg";
-        String uniqueFilename = UUID.randomUUID() + fileExtension;
+            com.tim.appTim.entity.UserImage userImage = new com.tim.appTim.entity.UserImage();
+            userImage.setUserId(id);
+            userImage.setImageUrl(imageUrl);
+            userImage.setCreatedAt(java.time.LocalDateTime.now());
+            userImageService.save(userImage);
 
-        Path filePath = Paths.get(uploadFolder + File.separator + uniqueFilename);
-        Files.write(filePath, file.getBytes());
+            User updatedUser = userService.updateProfileImage(id, imageUrl);
 
-        String imageUrl = "/uploads/" + uniqueFilename;
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Ảnh đại diện đã được cập nhật thành công");
+            response.put("imageUrl", imageUrl);
+            response.put("user", updatedUser);
 
-        com.tim.appTim.entity.UserImage userImage = new com.tim.appTim.entity.UserImage();
-        userImage.setUserId(id);
-        userImage.setImageUrl(imageUrl);
-        userImage.setCreatedAt(java.time.LocalDateTime.now());
-        userImageService.save(userImage);
-
-        User updatedUser = userService.updateProfileImage(id, imageUrl);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Ảnh đại diện đã được cập nhật thành công");
-        response.put("imageUrl", imageUrl);
-        response.put("user", updatedUser);
-
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        }catch (Exception e) {
+            throw new InternalServerErrorException("Không thể lưu ảnh: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}/profile-image")
@@ -158,39 +154,31 @@ public class UserController {
         if (file.isEmpty()) {
             throw new BadRequestException("File không được để trống");
         }
+        try {
+            User user = userService.findById(id);
+            if (user == null) {
+                throw new ResourceNotFoundException("User không tồn tại");
+            }
 
-        User user = userService.findById(id);
-        if (user == null) {
-            throw new ResourceNotFoundException("User không tồn tại");
+            String imageUrl = fileUploadService.uploadFile(file);
+
+            com.tim.appTim.entity.UserImage userImage = new com.tim.appTim.entity.UserImage();
+            userImage.setUserId(id);
+            userImage.setImageUrl(imageUrl);
+            userImage.setCreatedAt(java.time.LocalDateTime.now());
+            userImageService.save(userImage);
+
+            User updatedUser = userService.updateCoverImage(id, imageUrl);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Ảnh bìa đã được cập nhật thành công");
+            response.put("imageUrl", imageUrl);
+            response.put("user", updatedUser);
+
+            return ResponseEntity.ok(response);
+        }catch (Exception e) {
+            throw new InternalServerErrorException("Không thể lưu ảnh: " + e.getMessage());
         }
-
-        File uploadDir = new File(uploadFolder);
-        if (!uploadDir.exists()) uploadDir.mkdirs();
-
-        String originalFilename = file.getOriginalFilename();
-        String fileExtension = (originalFilename != null && originalFilename.contains(".")) ?
-                originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
-        String uniqueFilename = UUID.randomUUID() + fileExtension;
-
-        Path filePath = Paths.get(uploadFolder + File.separator + uniqueFilename);
-        Files.write(filePath, file.getBytes());
-
-        String imageUrl = "/uploads/" + uniqueFilename;
-
-        com.tim.appTim.entity.UserImage userImage = new com.tim.appTim.entity.UserImage();
-        userImage.setUserId(id);
-        userImage.setImageUrl(imageUrl);
-        userImage.setCreatedAt(java.time.LocalDateTime.now());
-        userImageService.save(userImage);
-
-        User updatedUser = userService.updateCoverImage(id, imageUrl);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Ảnh bìa đã được cập nhật thành công");
-        response.put("imageUrl", imageUrl);
-        response.put("user", updatedUser);
-
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/cover-image")
