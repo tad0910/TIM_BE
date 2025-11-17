@@ -61,12 +61,16 @@ INSERT INTO permissions (id, name) VALUES
 (28, 'grade:read_all'),
 (29, 'grade:update'),
 (30, 'grade:create'),
-(31, 'grade:read_detail');
+(31, 'grade:read_detail'),
+(32, 'attendance:open'),
+(33, 'attendance:mark'),
+(34, 'attendance:read_all');
 
 INSERT INTO users (id, username, password, email, deleted) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com', false),
 (2, 'another_user', '{noop}password', 'another@example.com', false),
 (3, 'admin_user', '{noop}password', 'admin@example.com', false),
+(4, 'stranger_user', '{noop}password', 'stranger@example.com', false),
 (5, 'giaovien1', '{noop}password', 'gv1@example.com', false),
 (6, 'giaovien2', '{noop}password', 'gv2@example.com', false),
 (7, 'giaovien3', '{noop}password', 'gv3@example.com', false);
@@ -75,6 +79,7 @@ INSERT INTO user_roles (user_id, role_id) VALUES
 (1, 1), 
 (2, 1), 
 (3, 2),
+(4, 1),
 (5, 1), 
 (6, 1), 
 (7, 1);
@@ -146,6 +151,7 @@ INSERT INTO program_modules (program_id, module_id, position) VALUES
 INSERT INTO class_module_schedules (id, class_id, module_id, class_module_id, start_date, end_date, instructor_id, status) VALUES
 (1000, 10, 200, 500, '2025-11-01 00:00:00', '2025-11-08 00:00:00', 5, 'planned');
 
+
 INSERT INTO class_module_teacher (class_module_id, user_id) VALUES
 (500, 5);
 
@@ -173,3 +179,20 @@ INSERT INTO notifications (id, receiver_id, sender_id, notification_type, title,
 INSERT INTO grades (id, class_module_id, student_id, component_name, score, max_score, weight_percent, entered_by_user_id, created_at, updated_at) VALUES
 (1, 500, 1, 'Bài tập 1', 8.0, 10.0, 20.0, 5, NOW(), NOW()),
 (2, 500, 2, 'Bài tập 1', 7.0, 10.0, 20.0, 5, NOW(), NOW());
+
+
+DELETE FROM attendance_records;
+DELETE FROM attendance_sessions;
+
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(2, 32),
+(2, 33),
+(2, 34);
+
+
+INSERT INTO class_module_schedules (id, class_id, module_id, class_module_id, start_date, end_date, instructor_id, status) VALUES
+(1001, 10, 200, 500, '2025-11-02 00:00:00', '2025-11-09 00:00:00', 5, 'planned');
+
+INSERT INTO attendance_sessions (id, schedule_id, opened_by, is_late, opened_at) VALUES
+(1, 1001, 5, false, '2025-11-02 00:05:00');
+
