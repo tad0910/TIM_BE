@@ -3,6 +3,7 @@ package com.tim.appTim.repository;
 import com.tim.appTim.entity.AttendanceSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -46,4 +47,6 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
         """, nativeQuery = true)
     List<Object[]> getAttendanceHistoryByClassId(Integer classId);
     Optional<AttendanceSession> findByScheduleId(Long scheduleId);
+    @Query(value = "SELECT COUNT(*) > 0 FROM class_module_schedules WHERE id = :scheduleId AND instructor_id = :teacherId", nativeQuery = true)
+    boolean isAssignedInstructor(@Param("scheduleId") Long scheduleId, @Param("teacherId") Integer teacherId);
 }

@@ -24,25 +24,31 @@ public class AttendanceController {
 
     @Autowired
     private AttendanceService attendanceService;
-    
+
     @PostMapping("/schedules/{scheduleId}/open")
-    @PreAuthorize("hasAuthority('attendance:open') or @attendanceService.isScheduleTeacher(authentication, #scheduleId)")   
+    @PreAuthorize("hasAuthority('attendance:open') or " +
+            "(authentication.authenticated and @attendanceService.isScheduleTeacher(authentication, #scheduleId))")  
     public ResponseEntity<AttendanceSession> openAttendanceSession(
             @PathVariable Long scheduleId,
-            @RequestBody @Valid Map<String, Integer> request, Authentication authentication) {
+            @RequestBody @Valid Map<String, Integer> request, 
+            Authentication authentication) { 
 
         Integer teacherId = request.get("teacherId");
-        AttendanceSession session = attendanceService.openAttendanceSession(scheduleId, teacherId);
+
+        AttendanceSession session = attendanceService.openAttendanceSession(scheduleId, teacherId, authentication);
+        
         return ResponseEntity.ok(session);
     }
 
     @PostMapping("/schedules/{scheduleId}/mark")
-    @PreAuthorize("hasAuthority('attendance:open') or @attendanceService.isScheduleTeacher(authentication, #scheduleId)")  
+    @PreAuthorize("hasAuthority('attendance:mark') or " +
+              "(authentication.authenticated and @attendanceService.isScheduleTeacher(authentication, #scheduleId))") 
     public ResponseEntity<List<AttendanceRecord>> markAttendance(
             @PathVariable Long scheduleId,
-            @RequestBody @Valid MarkAttendanceRequest request) {
+            @RequestBody @Valid MarkAttendanceRequest request,
+            Authentication authentication) { 
 
-        List<AttendanceRecord> records = attendanceService.markAttendanceBatch(scheduleId, request);
+        List<AttendanceRecord> records = attendanceService.markAttendanceBatch(scheduleId, request, authentication);
         return ResponseEntity.ok(records);
     }
 

@@ -25,6 +25,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.security.core.Authentication; 
+import org.springframework.security.core.GrantedAuthority;
 
 
 @Service
@@ -96,7 +98,7 @@ public class AttendanceService {
     }
 
     @Transactional
-    public AttendanceSession openAttendanceSession(Long scheduleId, Integer teacherId) {
+    public AttendanceSession openAttendanceSession(Long scheduleId, Integer teacherId, Authentication authentication) {
         if (teacherId == null) {
             throw new BadRequestException("teacherId là bắt buộc");
         }
@@ -106,9 +108,17 @@ public class AttendanceService {
             throw new ConflictException("Buổi điểm danh đã được mở trước đó.");
         }
 
-        if (!isTeacherAuthorized(scheduleId, teacherId)) {
+        boolean isAdminOverride = false; 
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            isAdminOverride = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(auth -> auth.equals("attendance:open"));
+        }
+
+        if (!isAdminOverride && !isTeacherAuthorized(scheduleId, teacherId)) {
             throw new ForbiddenException("Bạn không có quyền mở điểm danh cho buổi học này.");
-        } 
+        }
 
 
         LocalDateTime startDate = getScheduleStartDate(scheduleId);
@@ -124,7 +134,7 @@ public class AttendanceService {
     }
 
     @Transactional
-    public List<AttendanceRecord> markAttendanceBatch(Long scheduleId, MarkAttendanceRequest request) {
+    public List<AttendanceRecord> markAttendanceBatch(Long scheduleId, MarkAttendanceRequest request, Authentication authentication) {
         Integer teacherId = request.getTeacherId();
         if (teacherId == null) {
             throw new BadRequestException("teacherId là bắt buộc");
@@ -133,7 +143,15 @@ public class AttendanceService {
         AttendanceSession session = sessionRepository.findByScheduleId(scheduleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Chưa mở buổi điểm danh."));
 
-        if (!isTeacherAuthorized(scheduleId, teacherId)) {
+        boolean isAdminOverride = false;
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            isAdminOverride = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(auth -> auth.equals("attendance:mark"));
+        }
+
+        if (!isAdminOverride && !isTeacherAuthorized(scheduleId, teacherId)) {
             throw new ForbiddenException("Không có quyền điểm danh.");
         }
 
@@ -173,11 +191,29 @@ public class AttendanceService {
     }
 
     private boolean isTeacherAuthorized(Long scheduleId, Integer teacherId) {
-        Long count = recordRepository.countByScheduleIdAndMarkedBy(scheduleId, teacherId);
-        return count > 0 ||
-               sessionRepository.findByScheduleId(scheduleId)
-                   .map(s -> s.getOpenedBy().equals(teacherId))
-                   .orElse(false);
+    Long markedCount = recordRepository.countByScheduleIdAndMarkedBy(scheduleId, teacherId);
+    if (markedCount != null && markedCount > 0) {
+        return true;
+    }
+
+        boolean openedByTeacher = sessionRepository.findByScheduleId(scheduleId)
+            .map(session -> teacherId.equals(session.getOpenedBy()))
+            .orElse(Boolean.FALSE);
+
+        if (openedByTeacher) {
+            return true;
+        }
+
+        Object result = entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM class_module_schedules WHERE id = ? AND instructor_id = ?"
+            )
+            .setParameter(1, scheduleId)
+            .setParameter(2, teacherId)
+            .getSingleResult();
+
+        Long assignedCount = (result instanceof Number) ? ((Number) result).longValue() : 0L;
+
+        return assignedCount > 0;
     }
 
     public boolean isScheduleTeacher(Authentication authentication, Long scheduleId) {
@@ -186,11 +222,17 @@ public class AttendanceService {
         }
 
         User currentUser = userService.findByUsernameOrEmail(authentication.getName());
-        if (currentUser == null) {
+        if (currentUser == null || currentUser.getId() == null) {
             return false;
         }
 
-        Integer teacherId = currentUser.getId().intValue();  
+        Integer teacherId;
+        try {
+            teacherId = currentUser.getId().intValue();
+        } catch (Exception e) {
+            return false;
+        }
+
         return isTeacherAuthorized(scheduleId, teacherId);
     }
 
