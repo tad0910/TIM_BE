@@ -54,7 +54,7 @@ public class ClassModuleScheduleTeacherService {
         ClassModuleScheduleTeacher teacher = new ClassModuleScheduleTeacher();
         teacher.setClassModuleScheduleId(scheduleId);
         teacher.setUserId(dto.getUserId());
-        teacher.setRole(dto.getRole() != null ? dto.getRole() : ClassModuleScheduleTeacher.ScheduleTeacherRole.LECTURER);
+        teacher.setRole(dto.getRole() != null ? dto.getRole() : ClassModuleScheduleTeacher.ScheduleTeacherRole.TEACHER);
 
         ClassModuleScheduleTeacher saved = scheduleTeacherRepository.save(teacher);
         return convertToDTO(saved);

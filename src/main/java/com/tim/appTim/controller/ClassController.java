@@ -1,5 +1,6 @@
 package com.tim.appTim.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -9,11 +10,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.tim.appTim.dto.AddMemberDTO;
+import com.tim.appTim.dto.AddMembersBatchRequest;
 import com.tim.appTim.dto.ClassDTO;
 import com.tim.appTim.dto.UpdateMemberRequest;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.service.ClassService;
 import com.tim.appTim.service.UserService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -49,7 +52,7 @@ public class ClassController {
             @RequestBody ClassDTO classDTO,
             Authentication authentication
     ) {
-        ClassDTO createdClass = classService.createClass(classDTO, authentication);
+        ClassDTO createdClass = classService.createClass(classDTO, authentication, null);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdClass);
     }
 
@@ -92,6 +95,22 @@ public class ClassController {
         return ResponseEntity.ok(Map.of(
                 "message", "Thêm thành viên vào lớp học thành công",
                 "member", classMember
+        ));
+    }
+
+    @PostMapping("/{classId}/members/batch")
+    @PreAuthorize("hasAuthority('class:update_all') or @classService.isClassTeacher(authentication, #classId)")
+    public ResponseEntity<Map<String, Object>> addMembersBatch(
+            @PathVariable Long classId,
+            @RequestBody AddMembersBatchRequest request,
+            Authentication authentication
+    ) {
+        List<ClassMember> added = classService.addMembersBatch(classId, request.getMembers());
+
+        return ResponseEntity.ok(Map.of(
+            "message", "Đã thêm " + added.size() + " thành viên thành công",
+            "addedCount", added.size(),
+            "addedMembers", added
         ));
     }
 
