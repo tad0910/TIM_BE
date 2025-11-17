@@ -1,15 +1,32 @@
-# Bước 1: Dùng image Java 21 làm nền (vì bạn dùng Java 21)
-FROM openjdk:21-jdk-slim
+# =========================
+# BUILD STAGE
+# =========================
+FROM eclipse-temurin:21-jdk-alpine AS build
+WORKDIR /app
 
-# Đặt tên cho file .jar sẽ được build
-ARG JAR_FILE=target/*.jar
+# Copy toàn bộ source code
+COPY . .
 
-# Copy file .jar từ thư mục 'target' vào bên trong image
-# và đổi tên thành 'app.jar' cho thống nhất
-COPY ${JAR_FILE} app.jar
+# Cấp quyền executable cho Maven Wrapper
+RUN chmod +x mvnw
 
-# Mở cổng 8080 (cổng mặc định của Spring Boot)
+# Build project, bỏ qua test để nhanh hơn
+RUN ./mvnw clean package -DskipTests
+
+# =========================
+# RUN STAGE
+# =========================
+FROM eclipse-temurin:21-jdk-alpine
+WORKDIR /app
+
+# Copy file jar từ build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Render sẽ cung cấp biến môi trường PORT
+ENV PORT=8080
+
+# Expose port (local hoặc mặc định)
 EXPOSE 8080
 
-# Lệnh để chạy ứng dụng khi container khởi động
-ENTRYPOINT ["java","-jar","/app.jar"]
+# Chạy ứng dụng với port động Render
+ENTRYPOINT ["sh", "-c", "java -Xmx256m -jar app.jar --server.port=${PORT}"]
