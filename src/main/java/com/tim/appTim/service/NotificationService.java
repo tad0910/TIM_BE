@@ -276,18 +276,19 @@ public class NotificationService {
                 cms.instructor_id,
                 cms.start_date,
                 cms.end_date,
-                CONCAT(cm.module_name, ' - Buổi ', cms.session_number)
+                CONCAT(m.name, ' - Buổi ', ms.session_number) -- <--- ĐÃ SỬA
             FROM class_module_schedules cms
-            JOIN class_module cm ON cms.class_module_id = cm.id
+            JOIN modules m ON cms.module_id = m.id             -- <--- ĐÃ SỬA
+            JOIN module_sessions ms ON cms.module_session_id = ms.id -- <--- ĐÃ SỬA
             WHERE cms.start_date <= ? 
               AND cms.end_date >= ?
               AND cms.instructor_id IS NOT NULL
             """;
 
         return entityManager.createNativeQuery(sql)
-            .setParameter(1, now.plusMinutes(15))
-            .setParameter(2, now.minusMinutes(10))
-            .getResultList();
+                .setParameter(1, now.plusMinutes(15))
+                .setParameter(2, now.minusMinutes(10))
+                .getResultList();
     }
 
     private String generateActionUrl(Notification notification) {
