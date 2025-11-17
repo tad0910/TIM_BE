@@ -32,7 +32,7 @@ public class ClassModuleTeacher {
     private User user;
 
     public enum TeacherRole {
-        MAIN, ASSISTANT, MENTOR
+        TEACHER
     }
 
     @PrePersist

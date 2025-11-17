@@ -182,7 +182,7 @@ public class ClassModuleService {
         ClassModuleTeacher teacher = new ClassModuleTeacher();
         teacher.setClassModuleId(classModuleId);
         teacher.setUserId(dto.getUserId());
-        teacher.setRole(dto.getRole() != null ? dto.getRole() : ClassModuleTeacher.TeacherRole.MAIN);
+        teacher.setRole(dto.getRole() != null ? dto.getRole() : ClassModuleTeacher.TeacherRole.TEACHER);
 
         ClassModuleTeacher saved = classModuleTeacherRepository.save(teacher);
         return convertTeacherToDTO(saved);

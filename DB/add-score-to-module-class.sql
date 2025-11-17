@@ -45,20 +45,20 @@ MODIFY COLUMN notification_type ENUM(
 ) NOT NULL;
 
 INSERT INTO permissions (id, name) VALUES
-    (34, 'grade:read_all'),
-    (35, 'grade:read_detail'),
-    (36, 'grade:update'),
-    (37, 'grade:create')
+    (32, 'grade:read_all'),
+    (33, 'grade:read_detail'),
+    (34, 'grade:update'),
+    (35, 'grade:create')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name);
 
 INSERT INTO role_permissions (role_id, permission_id) VALUES
-     (1, 31),
-     (3, 31),
-     (2, 32),
+     (1, 32),
      (3, 32),
-     (1, 33),
      (2, 33),
+     (3, 33),
      (1, 34),
-     (2, 34)
+     (2, 34),
+     (1, 35),
+     (2, 35)
 ON DUPLICATE KEY UPDATE permission_id = VALUES(permission_id);
