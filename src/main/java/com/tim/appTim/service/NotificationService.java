@@ -278,7 +278,7 @@ public class NotificationService {
                 cms.end_date,
                 CONCAT(cm.module_name, ' - Buổi ', cms.session_number)
             FROM class_module_schedules cms
-            JOIN class_modules cm ON cms.class_module_id = cm.id
+            JOIN class_module cm ON cms.class_module_id = cm.id
             WHERE cms.start_date <= ? 
               AND cms.end_date >= ?
               AND cm.teacher_id IS NOT NULL
