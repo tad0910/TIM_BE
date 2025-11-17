@@ -6,8 +6,10 @@ import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.Post;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.service.FileUploadService;
 import com.tim.appTim.service.KeycloakSyncService;
 import com.tim.appTim.service.PostService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -56,8 +58,17 @@ public class PostSecurityIntegrationTest {
     @MockBean
     private KeycloakSyncService keycloakSyncService;
 
+    @MockBean
+    private FileUploadService fileUploadService;
+
     @SpyBean
     private PostService postService;
+
+    @BeforeEach
+    void setUp() {
+        // Setup default mock for FileUploadService to return a URL for any file upload
+        doReturn("url/uploaded-file.jpg").when(fileUploadService).uploadFile(any());
+    }
 
     private PostDTO createMockPostDTO(Long id, Long userId, String content, String privacy, List<FileDTO> files) {
         return new PostDTO(
@@ -91,6 +102,7 @@ public class PostSecurityIntegrationTest {
         PostDTO mockPost = createMockPostDTO(2L, 1L, content, "friends", List.of(mockFile));
 
         doReturn(mockPost).when(postService).createPostWithFiles(eq(1L), eq(content), eq(Post.Privacy.friends), any(List.class));
+        doReturn("url/test-image.jpg").when(fileUploadService).uploadFile(any());
 
         MockMultipartFile imageFile = new MockMultipartFile(
                 "files",
@@ -119,6 +131,7 @@ public class PostSecurityIntegrationTest {
         PostDTO mockPost = createMockPostDTO(3L, 1L, content, "open", List.of(mockFile1, mockFile2));
 
         doReturn(mockPost).when(postService).createPostWithFiles(eq(1L), eq(content), eq(Post.Privacy.open), any(List.class));
+        doReturn("url/uploaded-file.jpg").when(fileUploadService).uploadFile(any());
 
         MockMultipartFile imageFile = new MockMultipartFile("files", "image.jpg", MediaType.IMAGE_JPEG_VALUE, "img".getBytes());
         MockMultipartFile videoFile = new MockMultipartFile("files", "video.mp4", MediaType.APPLICATION_OCTET_STREAM_VALUE, "vid".getBytes());
