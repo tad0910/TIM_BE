@@ -212,7 +212,7 @@ public class NotificationService {
         );
     }
 
-    @Scheduled(fixedRate = 300000) 
+   // @Scheduled(fixedRate = 300000)
     @Transactional
     public void remindTeachersToOpenAttendance() {
         LocalDateTime now = LocalDateTime.now();

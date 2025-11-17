@@ -62,7 +62,7 @@ public class KeycloakSyncService {
     }
 
     @Transactional
-    @Scheduled(fixedDelay = 300_000)
+   // @Scheduled(fixedDelay = 300_000)
     public List<User> syncUsers() {
         List<User> syncedUsers = new ArrayList<>();
         Keycloak keycloak = null;
