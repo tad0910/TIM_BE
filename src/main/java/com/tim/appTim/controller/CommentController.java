@@ -9,6 +9,7 @@ import com.tim.appTim.entity.ReplyComment;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.InternalServerErrorException;
+import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.FileRepository;
 import com.tim.appTim.service.CommentService;
 import com.tim.appTim.service.FileUploadService;
@@ -120,50 +121,52 @@ public class CommentController {
             @RequestParam(required = false) String content,
             @RequestParam(required = false) String emotion,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles) throws IOException {
-    try {
-        User currentUser = getUserFromAuthentication(authentication);
-        List<File> files = new ArrayList<>();
+        try {
+            User currentUser = getUserFromAuthentication(authentication);
+            List<File> files = new ArrayList<>();
 
-        if (multipartFiles != null && !multipartFiles.isEmpty()) {
-            for (MultipartFile mf : multipartFiles) {
-                if (mf.isEmpty()) continue;
+            if (multipartFiles != null && !multipartFiles.isEmpty()) {
+                for (MultipartFile mf : multipartFiles) {
+                    if (mf.isEmpty()) continue;
 
-                String fileUrl = fileUploadService.uploadFile(mf);
+                    String fileUrl = fileUploadService.uploadFile(mf);
 
-                String originalName = mf.getOriginalFilename();
-                long fileSize = mf.getSize();
+                    String originalName = mf.getOriginalFilename();
+                    long fileSize = mf.getSize();
 
-                String lowerName = originalName != null ? originalName.toLowerCase() : "";
-                File.FileType fileType;
-                if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
-                    fileType = File.FileType.VIDEO;
-                } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
-                    fileType = File.FileType.DOCUMENT;
-                } else {
-                    fileType = File.FileType.IMAGE;
+                    String lowerName = originalName != null ? originalName.toLowerCase() : "";
+                    File.FileType fileType;
+                    if (lowerName.matches(".*\\.(mp4|mov|avi)$")) {
+                        fileType = File.FileType.VIDEO;
+                    } else if (lowerName.matches(".*\\.(pdf|docx?|xlsx?|pptx?|txt|rtf|zip|rar|7z)$")) {
+                        fileType = File.FileType.DOCUMENT;
+                    } else {
+                        fileType = File.FileType.IMAGE;
+                    }
+
+                    File f = new File();
+                    f.setFileUrl(fileUrl);
+                    f.setFileName(originalName);
+                    f.setFileSize(mf.getSize());
+                    f.setFileType(fileType);
+                    files.add(f);
                 }
-
-                File f = new File();
-                f.setFileUrl(fileUrl    );
-                f.setFileName(originalName);
-                f.setFileSize(mf.getSize());
-                f.setFileType(fileType);
-                files.add(f);
             }
+            Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
+            CommentDTO createdComment = commentService.createComment(
+                    postId,
+                    currentUser.getId(),
+                    content,
+                    emotionEnum,
+                    files
+            );
+            return ResponseEntity.ok(createdComment);
+        } catch (BadRequestException | ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            // Bắt lỗi chung, bao gồm cả lỗi upload
+            throw new InternalServerErrorException("Lỗi tạo bình luận: " + e.getMessage());
         }
-        Comment.Emotion emotionEnum = parseEmotion(emotion, Comment.Emotion.class);
-        CommentDTO createdComment = commentService.createComment(
-                postId,
-                currentUser.getId(),
-                content,
-                emotionEnum,
-                files
-        );
-        return ResponseEntity.ok(createdComment);
-    }catch (Exception e) {
-        // Bắt lỗi chung, bao gồm cả lỗi upload
-        throw new InternalServerErrorException("Lỗi tạo bình luận: " + e.getMessage());
-    }
     }
 
     @GetMapping("/posts/{postId}")
@@ -250,6 +253,8 @@ public class CommentController {
 
             return ResponseEntity.ok(createdReply);
 
+        } catch (BadRequestException | ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new InternalServerErrorException("Lỗi tạo trả lời bình luận: " + e.getMessage());
         }

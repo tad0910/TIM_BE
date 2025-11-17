@@ -114,7 +114,9 @@ public class UserController {
             response.put("user", updatedUser);
 
             return ResponseEntity.ok(response);
-        }catch (Exception e) {
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
             throw new InternalServerErrorException("Không thể lưu ảnh: " + e.getMessage());
         }
     }
@@ -176,7 +178,9 @@ public class UserController {
             response.put("user", updatedUser);
 
             return ResponseEntity.ok(response);
-        }catch (Exception e) {
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
             throw new InternalServerErrorException("Không thể lưu ảnh: " + e.getMessage());
         }
     }

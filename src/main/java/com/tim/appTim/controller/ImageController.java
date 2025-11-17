@@ -72,6 +72,8 @@ public class ImageController {
             logger.info("Tải ảnh thành công cho userId {}: {}", userId, imageUrl);
             return ResponseEntity.ok("Tải ảnh thành công: " + imageUrl);
 
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Lỗi khi tải ảnh cho userId {}: {}", userId, e.getMessage());
             throw new InternalServerErrorException("Không thể lưu ảnh: " + e.getMessage());
