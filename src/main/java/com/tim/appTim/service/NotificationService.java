@@ -273,7 +273,7 @@ public class NotificationService {
         String sql = """
             SELECT 
                 cms.id,
-                cm.instructor_id,
+                cms.instructor_id,
                 cms.start_date,
                 cms.end_date,
                 CONCAT(cm.module_name, ' - Buổi ', cms.session_number)
@@ -281,7 +281,7 @@ public class NotificationService {
             JOIN class_module cm ON cms.class_module_id = cm.id
             WHERE cms.start_date <= ? 
               AND cms.end_date >= ?
-              AND cm.instructor_id IS NOT NULL
+              AND cms.instructor_id IS NOT NULL
             """;
 
         return entityManager.createNativeQuery(sql)
