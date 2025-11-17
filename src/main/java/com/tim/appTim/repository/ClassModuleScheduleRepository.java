@@ -40,13 +40,13 @@ public interface ClassModuleScheduleRepository extends JpaRepository<ClassModule
         return findConflictingSchedules(instructorId, newStartDate, newEndDate, 0L);  
     }
 
-    boolean existsByClassIdAndModuleId(Long classId, Long moduleId);
+    boolean existsByClassIdAndModuleId(Long classId, Integer moduleId);
 
     List<ClassModuleSchedule> findByClassId(Long classId);
 
     List<ClassModuleSchedule> findByInstructorId(Long instructorId);
 
-    Optional<ClassModuleSchedule> findByClassIdAndModuleId(Long classId, Long moduleId);
+    Optional<ClassModuleSchedule> findByClassIdAndModuleId(Long classId, Integer moduleId);
 
     List<ClassModuleSchedule> findByInstructorIdAndStartDateBetween(
             Long instructorId,

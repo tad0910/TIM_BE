@@ -563,7 +563,7 @@ public class UserService implements UserDetailsService {
                     classEntity.getSchedules().forEach(schedule -> {
                         if (schedule.getModuleId() != null) {
                             List<ProgramModule> programModules = programModuleRepository
-                                    .findByModuleId(schedule.getModuleId().intValue());
+                                    .findByModuleId(schedule.getModuleId());
                             programModules.forEach(pm -> {
                                 if (pm.getProgram() != null && pm.getProgram().getId() != null) {
                                     programIds.add(pm.getProgram().getId());

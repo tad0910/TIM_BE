@@ -42,7 +42,7 @@ public class ClassModuleScheduleIntegrationTest {
     private ClassModuleScheduleDTO createBaseDto(Long instructorId, LocalDateTime startDate) {
         ClassModuleScheduleDTO dto = new ClassModuleScheduleDTO();
         dto.setClassId(10L);
-        dto.setModuleId(202L);
+        dto.setModuleId(202);
         dto.setInstructorId(instructorId);
         dto.setStartDate(startDate);
         dto.setEndDate(startDate.plusDays(7));
@@ -92,7 +92,7 @@ public class ClassModuleScheduleIntegrationTest {
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void createSchedule_WhenModuleAlreadyScheduled_ShouldReturn400BadRequest() throws Exception {
         ClassModuleScheduleDTO duplicateDto = createBaseDto(6L, LocalDateTime.of(2025, 11, 1, 0, 0, 0));
-        duplicateDto.setModuleId(200L);
+        duplicateDto.setModuleId(200);
         duplicateDto.setClassId(10L);
 
         mockMvc.perform(post(BASE_URL)
