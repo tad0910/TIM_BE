@@ -7,7 +7,7 @@ public class ClassModuleScheduleDTO {
     private Long id;
     private Long classId;
     private String className;
-    private Long moduleId;
+    private Integer moduleId;
     private String moduleName;
     private Long classModuleId;
     private Long moduleSessionId;
@@ -21,7 +21,7 @@ public class ClassModuleScheduleDTO {
     public ClassModuleScheduleDTO() {
     }
 
-    public ClassModuleScheduleDTO(Long id, Long classId, String className, Long moduleId, String moduleName,
+    public ClassModuleScheduleDTO(Long id, Long classId, String className, Integer moduleId, String moduleName,
                                   Long classModuleId, Long moduleSessionId, Long instructorId, String instructorName, 
                                   LocalDateTime startDate, LocalDateTime endDate, ScheduleStatus status) {
         this.id = id;
@@ -50,7 +50,7 @@ public class ClassModuleScheduleDTO {
         return className;
     }
 
-    public Long getModuleId() {
+    public Integer getModuleId() {
         return moduleId;
     }
 
@@ -90,7 +90,7 @@ public class ClassModuleScheduleDTO {
         this.className = className;
     }
 
-    public void setModuleId(Long moduleId) {
+    public void setModuleId(Integer moduleId) {
         this.moduleId = moduleId;
     }
 

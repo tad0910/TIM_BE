@@ -53,9 +53,6 @@ import com.tim.appTim.repository.FileRepository;
 @Service("userService") 
 public class UserService implements UserDetailsService {
 
-    @Value("${upload.folder}")
-    private String uploadDir;
-
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
@@ -452,14 +449,6 @@ public class UserService implements UserDetailsService {
                     break;
                 }
             }
-
-            if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
-                String filename = oldImageUrl.substring("/uploads/".length());
-                java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
-                if (file.exists() && !file.delete()) {
-                    throw new InternalServerErrorException("Không thể xóa file ảnh cũ: " + filename);
-                }
-            }
         } catch (Exception e) {
             throw new InternalServerErrorException("Lỗi khi xóa ảnh đại diện cũ: " + e.getMessage());
         }
@@ -472,14 +461,6 @@ public class UserService implements UserDetailsService {
                 if (oldImageUrl.equals(image.getImageUrl())) {
                     userImageRepository.delete(image);
                     break;
-                }
-            }
-
-            if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
-                String filename = oldImageUrl.substring("/uploads/".length());
-                java.io.File file = new java.io.File(uploadDir + java.io.File.separator + filename);
-                if (file.exists() && !file.delete()) {
-                    throw new InternalServerErrorException("Không thể xóa file ảnh cũ: " + filename);
                 }
             }
         } catch (Exception e) {
@@ -582,7 +563,7 @@ public class UserService implements UserDetailsService {
                     classEntity.getSchedules().forEach(schedule -> {
                         if (schedule.getModuleId() != null) {
                             List<ProgramModule> programModules = programModuleRepository
-                                    .findByModuleId(schedule.getModuleId().intValue());
+                                    .findByModuleId(schedule.getModuleId());
                             programModules.forEach(pm -> {
                                 if (pm.getProgram() != null && pm.getProgram().getId() != null) {
                                     programIds.add(pm.getProgram().getId());

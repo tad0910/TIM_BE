@@ -59,6 +59,9 @@ public class UserIntegrationTest {
     @MockBean
     private ClassService classService;
 
+    @MockBean
+    private FileUploadService fileUploadService;
+
     @SpyBean
     private UserService userService;
 
@@ -76,6 +79,7 @@ public class UserIntegrationTest {
                 .build();
 
         testUser1 = userService.findById(1L);
+        doReturn("https://test.local/uploaded-file.jpg").when(fileUploadService).uploadFile(any());
     }
 
     @Test

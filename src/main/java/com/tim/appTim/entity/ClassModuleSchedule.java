@@ -14,7 +14,7 @@ public class ClassModuleSchedule {
     private Long classId;
 
     @Column(name = "module_id")
-    private Long moduleId;
+    private Integer moduleId;
 
     @Column(name = "class_module_id")
     private Long classModuleId;
@@ -78,11 +78,11 @@ public class ClassModuleSchedule {
         this.classId = classId;
     }
 
-    public Long getModuleId() {
+    public Integer getModuleId() {
         return moduleId;
     }
 
-    public void setModuleId(Long moduleId) {
+    public void setModuleId(Integer moduleId) {
         this.moduleId = moduleId;
     }
 

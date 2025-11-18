@@ -54,4 +54,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             Notification.NotificationType notificationType,
             Pageable pageable
     );
+
+        boolean existsByReceiverIdAndTargetTypeAndTargetIdAndTitle(
+        Long receiverId,
+        String targetType,
+        Long targetId,
+        String title
+        );
 }

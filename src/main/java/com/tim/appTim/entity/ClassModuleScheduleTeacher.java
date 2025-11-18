@@ -32,7 +32,7 @@ public class ClassModuleScheduleTeacher {
     private User user;
 
     public enum ScheduleTeacherRole {
-        LECTURER, SUPPORTER, OBSERVER
+        TEACHER
     }
 
     @PrePersist

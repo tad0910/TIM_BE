@@ -70,8 +70,8 @@ public class ClassModuleScheduleService {
         if (entity.getModule() != null) {
             dto.setModuleName(entity.getModule().getName());
         } else if (entity.getModuleId() != null) {
-            Optional<Module> moduleOpt = moduleRepository.findById(entity.getModuleId().intValue());
-            moduleOpt.ifPresent(module -> dto.setModuleName(module.getName()));
+            moduleRepository.findById(entity.getModuleId())
+                    .ifPresent(module -> dto.setModuleName(module.getName()));
         }
 
         if (entity.getInstructor() != null) {
@@ -97,8 +97,8 @@ public class ClassModuleScheduleService {
         );
 
         if (!conflictingSchedules.isEmpty()) {
-            Long conflictingModuleId = conflictingSchedules.get(0).getModuleId();
-            String moduleName = moduleRepository.findById(conflictingModuleId.intValue())
+            Integer conflictingModuleId = conflictingSchedules.get(0).getModuleId();
+            String moduleName = moduleRepository.findById(conflictingModuleId)
                     .map(Module::getName).orElse("Module khác");
 
             throw new InvalidRequestException("Giảng viên đã bị trùng lịch với " + moduleName +
@@ -119,7 +119,7 @@ public class ClassModuleScheduleService {
         if (!classRepository.existsById(dto.getClassId())) {
             throw new ResourceNotFoundException("Lớp học không tồn tại với ID: " + dto.getClassId());
         }
-        if (!moduleRepository.existsById(dto.getModuleId().intValue())) {
+        if (!moduleRepository.existsById(dto.getModuleId())) {
             throw new ResourceNotFoundException("Module không tồn tại với ID: " + dto.getModuleId());
         }
         if (dto.getInstructorId() != null && !userRepository.existsById(dto.getInstructorId())) {
@@ -160,7 +160,7 @@ public class ClassModuleScheduleService {
 
         if (dto.getInstructorId() != null) {
 
-            List<ModuleSession> moduleSessions = moduleSessionRepository.findByModuleIdOrderBySessionNumberAsc(dto.getModuleId().intValue());
+            List<ModuleSession> moduleSessions = moduleSessionRepository.findByModuleIdOrderBySessionNumberAsc(dto.getModuleId());
             
             if (moduleSessions.isEmpty()) {
                 throw new InvalidRequestException("Module này chưa có ModuleSession nào.");
