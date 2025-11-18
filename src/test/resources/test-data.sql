@@ -176,9 +176,21 @@ INSERT INTO notifications (id, receiver_id, sender_id, notification_type, title,
 (50, 1, 2, 'POST_COMMENT', 'Thông báo mới', 'User 2 đã bình luận bài viết của bạn', NOW(), false, null, 'POST', 10),
 (51, 1, 3, 'SYSTEM_ANNOUNCEMENT', 'Thông báo hệ thống', 'Chào mừng bạn đến với hệ thống', DATEADD('DAY', -1, NOW()), true, DATEADD('HOUR', -12, NOW()), null, null);
 
-INSERT INTO grades (id, class_module_id, student_id, component_name, score, max_score, weight_percent, entered_by_user_id, created_at, updated_at) VALUES
-(1, 500, 1, 'Bài tập 1', 8.0, 10.0, 20.0, 5, NOW(), NOW()),
-(2, 500, 2, 'Bài tập 1', 7.0, 10.0, 20.0, 5, NOW(), NOW());
+INSERT INTO grades (
+    id,
+    class_module_id,
+    student_id,
+    theory_score,
+    practice_score,
+    entry_date,
+    entered_by_user_id,
+    status,
+    created_at,
+    updated_at
+) VALUES
+(1, 500, 1, 8.0, NULL, CURDATE(), 5, 'ACTIVE', NOW(), NOW()),
+
+(2, 500, 2, 7.0, NULL, CURDATE(), 5, 'ACTIVE', NOW(), NOW());
 
 
 DELETE FROM attendance_records;

@@ -12,7 +12,6 @@ import java.time.LocalDate;
 @Table(name = "grades", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"student_id", "class_module_id"})
 })
-// (Tùy chọn: Thêm Soft Delete giống như User entity của bạn)
 @SQLDelete(sql = "UPDATE grades SET status = 'DELETED' WHERE id = ?")
 @Where(clause = "status = 'ACTIVE'")
 public class Grade {
@@ -23,28 +22,25 @@ public class Grade {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_module_id", nullable = false)
-    private ClassModule classModule; // Môn học của lớp nào
+    private ClassModule classModule;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
-    private User student; // Sinh viên nào
+    private User student;
 
-    // --- CÁC CỘT ĐIỂM MỚI (THEO YÊU CẦU) ---
     @Column(name = "theory_score")
-    private BigDecimal theoryScore; // Điểm lý thuyết
+    private BigDecimal theoryScore;
 
     @Column(name = "practice_score")
-    private BigDecimal practiceScore; // Điểm thực hành
+    private BigDecimal practiceScore;
 
-    // --- CỘT NGÀY MỚI (THEO YÊU CẦU) ---
     @Column(name = "entry_date")
-    private LocalDate entryDate; // Ngày nhập điểm (từ UI "Chọn ngày")
+    private LocalDate entryDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entered_by_user_id")
-    private User enteredBy; // Giáo viên nào đã nhập
+    private User enteredBy;
 
-    // (Tùy chọn: Cột cho Soft Delete)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status = Status.ACTIVE;
@@ -71,7 +67,6 @@ public class Grade {
         updatedAt = Instant.now();
     }
 
-    // (Bắt buộc)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public ClassModule getClassModule() { return classModule; }

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate; // <-- THÊM IMPORT
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,7 +25,6 @@ public class GradeServiceImpl implements GradeService {
 
     private static final Logger logger = LoggerFactory.getLogger(GradeServiceImpl.class);
 
-    // (Các repo và constructor giữ nguyên)
     private final GradeRepository gradeRepository;
     private final ClassMemberRepository classMemberRepository;
     private final ClassModuleRepository classModuleRepository;
@@ -50,15 +49,12 @@ public class GradeServiceImpl implements GradeService {
         this.notificationService = notificationService;
     }
 
-    /**
-     * HÀM ĐÃ VIẾT LẠI LOGIC: Sửa lỗi TransientPropertyValueException
-     */
     @Override
     @Transactional
     public void batchCreateOrUpdateGrades(BatchGradeUpdateDTO dto, User teacher) {
 
         Long classModuleId = dto.getClassModuleId();
-        LocalDate entryDate = dto.getEntryDate(); // Lấy "Ngày"
+        LocalDate entryDate = dto.getEntryDate();
 
         validateTeacherPermission(classModuleId, teacher.getId());
 
@@ -76,9 +72,6 @@ public class GradeServiceImpl implements GradeService {
             BigDecimal newTheoryScore = scoresMap.get("Điểm lý thuyết");
             BigDecimal newPracticeScore = scoresMap.get("Điểm thực hành");
 
-            // --- Logic Upsert MỚI ---
-
-            // 1. Tìm hoặc Tạo Grade entity
             Optional<Grade> existingGradeOpt = gradeRepository
                     .findByStudentIdAndClassModuleIdAndStatus(studentId, classModuleId, Grade.Status.ACTIVE);
 
@@ -86,33 +79,24 @@ public class GradeServiceImpl implements GradeService {
             boolean isNewGrade = existingGradeOpt.isEmpty();
 
             if (isNewGrade) {
-                // TẠO MỚI
                 grade = new Grade();
                 grade.setStudent(student);
                 grade.setClassModule(classModule);
             } else {
-                // CẬP NHẬT
                 grade = existingGradeOpt.get();
             }
 
-            // 2. Lấy giá trị cũ (ĐỂ SO SÁNH)
             BigDecimal oldTheoryScore = grade.getTheoryScore();
             BigDecimal oldPracticeScore = grade.getPracticeScore();
             LocalDate oldEntryDate = grade.getEntryDate();
 
-            // 3. Cập nhật giá trị mới vào entity (trong bộ nhớ)
             grade.setEnteredBy(teacher);
             grade.setEntryDate(entryDate);
             grade.setTheoryScore(newTheoryScore);
             grade.setPracticeScore(newPracticeScore);
 
-            // 4. LƯU GRADE (ĐÂY LÀ BƯỚC SỬA LỖI QUAN TRỌNG)
-            // Sau dòng này, 'grade' sẽ có ID và không còn là "transient"
             Grade savedGrade = gradeRepository.save(grade);
 
-            // 5. Bây giờ mới lưu lịch sử và gửi thông báo
-
-            // Xử lý Lịch sử/Thông báo cho Điểm lý thuyết
             if (isNewGrade || (newTheoryScore != null && !newTheoryScore.equals(oldTheoryScore))) {
                 Notification.NotificationType type = (isNewGrade || oldTheoryScore == null) ?
                         Notification.NotificationType.GRADE_NEW : Notification.NotificationType.GRADE_UPDATED;
@@ -121,7 +105,6 @@ public class GradeServiceImpl implements GradeService {
                         teacher, student, moduleName, type);
             }
 
-            // Xử lý Lịch sử/Thông báo cho Điểm thực hành
             if (isNewGrade || (newPracticeScore != null && !newPracticeScore.equals(oldPracticeScore))) {
                 Notification.NotificationType type = (isNewGrade || oldPracticeScore == null) ?
                         Notification.NotificationType.GRADE_NEW : Notification.NotificationType.GRADE_UPDATED;
@@ -130,7 +113,6 @@ public class GradeServiceImpl implements GradeService {
                         teacher, student, moduleName, type);
             }
 
-            // (Tùy chọn) Xử lý Lịch sử cho Ngày
             if (entryDate != null && !entryDate.equals(oldEntryDate)) {
                 GradeHistory history = new GradeHistory();
                 history.setGrade(savedGrade);
@@ -141,30 +123,23 @@ public class GradeServiceImpl implements GradeService {
         }
     }
 
-    /**
-     * HÀM HELPER MỚI (Tách ra từ hàm cũ):
-     * Hàm này giờ nhận 'savedGrade' (đã có ID)
-     */
     private void saveHistoryAndNotify(Grade savedGrade, String componentName,
                                       BigDecimal oldScore, BigDecimal newScore,
                                       User teacher, User student, String moduleName,
                                       Notification.NotificationType type) {
 
-        // 1. Lưu Lịch sử (với bảng history MỚI)
         GradeHistory history = new GradeHistory();
-        history.setGrade(savedGrade); // <-- AN TOÀN (vì 'savedGrade' đã có ID)
+        history.setGrade(savedGrade);
         history.setComponentChanged(componentName);
         history.setOldScore(oldScore);
         history.setNewScore(newScore);
         history.setChangedBy(teacher);
         gradeHistoryRepository.save(history);
 
-        // 2. Gửi thông báo
         sendGradeNotification(teacher, student, moduleName, componentName, newScore,
                 savedGrade.getClassModule().getId(), savedGrade.getId(), type);
     }
 
-    // (Hàm sendGradeNotification cũ giữ nguyên)
     private void sendGradeNotification(User teacher, User student, String moduleName,
                                        String componentName, BigDecimal score, Long classModuleId,
                                        Long gradeId, Notification.NotificationType type) {
@@ -189,8 +164,6 @@ public class GradeServiceImpl implements GradeService {
         }
     }
 
-    // --- CÁC HÀM CŨ ĐÃ VIẾT LẠI (CẦN CẬP NHẬT STATUS) ---
-
     @Override
     public GradebookDTO getGradebook(Long classModuleId, Long teacherId, Pageable pageable) {
         validateTeacherPermission(classModuleId, teacherId);
@@ -206,7 +179,6 @@ public class GradeServiceImpl implements GradeService {
                 .map(member -> member.getUser().getId())
                 .collect(Collectors.toList());
 
-        // CẬP NHẬT: Thêm Grade.Status.ACTIVE
         List<Grade> gradesForThisPage = (studentIdsOnPage.isEmpty())
                 ? List.of()
                 : gradeRepository.findByClassModuleIdAndStudentIdInAndStatus(
@@ -247,7 +219,6 @@ public class GradeServiceImpl implements GradeService {
     public GradeDTO getMyGrades(Long classModuleId, Long studentId) {
         validateStudentMembership(classModuleId, studentId);
 
-        // CẬP NHẬT: Thêm Grade.Status.ACTIVE
         Grade grade = gradeRepository.findByClassModuleIdAndStudentIdAndStatus(
                         classModuleId, studentId, Grade.Status.ACTIVE)
                 .orElse(null);
@@ -262,7 +233,6 @@ public class GradeServiceImpl implements GradeService {
     @Override
     public List<GradeHistoryDTO> getGradeHistory(Long gradeId, User currentUser) {
 
-        // Hàm @Where("status = 'ACTIVE'") trong Grade.java sẽ tự động xử lý
         Grade grade = gradeRepository.findById(gradeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Grade record not found (or deleted): " + gradeId));
 
@@ -298,7 +268,6 @@ public class GradeServiceImpl implements GradeService {
                 .toList();
     }
 
-    // (Hàm deleteGrade và các hàm validate giữ nguyên)
     @Override
     @Transactional
     public void deleteGrade(Long gradeId, User currentUser) {
@@ -307,7 +276,7 @@ public class GradeServiceImpl implements GradeService {
 
         validateTeacherPermission(grade.getClassModule().getId(), currentUser.getId());
 
-        gradeRepository.delete(grade); // @SQLDelete sẽ tự động chạy
+        gradeRepository.delete(grade);
     }
 
     private void validateStudentMembership(Long classModuleId, Long studentId) {
@@ -321,7 +290,7 @@ public class GradeServiceImpl implements GradeService {
         ClassMember member = memberOpt.get();
         ClassMember.Role vaiTroEnum = member.getRole();
         String vaiTroThucTe = (vaiTroEnum == null) ? "null" : vaiTroEnum.name();
-        if (!"sinh_vien".equals(vaiTroThucTe)) { // (Sửa chuỗi này nếu vai trò SV của bạn tên khác)
+        if (!"sinh_vien".equals(vaiTroThucTe)) {
             throw new ForbiddenException("Access Denied: User is in this class, but not as a student");
         }
     }

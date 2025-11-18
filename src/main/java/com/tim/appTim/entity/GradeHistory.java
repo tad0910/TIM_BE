@@ -1,4 +1,4 @@
-package com.tim.appTim.entity; // Đảm bảo đúng package
+package com.tim.appTim.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -14,11 +14,10 @@ public class GradeHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "grade_id", nullable = false)
-    private Grade grade; // Liên kết tới 'grades' (bảng mới)
+    private Grade grade;
 
-    // --- CỘT MỚI (THEO YÊU CẦU) ---
     @Column(name = "component_changed", nullable = false)
-    private String componentChanged; // Tên cột đã thay đổi (ví dụ: "theory_score")
+    private String componentChanged;
 
     @Column(name = "old_score")
     private BigDecimal oldScore;
@@ -38,8 +37,6 @@ public class GradeHistory {
         changedAt = Instant.now();
     }
 
-    // --- Getters và Setters ---
-    // (Bắt buộc)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Grade getGrade() { return grade; }

@@ -10,19 +10,16 @@ public class GradeHistoryDTO {
     private BigDecimal oldScore;
     private BigDecimal newScore;
 
-    // SỬA: Thay "changeReason" bằng "componentChanged"
-    private String componentChanged; // (Ví dụ: "Điểm lý thuyết", "Điểm thực hành", "entry_date")
+    private String componentChanged;
 
     private Instant changedAt;
     private String changedByUserName;
 
-    // SỬA: Cập nhật Constructor
     public GradeHistoryDTO(GradeHistory history) {
         this.id = history.getId();
         this.oldScore = history.getOldScore();
         this.newScore = history.getNewScore();
 
-        // SỬA: Lấy từ hàm mới của Entity
         this.componentChanged = history.getComponentChanged();
 
         this.changedAt = history.getChangedAt();
@@ -33,8 +30,6 @@ public class GradeHistoryDTO {
             this.changedByUserName = "Không rõ";
         }
     }
-
-    // --- Getters & Setters (Đã cập nhật) ---
 
     public Long getId() {
         return id;
@@ -55,7 +50,6 @@ public class GradeHistoryDTO {
         this.newScore = newScore;
     }
 
-    // SỬA: Getter/Setter cho componentChanged
     public String getComponentChanged() {
         return componentChanged;
     }
