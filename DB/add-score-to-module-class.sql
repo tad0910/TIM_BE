@@ -1,39 +1,48 @@
-CREATE TABLE IF NOT EXISTS `grades` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `class_module_id` BIGINT NOT NULL,          -- FK to `class_module` (Knows which class & module this grade belongs to)
-  `student_id` INT NOT NULL,                -- FK to `users` (Knows which student this grade belongs to)
-  `component_name` VARCHAR(255) NOT NULL,     -- Grade component name: "Midterm", "Final", "Assignment 1"...
-  `score` DECIMAL(5, 2) NOT NULL,             -- The score (e.g., 8.50)
-  `max_score` DECIMAL(5, 2) DEFAULT 10.00,  -- Maximum possible score (usually 10)
-  `weight_percent` DECIMAL(5, 4) DEFAULT NULL,    -- The weight (e.g., 0.3 for 30%)
-  `entered_by_user_id` INT NULL,              -- FK to `users` (Which teacher/admin entered this)
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_grades_class_module` (`class_module_id`),
-  KEY `fk_grades_student` (`student_id`),
-  KEY `fk_grades_entered_by` (`entered_by_user_id`),
-  CONSTRAINT `fk_grades_class_module` FOREIGN KEY (`class_module_id`) REFERENCES `class_module` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_grades_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_grades_entered_by` FOREIGN KEY (`entered_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  -- Ensures a student has only one "Midterm" score (for example) in one class_module
-  UNIQUE KEY `uk_student_class_module_component` (`student_id`, `class_module_id`, `component_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+DROP TABLE IF EXISTS grade_history;
+DROP TABLE IF EXISTS grades;
 
-CREATE TABLE IF NOT EXISTS `grade_history` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `grade_id` BIGINT NOT NULL,               -- FK to the `grades` table
-  `old_score` DECIMAL(5, 2) NOT NULL,
-  `new_score` DECIMAL(5, 2) NOT NULL,
-  `changed_by_user_id` INT NOT NULL,        -- FK to `users` (Who made the change)
-  `change_reason` TEXT NULL,                -- Reason (e.g., "Re-evaluation", "Input error")
-  `changed_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fk_gh_grade_id` (`grade_id`),
-  KEY `fk_gh_changed_by` (`changed_by_user_id`),
-  CONSTRAINT `fk_gh_grade_id` FOREIGN KEY (`grade_id`) REFERENCES `grades` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_gh_changed_by` FOREIGN KEY (`changed_by_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE grades (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    class_module_id BIGINT NOT NULL,
+    student_id INT NOT NULL,
+
+    -- CỘT ĐIỂM MỚI (theo yêu cầu 1)
+    theory_score DECIMAL(5, 2) NULL, -- Điểm lý thuyết
+    practice_score DECIMAL(5, 2) NULL, -- Điểm thực hành
+
+    -- CỘT MỚI (theo yêu cầu 2)
+    entry_date DATE NULL, -- 'Chọn ngày' từ UI
+
+    entered_by_user_id INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- (Tùy chọn: Thêm cột status cho Xóa Mềm)
+   status ENUM('ACTIVE', 'DELETED') NOT NULL DEFAULT 'ACTIVE',
+
+    -- Đảm bảo mỗi sinh viên chỉ có 1 hàng điểm cho mỗi môn
+    UNIQUE KEY uk_student_module (student_id, class_module_id),
+
+    FOREIGN KEY (class_module_id) REFERENCES class_module(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (entered_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=INNODB;
+
+CREATE TABLE grade_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    grade_id BIGINT NOT NULL, -- Liên kết với bảng 'grades' mới
+
+    -- CỘT MỚI: Cho biết cột nào đã thay đổi
+    component_changed VARCHAR(100) NOT NULL, -- Ví dụ: "theory_score", "practice_score"
+
+    old_score DECIMAL(5, 2) NULL,
+    new_score DECIMAL(5, 2) NULL,
+    changed_by_user_id INT NOT NULL,
+    changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (grade_id) REFERENCES grades(id) ON DELETE CASCADE,
+    FOREIGN KEY (changed_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 ALTER TABLE notifications
 MODIFY COLUMN notification_type ENUM(

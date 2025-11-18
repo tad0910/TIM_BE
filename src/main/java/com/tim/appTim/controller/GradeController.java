@@ -5,18 +5,13 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.service.GradeService;
 import com.tim.appTim.service.UserService;
 
-import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
-import java.util.stream.Collectors;
 import java.util.List;
-
 
 @RestController
 @RequestMapping("grades")
@@ -33,64 +28,38 @@ public class GradeController {
         return userService.findByUsernameOrEmail(authentication.getName());
     }
 
-    @GetMapping("/class-modules/{classModuleId}/my-grades")
-    @PreAuthorize("hasAuthority('grade:read_all')")
-    public ResponseEntity<List<StudentGradeDTO>> getMyGradesInModule(
-            @PathVariable Long classModuleId,
-            Authentication authentication) {
-
-         authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(", "));
-
-        User currentUser = getUserFromAuthentication(authentication);
-        Long studentId = currentUser.getId();
-
-        List<StudentGradeDTO> grades = gradeService.getMyGrades(classModuleId, studentId);
-        return ResponseEntity.ok(grades);
-    }
-
-    @GetMapping("/class-modules/{classModuleId}/grades")
-    @PreAuthorize("hasAuthority('grade:read_detail')")
-    public ResponseEntity<List<StudentGradeDTO>> getStudentGradesInModule(
-            @PathVariable Long classModuleId,
-            @RequestParam Long studentId,
+    @PostMapping("/batch")
+    @PreAuthorize("hasAuthority('grade:create')")
+    public ResponseEntity<Void> batchCreateOrUpdateGrades(
+            @RequestBody BatchGradeUpdateDTO batchDto, // DTO mới
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Long teacherId = currentUser.getId();
-
-        gradeService.validateTeacherPermission(classModuleId, teacherId);
-
-        List<StudentGradeDTO> grades = gradeService.getStudentGrades(classModuleId, studentId);
-        return ResponseEntity.ok(grades);
+        gradeService.batchCreateOrUpdateGrades(batchDto, currentUser);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/class-modules/{classModuleId}/gradebook")
     @PreAuthorize("hasAuthority('grade:read_detail')")
     public ResponseEntity<GradebookDTO> getModuleGradebook(
             @PathVariable Long classModuleId,
-            Authentication authentication, @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+            Authentication authentication,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Long teacherId = currentUser.getId();
-
-        GradebookDTO gradebook = gradeService.getGradebook(classModuleId, teacherId, pageable);
+        GradebookDTO gradebook = gradeService.getGradebook(classModuleId, currentUser.getId(), pageable);
         return ResponseEntity.ok(gradebook);
     }
 
-    @PutMapping("/{gradeId}")
-    @PreAuthorize("hasAuthority('grade:update')")
-    public ResponseEntity<StudentGradeDTO> updateGrade(
-            @PathVariable Long gradeId,
-            @RequestBody @Valid GradeUpdateDTO gradeUpdateDTO,
-            Authentication authentication) {
+    @GetMapping("/class-modules/{classModuleId}/my-grades")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GradeDTO> getMyGradesInModule(
+                                                         @PathVariable Long classModuleId,
+                                                         Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-
-        StudentGradeDTO updatedGrade = gradeService.updateGrade(gradeId, gradeUpdateDTO, currentUser);
-
-        return ResponseEntity.ok(updatedGrade);
+        GradeDTO grade = gradeService.getMyGrades(classModuleId, currentUser.getId());
+        return ResponseEntity.ok(grade);
     }
 
     @GetMapping("/{gradeId}/history")
@@ -100,22 +69,20 @@ public class GradeController {
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-
         List<GradeHistoryDTO> history = gradeService.getGradeHistory(gradeId, currentUser);
-
         return ResponseEntity.ok(history);
     }
 
-    @PostMapping
-    @PreAuthorize("hasAuthority('grade:create')")
-    public ResponseEntity<StudentGradeDTO> createGrade(
-            @RequestBody @Valid GradeCreateDTO gradeCreateDTO,
+    @DeleteMapping("/{gradeId}")
+    @PreAuthorize("hasAuthority('grade:delete')")
+    public ResponseEntity<Void> deleteGrade(
+            @PathVariable Long gradeId,
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
+        gradeService.deleteGrade(gradeId, currentUser);
 
-        StudentGradeDTO newGrade = gradeService.createGrade(gradeCreateDTO, currentUser);
-
-        return new ResponseEntity<>(newGrade, HttpStatus.CREATED);
+        return ResponseEntity.noContent().build();
     }
+
 }
