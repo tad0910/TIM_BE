@@ -85,6 +85,7 @@ public class SecurityConfig {
                 .authenticationProvider(daoAuthenticationProvider())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/api/v1/keycloak/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/link-preview/**").permitAll()
