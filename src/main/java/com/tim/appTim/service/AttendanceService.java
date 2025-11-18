@@ -102,11 +102,6 @@ public class AttendanceService {
             throw new BadRequestException("teacherId là bắt buộc");
         }
 
-        Optional<AttendanceSession> existing = sessionRepository.findByScheduleId(scheduleId);
-        if (existing.isPresent()) {
-            throw new ConflictException("Buổi điểm danh đã được mở trước đó.");
-        }
-
         boolean isAdminOverride = false; 
 
         if (authentication != null && authentication.isAuthenticated()) {
@@ -120,17 +115,34 @@ public class AttendanceService {
         }
 
 
+        Optional<AttendanceSession> existing = sessionRepository.findByScheduleId(scheduleId);
+        
         LocalDateTime startDate = getScheduleStartDate(scheduleId);
         boolean isLate = startDate != null && LocalDateTime.now().isAfter(startDate.plusMinutes(15));
 
-        AttendanceSession session = new AttendanceSession();
-        session.setScheduleId(scheduleId);
-        session.setOpenedBy(teacherId);
-        session.setIsLate(isLate);
-        session.setOpenedAt(LocalDateTime.now());
+        if (existing.isPresent()) {
+            long markedCount = recordRepository.countByScheduleId(scheduleId);
+            if (markedCount > 0) {
 
-        return sessionRepository.save(session);
+                throw new ConflictException("Buổi điểm danh đã có sinh viên được đánh dấu, không thể mở lại.");
+            }
+
+            AttendanceSession session = existing.get();
+            session.setOpenedBy(teacherId); 
+            session.setIsLate(isLate);     
+            session.setOpenedAt(LocalDateTime.now()); 
+            return sessionRepository.save(session);
+
+        } else {
+            AttendanceSession session = new AttendanceSession();
+            session.setScheduleId(scheduleId);
+            session.setOpenedBy(teacherId);
+            session.setIsLate(isLate);
+            session.setOpenedAt(LocalDateTime.now());
+            return sessionRepository.save(session);
+        }
     }
+
 
     @Transactional
     public List<AttendanceRecord> markAttendanceBatch(Long scheduleId, MarkAttendanceRequest request, Authentication authentication) {
@@ -165,9 +177,17 @@ public class AttendanceService {
             record.setScheduleId(scheduleId);
             record.setStudentId(dto.getStudentId());
             try {
-                record.setStatus(AttendanceRecord.AttendanceStatus.valueOf(dto.getStatus()));
+
+                String statusStr = dto.getStatus();
+
+                if (statusStr != null) {
+                    statusStr = statusStr.trim().toLowerCase();
+                }
+
+                record.setStatus(AttendanceRecord.AttendanceStatus.valueOf(statusStr));
+                
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Trạng thái không hợp lệ: " + dto.getStatus());
+                throw new BadRequestException("Trạng thái không hợp lệ: " + dto.getStatus() + ". Các trạng thái hợp lệ: PRESENT, ABSENT, LATE, EXCUSED.");
             }
             record.setMarkedBy(teacherId);
             record.setNotes(dto.getNotes());

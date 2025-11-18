@@ -23,6 +23,7 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
             + "GROUP BY u.id "
             + "ORDER BY attendance_rate DESC", nativeQuery = true)
     List<Object[]> getAttendanceStatsByClassId(Integer classId);
+    Long countByScheduleId(Long scheduleId);
     Optional<AttendanceRecord> findByScheduleIdAndStudentId(Long scheduleId, Integer studentId);
     @Query("SELECT COUNT(ar) FROM AttendanceRecord ar WHERE ar.scheduleId = ?1 AND ar.markedBy = ?2")
     Long countByScheduleIdAndMarkedBy(Long scheduleId, Integer markedBy);
