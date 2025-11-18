@@ -4,6 +4,8 @@ package com.tim.appTim.service;
 import com.tim.appTim.dto.*;
 import com.tim.appTim.entity.*;
 
+import com.tim.appTim.entity.Class;
+import com.tim.appTim.entity.Module;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
@@ -29,6 +31,8 @@ public class GradeServiceImpl implements GradeService {
     private final UserRepository userRepository;
     private final GradeHistoryRepository gradeHistoryRepository;
     private final NotificationService notificationService;
+    private final ClassRepository classRepository;
+    private final ModuleRepository moduleRepository;
 
     public GradeServiceImpl(GradeRepository gradeRepository,
                             ClassMemberRepository classMemberRepository,
@@ -36,7 +40,9 @@ public class GradeServiceImpl implements GradeService {
                             ClassModuleTeacherRepository classModuleTeacherRepository,
                             UserRepository userRepository,
                             GradeHistoryRepository gradeHistoryRepository,
-                            NotificationService notificationService) {
+                            NotificationService notificationService,
+                            ClassRepository classRepository,
+                            ModuleRepository moduleRepository) {
         this.gradeRepository = gradeRepository;
         this.classMemberRepository = classMemberRepository;
         this.classModuleRepository = classModuleRepository;
@@ -44,6 +50,8 @@ public class GradeServiceImpl implements GradeService {
         this.userRepository = userRepository;
         this.gradeHistoryRepository = gradeHistoryRepository;
         this.notificationService = notificationService;
+        this.classRepository = classRepository;
+        this.moduleRepository = moduleRepository;
     }
 
     @Override
@@ -67,7 +75,7 @@ public class GradeServiceImpl implements GradeService {
 
         List<String> components = gradeRepository.findDistinctComponentNamesByClassModuleId(classModuleId);
 
-        Long classId = classModule.getClassEntity().getId();
+        Long classId = classModule.getClassId();
         Page<ClassMember> studentMemberPage = classMemberRepository.findByClassIdAndRole(
                 classId, ClassMember.Role.sinh_vien, pageable);
 
@@ -89,16 +97,27 @@ public class GradeServiceImpl implements GradeService {
                         Collectors.toMap(Grade::getComponentName, Grade::getScore)
                 ));
 
+        // Fetch Class and Module separately to avoid lazy loading issues
+        Class classEntity = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found with id: " + classId));
+        
+        Module module = moduleRepository.findById(classModule.getModuleId())
+                .orElseThrow(() -> new ResourceNotFoundException("Module not found with id: " + classModule.getModuleId()));
+
         GradebookDTO gradebook = new GradebookDTO();
         gradebook.setClassModuleId(classModuleId);
-        gradebook.setClassName(classModule.getClassEntity().getClassName());
-        gradebook.setModuleName(classModule.getModule().getName());
+        gradebook.setClassName(classEntity.getClassName());
+        gradebook.setModuleName(module.getName());
         gradebook.setComponents(components);
 
         List<GradebookDTO.StudentRow> studentRows = studentsOnThisPage.stream().map(student -> {
             GradebookDTO.StudentRow row = new GradebookDTO.StudentRow();
             row.setStudentId(student.getId());
-            row.setStudentName(student.getFirstName() + " " + student.getLastName());
+            
+            // Handle null firstName/lastName
+            String firstName = student.getFirstName() != null ? student.getFirstName() : "";
+            String lastName = student.getLastName() != null ? student.getLastName() : "";
+            row.setStudentName((firstName + " " + lastName).trim());
 
             Map<String, BigDecimal> studentScores = gradesByStudent.getOrDefault(student.getId(), Map.of());
             row.setGrades(studentScores);
