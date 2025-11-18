@@ -116,7 +116,7 @@ import static org.hamcrest.Matchers.*;
     }
 
     @Test
-    @WithMockUser(username = "giaovien1", authorities = "grade:read_detail")
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
     void getModuleGradebook_WhenTeacherIsAuthorized_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/class-modules/500/gradebook")
                         .param("page", "0")

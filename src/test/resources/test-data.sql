@@ -75,7 +75,7 @@ INSERT INTO user_roles (user_id, role_id) VALUES
 (1, 1), 
 (2, 1), 
 (3, 2),
-(5, 1), 
+(5, 3), 
 (6, 1), 
 (7, 1);
 
