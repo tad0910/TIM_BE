@@ -143,7 +143,7 @@ public class GradeServiceImpl implements GradeService {
 
         Set<Role> userRoles = user.getRoles();
         boolean isAdmin = userRoles.stream()
-                .anyMatch(role -> "admin".equals(role.getName()));
+                .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
 
         if (isAdmin) {
             return;
