@@ -80,7 +80,7 @@ public class AttendanceIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict()) 
-                .andExpect(jsonPath("$.message").value("Buổi điểm danh đã được mở trước đó."));
+                .andExpect(jsonPath("$.message").value("Buổi điểm danh đã có sinh viên được đánh dấu, không thể mở lại."));
     }
 
 
@@ -91,8 +91,6 @@ public class AttendanceIntegrationTest {
         
         AttendanceMarkDto markDto = new AttendanceMarkDto();
         markDto.setStudentId(1);
-        // Status must match the enum used in the domain model (PRESENT, ABSENT, LATE, EXCUSED, ...)
-        // Using PRESENT here so the request is valid and we can assert authorization/business logic.
         markDto.setStatus("PRESENT");
         markDto.setNotes("GV1 marked"); 
 
@@ -113,7 +111,6 @@ public class AttendanceIntegrationTest {
         
         AttendanceMarkDto markDto = new AttendanceMarkDto();
         markDto.setStudentId(1);
-        // Use a valid status so this test focuses on the \"unassigned teacher\" authorization branch
         markDto.setStatus("PRESENT");
         markDto.setNotes("GV2 marked");
         
@@ -134,7 +131,6 @@ public class AttendanceIntegrationTest {
         
         AttendanceMarkDto markDto = new AttendanceMarkDto();
         markDto.setStudentId(1);
-        // Use a valid status so this test focuses on the \"session not open\" branch
         markDto.setStatus("PRESENT");
           MarkAttendanceRequest request = new MarkAttendanceRequest();
         request.setTeacherId(3); 
