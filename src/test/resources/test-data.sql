@@ -208,3 +208,6 @@ INSERT INTO class_module_schedules (id, class_id, module_id, class_module_id, st
 INSERT INTO attendance_sessions (id, schedule_id, opened_by, is_late, opened_at) VALUES
 (1, 1001, 5, false, '2025-11-02 00:05:00');
 
+INSERT INTO attendance_records (marked_by, student_id, schedule_id, status, marked_at, notes) VALUES
+(5, 1, 1001, 'present', NOW(), 'Bản ghi điểm danh có sẵn dùng cho test mở lại phiên');
+

@@ -19,7 +19,7 @@ public class AttendanceRecord {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private AttendanceStatus status = AttendanceStatus.ABSENT;
+    private AttendanceStatus status = AttendanceStatus.absent;
 
     @Column(name = "marked_by", nullable = false)
     private Integer markedBy;
@@ -32,7 +32,7 @@ public class AttendanceRecord {
 
     // --- ENUM ---
     public enum AttendanceStatus {
-        PRESENT, ABSENT, LATE, EXCUSED
+        present ,absent ,late ,excused
     }
 
     // --- GETTER & SETTER ---
