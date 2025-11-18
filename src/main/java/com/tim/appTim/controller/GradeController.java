@@ -5,18 +5,15 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.service.GradeService;
 import com.tim.appTim.service.UserService;
 
-import jakarta.validation.Valid;
+import jakarta.validation.Valid; // (Giữ lại, nhưng chúng ta không dùng DTO có @Valid nữa)
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
-import java.util.stream.Collectors;
 import java.util.List;
-
 
 @RestController
 @RequestMapping("grades")
@@ -33,66 +30,57 @@ public class GradeController {
         return userService.findByUsernameOrEmail(authentication.getName());
     }
 
-    @GetMapping("/class-modules/{classModuleId}/my-grades")
-    @PreAuthorize("hasAuthority('grade:read_all')")
-    public ResponseEntity<List<StudentGradeDTO>> getMyGradesInModule(
-            @PathVariable Long classModuleId,
-            Authentication authentication) {
-
-         authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(", "));
-
-        User currentUser = getUserFromAuthentication(authentication);
-        Long studentId = currentUser.getId();
-
-        List<StudentGradeDTO> grades = gradeService.getMyGrades(classModuleId, studentId);
-        return ResponseEntity.ok(grades);
-    }
-
-    @GetMapping("/class-modules/{classModuleId}/grades")
-    @PreAuthorize("hasAuthority('grade:read_detail')")
-    public ResponseEntity<List<StudentGradeDTO>> getStudentGradesInModule(
-            @PathVariable Long classModuleId,
-            @RequestParam Long studentId,
+    /**
+     * API CHÍNH: Dùng cho "Trang nhập điểm" (cả Tạo và Cập nhật)
+     * API: POST /grades/batch
+     */
+    @PostMapping("/batch")
+    @PreAuthorize("hasAuthority('grade:create')")
+    public ResponseEntity<Void> batchCreateOrUpdateGrades(
+            @RequestBody BatchGradeUpdateDTO batchDto, // DTO mới
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Long teacherId = currentUser.getId();
-
-        gradeService.validateTeacherPermission(classModuleId, teacherId);
-
-        List<StudentGradeDTO> grades = gradeService.getStudentGrades(classModuleId, studentId);
-        return ResponseEntity.ok(grades);
+        gradeService.batchCreateOrUpdateGrades(batchDto, currentUser);
+        return ResponseEntity.ok().build();
     }
 
+    /**
+     * API CHO GIÁO VIÊN: Lấy sổ điểm (có phân trang)
+     * API: GET /grades/class-modules/{classModuleId}/gradebook
+     */
     @GetMapping("/class-modules/{classModuleId}/gradebook")
     @PreAuthorize("hasAuthority('grade:read_detail')")
     public ResponseEntity<GradebookDTO> getModuleGradebook(
             @PathVariable Long classModuleId,
-            Authentication authentication, @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+            Authentication authentication,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        Long teacherId = currentUser.getId();
-
-        GradebookDTO gradebook = gradeService.getGradebook(classModuleId, teacherId, pageable);
+        GradebookDTO gradebook = gradeService.getGradebook(classModuleId, currentUser.getId(), pageable);
         return ResponseEntity.ok(gradebook);
     }
 
-    @PutMapping("/{gradeId}")
-    @PreAuthorize("hasAuthority('grade:update')")
-    public ResponseEntity<StudentGradeDTO> updateGrade(
-            @PathVariable Long gradeId,
-            @RequestBody @Valid GradeUpdateDTO gradeUpdateDTO,
-            Authentication authentication) {
+    /**
+     * API CHO SINH VIÊN: Tự xem điểm (1 hàng duy nhất)
+     * API: GET /grades/class-modules/{classModuleId}/my-grades
+     */
+    @GetMapping("/class-modules/{classModuleId}/my-grades")
+    @PreAuthorize("isAuthenticated()") // Chỉ cần đăng nhập
+    public ResponseEntity<GradeDTO> getMyGradesInModule( // Sửa: Trả về 1 GradeDTO
+                                                         @PathVariable Long classModuleId,
+                                                         Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-
-        StudentGradeDTO updatedGrade = gradeService.updateGrade(gradeId, gradeUpdateDTO, currentUser);
-
-        return ResponseEntity.ok(updatedGrade);
+        // Sửa: Gọi hàm getMyGrades
+        GradeDTO grade = gradeService.getMyGrades(classModuleId, currentUser.getId());
+        return ResponseEntity.ok(grade);
     }
 
+    /**
+     * API XEM LỊCH SỬ: Dùng cho cả SV và GV
+     * API: GET /grades/{gradeId}/history
+     */
     @GetMapping("/{gradeId}/history")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<GradeHistoryDTO>> getGradeHistory(
@@ -100,22 +88,21 @@ public class GradeController {
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
-
         List<GradeHistoryDTO> history = gradeService.getGradeHistory(gradeId, currentUser);
-
         return ResponseEntity.ok(history);
     }
 
-    @PostMapping
-    @PreAuthorize("hasAuthority('grade:create')")
-    public ResponseEntity<StudentGradeDTO> createGrade(
-            @RequestBody @Valid GradeCreateDTO gradeCreateDTO,
+    @DeleteMapping("/{gradeId}")
+    @PreAuthorize("hasAuthority('grade:delete')")
+    public ResponseEntity<Void> deleteGrade(
+            @PathVariable Long gradeId,
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
+        gradeService.deleteGrade(gradeId, currentUser);
 
-        StudentGradeDTO newGrade = gradeService.createGrade(gradeCreateDTO, currentUser);
-
-        return new ResponseEntity<>(newGrade, HttpStatus.CREATED);
+        // Trả về 204 No Content (thành công, không có nội dung trả về)
+        return ResponseEntity.noContent().build();
     }
+
 }

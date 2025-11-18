@@ -9,17 +9,25 @@ import java.util.List;
 
 public interface GradeService {
 
-    List<StudentGradeDTO> getMyGrades(Long classModuleId, Long studentId);
+    void batchCreateOrUpdateGrades(BatchGradeUpdateDTO dto, User teacher);
 
-    List<StudentGradeDTO> getStudentGrades(Long classModuleId, Long studentId);
-
+    /**
+     * API CŨ (ĐÃ SỬA): Lấy sổ điểm (có phân trang)
+     */
     GradebookDTO getGradebook(Long classModuleId, Long teacherId, Pageable pageable);
 
-    void validateTeacherPermission(Long classModuleId, Long teacherId);
+    /**
+     * API CŨ (ĐÃ SỬA): Lấy điểm của 1 sinh viên (dùng cho SV xem điểm)
+     */
+    GradeDTO getMyGrades(Long classModuleId, Long studentId); // Sửa: Trả về GradeDTO mới
 
-    StudentGradeDTO updateGrade(Long gradeId, GradeUpdateDTO dto, User teacher);
-
+    /**
+     * Lấy lịch sử thay đổi của 1 hàng điểm
+     */
     List<GradeHistoryDTO> getGradeHistory(Long gradeId, User currentUser);
 
-    StudentGradeDTO createGrade(GradeCreateDTO dto, User teacher);
+    // --- CÁC HÀM HELPER ---
+    void validateTeacherPermission(Long classModuleId, Long teacherId);
+
+    void deleteGrade(Long gradeId, User currentUser);
 }

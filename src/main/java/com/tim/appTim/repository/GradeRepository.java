@@ -1,31 +1,32 @@
 package com.tim.appTim.repository;
 
-
-import com.tim.appTim.dto.StudentGradeDTO;
-import com.tim.appTim.entity.Grade;
+import com.tim.appTim.entity.Grade; // (Entity MỚI của bạn)
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface GradeRepository extends JpaRepository<Grade, Long> {
 
-    @Query("SELECT new com.tim.appTim.dto.StudentGradeDTO(g.componentName, g.score, g.maxScore, g.weightPercent, g.updatedAt) " +
-            "FROM Grade g " +
-            "WHERE g.classModule.id = :classModuleId AND g.student.id = :studentId")
-    List<StudentGradeDTO> findGradesForStudent(Long classModuleId, Long studentId);
+    /**
+     * HÀM MỚI (QUAN TRỌNG): Dùng cho logic "Upsert"
+     * Tìm một hàng điểm duy nhất bằng studentId và classModuleId
+     */
+    Optional<Grade> findByStudentIdAndClassModuleIdAndStatus(Long studentId, Long classModuleId, Grade.Status status);
 
-    @Query("SELECT new com.tim.appTim.dto.StudentGradeDTO(g.id, g.componentName, g.score, g.maxScore, g.weightPercent, g.updatedAt) " +
-            "FROM Grade g " +
-            "WHERE g.classModule.id = :classModuleId AND g.student.id = :studentId")
-    List<StudentGradeDTO> findGradesForTeacher(Long classModuleId, Long studentId);
+    /**
+     * HÀM MỚI: Lấy tất cả điểm của các sinh viên trong một danh sách
+     * (Dùng cho API Gradebook có phân trang)
+     */
+    List<Grade> findByClassModuleIdAndStudentIdInAndStatus(
+            Long classModuleId, List<Long> studentIds, Grade.Status status);
 
-    List<Grade> findByClassModuleId(Long classModuleId);
-
-    @Query("SELECT DISTINCT g.componentName FROM Grade g WHERE g.classModule.id = :classModuleId")
-    List<String> findDistinctComponentNamesByClassModuleId(Long classModuleId);
-
-    List<Grade> findByClassModuleIdAndStudentIdIn(Long classModuleId, List<Long> studentIds);
-
+    /**
+     * HÀM CŨ (ĐÃ SỬA): Lấy điểm của sinh viên
+     * (Chúng ta không thể dùng DTO projection cũ nữa vì cấu trúc đã thay đổi)
+     */
+    Optional<Grade> findByClassModuleIdAndStudentIdAndStatus(
+            Long classModuleId, Long studentId, Grade.Status status);
 }

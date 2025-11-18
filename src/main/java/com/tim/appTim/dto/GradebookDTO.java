@@ -2,19 +2,19 @@ package com.tim.appTim.dto;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 public class GradebookDTO {
 
     private Long classModuleId;
     private String className;
     private String moduleName;
-    private List<String> components;
-
-    private List<StudentRow> students;
     private int currentPage;
     private long totalElements;
     private int totalPages;
+
+    private List<StudentGradeRowDTO> students;
+
+    private List<String> components;
 
     public Long getClassModuleId() {
         return classModuleId;
@@ -40,34 +40,54 @@ public class GradebookDTO {
         this.moduleName = moduleName;
     }
 
+    public int getCurrentPage() {
+        return currentPage;
+    }
+
+    public void setCurrentPage(int currentPage) {
+        this.currentPage = currentPage;
+    }
+
+    public long getTotalElements() {
+        return totalElements;
+    }
+
+    public void setTotalElements(long totalElements) {
+        this.totalElements = totalElements;
+    }
+
+    public int getTotalPages() {
+        return totalPages;
+    }
+
+    public void setTotalPages(int totalPages) {
+        this.totalPages = totalPages;
+    }
+
     public List<String> getComponents() {
         return components;
     }
-
     public void setComponents(List<String> components) {
         this.components = components;
     }
 
-    public List<StudentRow> getStudents() {
+    public List<StudentGradeRowDTO> getStudents() {
         return students;
     }
 
-    public void setStudents(List<StudentRow> students) {
+    public void setStudents(List<StudentGradeRowDTO> students) {
         this.students = students;
     }
 
-    public int getCurrentPage() { return currentPage; }
-    public void setCurrentPage(int currentPage) { this.currentPage = currentPage; }
-    public long getTotalElements() { return totalElements; }
-    public void setTotalElements(long totalElements) { this.totalElements = totalElements; }
-    public int getTotalPages() { return totalPages; }
-    public void setTotalPages(int totalPages) { this.totalPages = totalPages; }
 
-    public static class StudentRow {
+    public static class StudentGradeRowDTO {
 
         private Long studentId;
         private String studentName;
-        private Map<String, BigDecimal> grades;
+        private Long gradeId;
+
+        private BigDecimal theoryScore;
+        private BigDecimal practiceScore;
 
         public Long getStudentId() {
             return studentId;
@@ -85,12 +105,28 @@ public class GradebookDTO {
             this.studentName = studentName;
         }
 
-        public Map<String, BigDecimal> getGrades() {
-            return grades;
+        public Long getGradeId() {
+            return gradeId;
         }
 
-        public void setGrades(Map<String, BigDecimal> grades) {
-            this.grades = grades;
+        public void setGradeId(Long gradeId) {
+            this.gradeId = gradeId;
+        }
+
+        public BigDecimal getTheoryScore() {
+            return theoryScore;
+        }
+
+        public void setTheoryScore(BigDecimal theoryScore) {
+            this.theoryScore = theoryScore;
+        }
+
+        public BigDecimal getPracticeScore() {
+            return practiceScore;
+        }
+
+        public void setPracticeScore(BigDecimal practiceScore) {
+            this.practiceScore = practiceScore;
         }
     }
 }
