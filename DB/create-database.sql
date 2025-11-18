@@ -87,7 +87,12 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `receiver_id` int NOT NULL,
   `sender_id` int DEFAULT NULL,
-  `notification_type` enum('POST_REACTION','POST_COMMENT','COMMENT_REACTION','COMMENT_REPLY','REPLY_REACTION','USER_FOLLOW','POST_MENTION','COMMENT_MENTION','SYSTEM_ANNOUNCEMENT') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `notification_type` enum('POST_REACTION', 'POST_COMMENT', 'COMMENT_REACTION', 'COMMENT_REPLY',
+                          'REPLY_REACTION', 'USER_FOLLOW', 'POST_MENTION', 'COMMENT_MENTION',
+                          'SYSTEM_ANNOUNCEMENT', 'GRADE_NEW', 'GRADE_UPDATED',
+                          'BLOG_NEW', 'LATE_ATTENDANCE_OPENED',
+                          'ATTENDANCE_REMINDER_LATE','ATTENDANCE_REMINDER_ENDING')
+   CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `target_type` varchar(50) DEFAULT NULL,
   `target_id` bigint DEFAULT NULL,
   `title` varchar(255) NOT NULL,
@@ -151,22 +156,29 @@ CREATE TABLE IF NOT EXISTS `classes` (
 ) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS `class_module_schedules` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `class_id` int NOT NULL,
-  `module_id` int NOT NULL,
-  `start_date` date DEFAULT NULL,
-  `end_date` date DEFAULT NULL,
-  `status` enum('planned','ongoing','completed') NOT NULL DEFAULT 'planned',
-  `instructor_id` int DEFAULT NULL,
-  `notes` text,
-  PRIMARY KEY (`id`),
-  KEY `fk_cms_class` (`class_id`),
-  KEY `fk_cms_module` (`module_id`),
-  KEY `fk_cms_instructor` (`instructor_id`),
-  CONSTRAINT `fk_cms_class` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_cms_instructor` FOREIGN KEY (`instructor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_cms_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+	`id` BIGINT NOT NULL AUTO_INCREMENT,
+	`class_id` INT NOT NULL,
+	`module_id` INT NOT NULL,
+	`class_module_id` BIGINT NULL DEFAULT NULL,
+	`start_date` DATETIME NULL DEFAULT NULL,
+	`end_date` DATETIME NULL DEFAULT NULL,
+	`status` ENUM('planned','ongoing','completed') NOT NULL DEFAULT 'planned' COLLATE 'utf8mb4_0900_ai_ci',
+	`instructor_id` INT NULL DEFAULT NULL,
+	`notes` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+	`module_session_id` BIGINT NULL DEFAULT NULL,
+	PRIMARY KEY (`id`) USING BTREE,
+	INDEX `fk_cms_class` (`class_id`) USING BTREE,
+	INDEX `fk_cms_module` (`module_id`) USING BTREE,
+	INDEX `fk_cms_instructor` (`instructor_id`) USING BTREE,
+	INDEX `fk_cms_module_session` (`module_session_id`) USING BTREE,
+	INDEX `fk_cms_class_module` (`class_module_id`) USING BTREE,
+	CONSTRAINT `fk_cms_class` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT `fk_cms_class_module` FOREIGN KEY (`class_module_id`) REFERENCES `class_module` (`id`) ON UPDATE CASCADE ON DELETE SET NULL,
+	CONSTRAINT `fk_cms_instructor` FOREIGN KEY (`instructor_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE SET NULL,
+	CONSTRAINT `fk_cms_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT `fk_cms_module_session` FOREIGN KEY (`module_session_id`) REFERENCES `module_sessions` (`id`) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+;
 
 CREATE TABLE IF NOT EXISTS `class_members` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -289,6 +301,45 @@ CREATE TABLE IF NOT EXISTS `program_modules` (
   CONSTRAINT `fk_pm_program` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE IF NOT EXISTS `class_module` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `class_id` INT NOT NULL,
+  `module_id` INT NOT NULL,
+  `schedule_type` ENUM('fixed','flexible','online','offline') DEFAULT 'fixed',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_cm_class` (`class_id`),
+  KEY `fk_cm_module` (`module_id`),
+  CONSTRAINT `fk_cm_class` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cm_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS `class_module_teacher` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `class_module_id` BIGINT NOT NULL,
+  `user_id` INT NOT NULL,
+  `role` ENUM('MAIN','ASSISTANT','MENTOR') DEFAULT 'MAIN',
+  `assigned_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_cmt_class_module` (`class_module_id`),
+  KEY `fk_cmt_user` (`user_id`),
+  CONSTRAINT `fk_cmt_class_module` FOREIGN KEY (`class_module_id`) REFERENCES `class_module` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cmt_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS `class_module_schedule_teacher` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `class_module_schedule_id` BIGINT NOT NULL,
+  `user_id` INT NOT NULL,
+  `role` ENUM('LECTURER','SUPPORTER','OBSERVER') DEFAULT 'LECTURER',
+  `assigned_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_cmst_schedule` (`class_module_schedule_id`),
+  KEY `fk_cmst_user` (`user_id`),
+  CONSTRAINT `fk_cmst_schedule` FOREIGN KEY (`class_module_schedule_id`) REFERENCES `class_module_schedules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cmst_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE IF NOT EXISTS `attendance_sessions` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `schedule_id` BIGINT NOT NULL, 
@@ -327,3 +378,33 @@ CREATE TABLE IF NOT EXISTS `attendance_records` (
   CONSTRAINT `fk_att_marker` FOREIGN KEY (`marked_by`) 
     REFERENCES `users` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE grades (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    class_module_id BIGINT NOT NULL,
+    student_id INT NOT NULL,
+    theory_score DECIMAL(5, 2) NULL, 
+    practice_score DECIMAL(5, 2) NULL, 
+    entry_date DATE NULL, 
+    entered_by_user_id INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+   status ENUM('ACTIVE', 'DELETED') NOT NULL DEFAULT 'ACTIVE',
+    UNIQUE KEY uk_student_module (student_id, class_module_id),
+    FOREIGN KEY (class_module_id) REFERENCES class_module(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (entered_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=INNODB;
+
+CREATE TABLE grade_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    grade_id BIGINT NOT NULL, 
+    component_changed VARCHAR(100) NOT NULL,
+    old_score DECIMAL(5, 2) NULL,
+    new_score DECIMAL(5, 2) NULL,
+    changed_by_user_id INT NOT NULL,
+    changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (grade_id) REFERENCES grades(id) ON DELETE CASCADE,
+    FOREIGN KEY (changed_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+

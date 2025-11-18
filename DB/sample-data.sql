@@ -32,15 +32,29 @@ INSERT IGNORE INTO permissions (id, name) VALUES
 (25, 'module:delete'),
 (26, 'program:create'),
 (27, 'program:update'),
-(28, 'program:delete');
+(28, 'program:delete'),
+(29,'schedule:create'),
+(30,'schedule:update'),
+(31,'schedule:delete'),
+(32, 'grade:read_all'),
+(33, 'grade:read_detail'),
+(34, 'grade:update'),
+(35, 'grade:create'),
+(36, 'attendance:open'),
+(37, 'attendance:read_all'),
+(38, 'grade:delete');
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),
   (1,8),(1,9),(1,10),(1,11),(1,12),(1,13),(1,14),
   (1,15),(1,16),(1,17),(1,18),(1,19),(1,20),(1,22),
   (1,23),(1,24),(1,25),(1,26),(1,27),(1,28), (1,21),
-  (2,1),(2,3),(2,5),
-  (3,3),(3,5);
+  (1,29),(1,30),(1,31),(1,32),(1,33),(1,34),(1,35),
+  (1,36),(1,37),(1,38),
+
+  (2,1),(2,3),(2,5),(2,33),(2,34),(2,35),(2,37),(2, 38),
+
+  (3,1),(3,3),(3,5),(3,8),(3,19),(3,13),(3,19),(3,22),(3,32),(3,33);
 
 INSERT IGNORE INTO users (id, username, firstname, lastname, password, email, vai_tro)
 VALUES
@@ -62,9 +76,6 @@ INSERT IGNORE INTO user_images (nguoi_dung_id, url_anh, mo_ta) VALUES
   (4, '/uploads/student_lan.jpg', 'Ảnh đại diện học viên Lan'),
   (5, '/uploads/student_bao.jpg', 'Ảnh đại diện học viên Bảo');
 
--- =====================================
--- 3. Programs & Modules
--- =====================================
 INSERT IGNORE INTO programs (id, name, description) VALUES
   (1, 'Fullstack Web Development', 'Khóa học lập trình web toàn diện'),
   (2, 'Python AI Fundamentals', 'Khóa học AI và Machine Learning cơ bản'),
