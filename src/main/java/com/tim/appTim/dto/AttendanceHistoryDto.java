@@ -15,7 +15,6 @@ public class AttendanceHistoryDto {
     private String openedByName;
     private String markedByName;
 
-    // --- Getter & Setter ---
 
     public Long getScheduleId() {
         return scheduleId;
