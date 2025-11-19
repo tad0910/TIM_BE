@@ -23,7 +23,7 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
             ass.closed_at,
             ass.is_late,
             CONCAT(opener.firstname, ' ', opener.lastname) AS opened_by_name,
-            ANY_VALUE(CONCAT(marker.firstname, ' ', marker.lastname)) AS marked_by_name
+            MAX(CONCAT(marker.firstname, ' ', marker.lastname)) AS marked_by_name
         FROM class_module_schedules cms
         JOIN modules m ON cms.module_id = m.id
         JOIN module_sessions ms ON cms.module_session_id = ms.id
