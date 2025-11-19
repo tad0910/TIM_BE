@@ -1,6 +1,7 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.dto.MarkAttendanceRequest;
+import com.tim.appTim.dto.AttendanceDetailDto;
 import com.tim.appTim.dto.AttendanceHistoryDto;
 import com.tim.appTim.dto.AttendanceMarkDto;
 import com.tim.appTim.dto.AttendanceStatsDto;
@@ -207,6 +208,26 @@ public class AttendanceService {
         }
 
         return savedRecords;
+    }
+
+    public List<AttendanceDetailDto> getAttendanceDetails(Long scheduleId) {
+        List<Object[]> results = recordRepository.getAttendanceDetailsByScheduleId(scheduleId);
+        List<AttendanceDetailDto> dtos = new ArrayList<>();
+
+        for (Object[] row : results) {
+            AttendanceDetailDto dto = new AttendanceDetailDto();
+            dto.setStudentId(row[0] instanceof Number ? ((Number) row[0]).longValue() : null);
+            dto.setStudentName((String) row[1]);
+            String statusStr = (String) row[2];
+            dto.setStatus(statusStr != null ? statusStr.toLowerCase() : "absent"); 
+            Timestamp markedAtTs = (Timestamp) row[3];
+            dto.setMarkedAt(markedAtTs != null ? markedAtTs.toLocalDateTime() : null);
+            dto.setNotes((String) row[4]);
+            Object markedByObj = row[5];
+            dto.setMarkedBy(markedByObj instanceof Number ? ((Number) markedByObj).intValue() : null);
+            dtos.add(dto);
+        }
+        return dtos;
     }
 
     private boolean isTeacherAuthorized(Long scheduleId, Integer teacherId) {
