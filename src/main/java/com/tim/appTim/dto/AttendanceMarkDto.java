@@ -11,8 +11,6 @@ public class AttendanceMarkDto {
 
     private String notes;
 
-    // --- Getter & Setter ---
-
     public Integer getStudentId() {
         return studentId;
     }
