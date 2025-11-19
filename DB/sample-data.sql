@@ -32,15 +32,30 @@ INSERT IGNORE INTO permissions (id, name) VALUES
 (25, 'module:delete'),
 (26, 'program:create'),
 (27, 'program:update'),
-(28, 'program:delete');
+(28, 'program:delete'),
+(29,'schedule:create'),
+(30,'schedule:update'),
+(31,'schedule:delete'),
+(32, 'grade:read_all'),
+(33, 'grade:read_detail'),
+(34, 'grade:update'),
+(35, 'grade:create'),
+(36, 'attendance:open'),
+(37, 'attendance:read_all'),
+(38, 'grade:delete');
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),
   (1,8),(1,9),(1,10),(1,11),(1,12),(1,13),(1,14),
   (1,15),(1,16),(1,17),(1,18),(1,19),(1,20),(1,22),
   (1,23),(1,24),(1,25),(1,26),(1,27),(1,28), (1,21),
-  (2,1),(2,3),(2,5),
-  (3,3),(3,5);
+  (1,29),(1,30),(1,31),(1,32),(1,33),(1,34),(1,35),
+  (1,36),(1,37),(1,38),
+
+  (2,1),(2,3),(2,5),(2,33),(2,34),(2,35),(2,37),(2, 38),
+
+  (3,1),(3,3),(3,5),(3,6),(3,8),(3,9),(3,19),(3,13),(3,19),(3,22),(3,32),(3,33);
+  
 
 INSERT IGNORE INTO users (id, username, firstname, lastname, password, email, vai_tro)
 VALUES
@@ -62,9 +77,6 @@ INSERT IGNORE INTO user_images (nguoi_dung_id, url_anh, mo_ta) VALUES
   (4, '/uploads/student_lan.jpg', 'Ảnh đại diện học viên Lan'),
   (5, '/uploads/student_bao.jpg', 'Ảnh đại diện học viên Bảo');
 
--- =====================================
--- 3. Programs & Modules
--- =====================================
 INSERT IGNORE INTO programs (id, name, description) VALUES
   (1, 'Fullstack Web Development', 'Khóa học lập trình web toàn diện'),
   (2, 'Python AI Fundamentals', 'Khóa học AI và Machine Learning cơ bản'),
@@ -131,9 +143,7 @@ VALUES ('sample-token-123', DATE_ADD(NOW(), INTERVAL 2 DAY));
 
 USE dbtest;
 
--- =====================================
--- 1. Thêm nhiều Users (sinh viên + giáo viên)
--- =====================================
+
 INSERT IGNORE INTO users (id, username, firstname, lastname, password, email, vai_tro) VALUES
   (9,  'teacher_minh',    'Minh',     'Nguyen',   '123456', 'minh.teacher@example.com', 'giao_vien'),
   (10, 'teacher_thao',    'Thảo',     'Phạm',     '123456', 'thao.teacher@example.com', 'giao_vien'),
@@ -146,14 +156,12 @@ INSERT IGNORE INTO users (id, username, firstname, lastname, password, email, va
   (17, 'student_vy',      'Vy',       'Lý',       '123456', 'vy.student@example.com',   'sinh_vien'),
   (18, 'student_duy',     'Duy',      'Trịnh',    '123456', 'duy.student@example.com',  'sinh_vien');
 
--- Gán vai trò (giả sử đã có user_roles cho các user mới)
-INSERT IGNORE INTO user_roles (user_id, role_id) VALUES
-  (9,2), (10,2),  -- Giáo viên
-  (11,3),(12,3),(13,3),(14,3),(15,3),(16,3),(17,3),(18,3); -- Sinh viên
 
--- =====================================
--- 2. user_images cho các user mới
--- =====================================
+INSERT IGNORE INTO user_roles (user_id, role_id) VALUES
+  (9,2), (10,2), 
+  (11,3),(12,3),(13,3),(14,3),(15,3),(16,3),(17,3),(18,3); 
+
+
 INSERT IGNORE INTO user_images (nguoi_dung_id, url_anh, mo_ta) VALUES
   (9,  '/uploads/teacher_minh.jpg', 'Ảnh đại diện giáo viên Minh'),
   (10, '/uploads/teacher_thao.jpg', 'Ảnh đại diện giáo viên Thảo'),
@@ -163,9 +171,7 @@ INSERT IGNORE INTO user_images (nguoi_dung_id, url_anh, mo_ta) VALUES
   (14, '/uploads/student_mai.jpg',  'Ảnh đại diện học viên Mai'),
   (15, '/uploads/student_anh.jpg',  'Ảnh đại diện học viên Anh');
 
--- =====================================
--- 3. Thêm Programs & Modules mới
--- =====================================
+
 INSERT IGNORE INTO programs (id, name, description) VALUES
   (4, 'Mobile App Development', 'Phát triển ứng dụng di động với Flutter'),
   (5, 'Data Science Bootcamp', 'Từ dữ liệu thô đến mô hình dự đoán'),
@@ -184,28 +190,19 @@ INSERT IGNORE INTO program_modules (program_id, module_id, position) VALUES
   (5,7,1),(5,8,2),
   (6,9,1),(6,10,2);
 
--- =====================================
--- 4. Thêm Classes mới
--- =====================================
+
 INSERT IGNORE INTO classes (id, name, description, program_id) VALUES
   (3, 'Mobile Dev K2025', 'Lớp học phát triển ứng dụng di động', 4),
   (4, 'Data Science 2025', 'Lớp học phân tích dữ liệu chuyên sâu', 5),
   (5, 'DevOps Pro 2025', 'Lớp học vận hành hệ thống hiện đại', 6);
 
--- =====================================
--- 5. class_members (gán giáo viên & sinh viên vào lớp)
--- =====================================
+
 INSERT IGNORE INTO class_members (lop_id, nguoi_dung_id, vai_tro) VALUES
-  -- Lớp 3: Mobile Dev
   (3,9,'giao_vien'),(3,11,'sinh_vien'),(3,12,'sinh_vien'),(3,13,'sinh_vien'),
-  -- Lớp 4: Data Science
   (4,10,'giao_vien'),(4,14,'sinh_vien'),(4,15,'sinh_vien'),(4,16,'sinh_vien'),
-  -- Lớp 5: DevOps
   (5,9,'giao_vien'),(5,17,'sinh_vien'),(5,18,'sinh_vien');
 
--- =====================================
--- 6. Posts mới từ nhiều người
--- =====================================
+
 INSERT IGNORE INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES
   (3,11,'Em vừa hoàn thành bài tập Flutter đầu tiên!','open'),
   (4,9,'Hôm nay chúng ta sẽ học về Stateful vs Stateless Widget.','open'),
@@ -216,9 +213,7 @@ INSERT IGNORE INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES
   (9,12,'Ai muốn lập nhóm học chung Flutter không?','open'),
   (10,18,'Em cần tài liệu về AWS Lambda, có ai chia sẻ không?','open');
 
--- =====================================
--- 7. Comments & Reply Comments
--- =====================================
+
 INSERT IGNORE INTO comments (id, bai_viet_id, nguoi_dung_id, noi_dung) VALUES
   (4,3,9,'Tuyệt vời Tuấn! Gửi code lên để cô xem nhé!'),
   (5,3,12,'Mình cũng đang làm, để mình tag bạn vào group.'),
@@ -234,9 +229,6 @@ INSERT IGNORE INTO reply_comments (id, comments_id, nguoi_dung_id, noi_dung) VAL
   (5,9,12,'Tối nay 8h nhé, trên Discord.'),
   (6,10,18,'Cảm ơn Khoa nhiều!');
 
--- =====================================
--- 8. Reactions
--- =====================================
 INSERT IGNORE INTO reactions (id, bai_viet_id, nguoi_dung_id, loai_cam_xuc) VALUES
   (5,3,9,'like'),(6,3,13,'like'),(7,3,12,'love'),
   (8,4,11,'like'),(9,4,14,'wow'),
@@ -245,9 +237,6 @@ INSERT IGNORE INTO reactions (id, bai_viet_id, nguoi_dung_id, loai_cam_xuc) VALU
   (14,8,2,'like'),(15,8,3,'like'),
   (16,9,13,'like'),(17,9,11,'like');
 
--- =====================================
--- 9. Notifications
--- =====================================
 INSERT IGNORE INTO notifications (receiver_id, sender_id, notification_type, target_type, target_id, title, content) VALUES
   (9,11,'POST_COMMENT','POST',3,'Tuấn đã bình luận','Tuấn đã bình luận về bài đăng Flutter của bạn'),
   (11,9,'SYSTEM_ANNOUNCEMENT','CLASS',3,'Lịch học mới','Buổi học Flutter tuần này chuyển sang thứ 4'),
@@ -256,9 +245,6 @@ INSERT IGNORE INTO notifications (receiver_id, sender_id, notification_type, tar
   (12,11,'REPLY_COMMENT','COMMENT',9,'Tuấn trả lời','Tuấn đã trả lời bình luận của bạn'),
   (18,17,'POST_MENTION','POST',10,'Bạn được nhắc đến','Khoa đã gửi tài liệu AWS cho bạn');
 
--- =====================================
--- 10. Ranking (điểm số các lớp)
--- =====================================
 INSERT IGNORE INTO ranking (nguoi_dung_id, diem_tong_hop, classes_id, program_id) VALUES
   (11,88,3,4),
   (12,92,3,4),
@@ -269,21 +255,160 @@ INSERT IGNORE INTO ranking (nguoi_dung_id, diem_tong_hop, classes_id, program_id
   (17,95,5,6),
   (18,89,5,6);
 
--- =====================================
--- 11. password_reset_requests (yêu cầu đặt lại mật khẩu)
--- =====================================
 INSERT IGNORE INTO password_reset_requests (user_id, otp_hash, token_type, attempts, used, expires_at) VALUES
   (11, 'xyz789', 'OTP', 1, 0, DATE_ADD(NOW(), INTERVAL 30 MINUTE)),
   (14, 'def456', 'OTP', 0, 0, DATE_ADD(NOW(), INTERVAL 1 HOUR)),
   (17, 'ghi789', 'OTP', 2, 0, DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 
--- =====================================
--- 12. invalidated_tokens (token bị vô hiệu hóa)
--- =====================================
 INSERT IGNORE INTO invalidated_tokens (jti, expiry_date) VALUES
   ('invalid-token-456', DATE_ADD(NOW(), INTERVAL 1 DAY)),
   ('old-session-789', DATE_ADD(NOW(), INTERVAL 3 DAY)),
   ('logout-all-101112', DATE_ADD(NOW(), INTERVAL 7 DAY));
 
-  INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
-(3,1), (3,2), (3,6), (3,8), (3,9), (3,13), (3,14), (3,15), (3,19), (3,21), (3,22);
+USE dbtest;
+
+INSERT IGNORE INTO users (id, username, firstname, lastname, password, email, vai_tro) VALUES
+  (19, 'student_linh',   'Linh',    'Nguyễn', '123456', 'linh.student@example.com', 'sinh_vien'),
+  (20, 'student_hao',    'Hào',     'Trần',   '123456', 'hao.student@example.com',  'sinh_vien'),
+  (21, 'teacher_kien',   'Kiên',    'Lê',     '123456', 'kien.teacher@example.com', 'giao_vien'),
+  (22, 'student_thuy',   'Thủy',    'Phạm',   '123456', 'thuy.student@example.com', 'sinh_vien'),
+  (23, 'student_nam',    'Nam',     'Vũ',     '123456', 'nam.student@example.com',  'sinh_vien'),
+  (24, 'teacher_uyen',   'Uyên',    'Hoàng',  '123456', 'uyen.teacher@example.com', 'giao_vien'),
+  (25, 'student_phuc',   'Phúc',    'Đặng',   '123456', 'phuc.student@example.com', 'sinh_vien'),
+  (26, 'student_my',     'Mỹ',      'Bùi',    '123456', 'my.student@example.com',   'sinh_vien'),
+  (27, 'student_quang',  'Quang',   'Lý',     '123456', 'quang.student@example.com','sinh_vien'),
+  (28, 'teacher_binh',   'Bình',    'Trương', '123456', 'binh.teacher@example.com', 'giao_vien'),
+  (29, 'student_chau',   'Châu',    'Đỗ',     '123456', 'chau.student@example.com', 'sinh_vien'),
+  (30, 'student_hoang',  'Hoàng',   'Phan',   '123456', 'hoang.student@example.com','sinh_vien');
+
+INSERT IGNORE INTO user_roles (user_id, role_id) VALUES
+  (19,3),(20,3),(21,2),(22,3),(23,3),(24,2),(25,3),(26,3),(27,3),(28,2),(29,3),(30,3);
+
+INSERT IGNORE INTO user_images (nguoi_dung_id, url_anh, mo_ta) VALUES
+  (19,'/uploads/student_linh.jpg','Linh'),(20,'/uploads/student_hao.jpg','Hào'),
+  (21,'/uploads/teacher_kien.jpg','Kiên'),(22,'/uploads/student_thuy.jpg','Thủy'),
+  (23,'/uploads/student_nam.jpg','Nam'),(24,'/uploads/teacher_uyen.jpg','Uyên'),
+  (25,'/uploads/student_phuc.jpg','Phúc'),(26,'/uploads/student_my.jpg','Mỹ'),
+  (27,'/uploads/student_quang.jpg','Quang'),(28,'/uploads/teacher_binh.jpg','Bình');
+
+
+INSERT IGNORE INTO programs (id, name, description) VALUES
+  (7,'Frontend React Master','Thành thạo React, Redux, Next.js'),
+  (8,'Backend Node.js Pro','Xây dựng API mạnh mẽ với NestJS'),
+  (9,'UI/UX Design','Thiết kế giao diện người dùng chuyên nghiệp'),
+  (10,'Cyber Security Basics','Bảo mật ứng dụng web');
+
+
+INSERT IGNORE INTO modules (id, name, description) VALUES
+  (11,'React Hooks & Context','Quản lý state hiện đại'),
+  (12,'Next.js','Server-side rendering với React'),
+  (13,'NestJS','Backend TypeScript mạnh mẽ'),
+  (14,'MongoDB','Cơ sở dữ liệu NoSQL'),
+  (15,'Figma','Thiết kế UI/UX chuyên nghiệp'),
+  (16,'Firebase','Backend-as-a-Service'),
+  (17,'GraphQL','API query language'),
+  (18,'TypeScript','JavaScript typed'),
+  (19,'Web Security','OWASP Top 10'),
+  (20,'Testing (Jest + Cypress)','Đảm bảo chất lượng code');
+
+INSERT IGNORE INTO program_modules (program_id, module_id, position) VALUES
+  (7,11,1),(7,12,2),(7,18,3),
+  (8,13,1),(8,14,2),(8,17,3),
+  (9,15,1),(9,20,2),
+  (10,19,1),(10,16,2);
+
+INSERT IGNORE INTO classes (id, name, description, program_id) VALUES
+  (6,'React Master 2025','Lớp React nâng cao',7),
+  (7,'Node.js Pro 2025','Lớp backend Node chuyên sâu',8),
+  (8,'UI/UX Design K2025','Lớp thiết kế giao diện',9),
+  (9,'CyberSec 2025','Lớp bảo mật cơ bản',10),
+  (10,'Fullstack Elite 2025','Lớp fullstack kết hợp React + NestJS',1);
+
+INSERT IGNORE INTO class_members (lop_id, nguoi_dung_id, vai_tro) VALUES
+  (6,21,'giao_vien'),(6,19,'sinh_vien'),(6,20,'sinh_vien'),(6,22,'sinh_vien'),(6,23,'sinh_vien'),
+  (7,24,'giao_vien'),(7,25,'sinh_vien'),(7,26,'sinh_vien'),(7,27,'sinh_vien'),
+  (8,28,'giao_vien'),(8,29,'sinh_vien'),(8,30,'sinh_vien'),
+  (9,21,'giao_vien'),(9,19,'sinh_vien'),(9,25,'sinh_vien'),
+  (10,2,'giao_vien'),(10,4,'sinh_vien'),(10,11,'sinh_vien'),(10,14,'sinh_vien');
+
+INSERT IGNORE INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu, link_url, link_title, link_description, link_image_url) VALUES
+  (11,19,'Học React Hooks khó quá mọi người ơi!','open','https://react.dev','React Official','Tài liệu chính thức React',NULL),
+  (12,21,'Hôm nay học về Custom Hooks','open'),
+  (13,25,'Ai có tài liệu NestJS tiếng Việt không?','open'),
+  (14,28,'Khóa UI/UX bắt đầu nhận đăng ký!','open','https://figma.com','Figma','Công cụ thiết kế miễn phí',NULL),
+  (15,4,'Chia sẻ kinh nghiệm phỏng vấn Fullstack','open'),
+  (16,11,'Em vừa deploy app Flutter lên TestFlight!','open'),
+  (17,14,'Pandas + Matplotlib = tuyệt vời','open'),
+  (18,17,'Docker compose giúp cuộc đời dễ thở hơn','open'),
+  (19,20,'Next.js 14 ra mắt rồi, mọi người thử chưa?','open'),
+  (20,24,'Buổi học GraphQL tuần này sẽ rất thú vị','open'),
+  (21,5,'Tài liệu Spring Security miễn phí đây','open','https://github.com/spring-security','Spring Security','Bảo mật Spring Boot',NULL),
+  (22,30,'Em cần mentor 1-1 về React','friends'),
+  (23,9,'Thông báo lịch thi giữa kỳ','open'),
+  (24,2,'Chúc mừng lớp Fullstack K2025 hoàn thành 50% khóa học!','open'),
+  (25,18,'AWS miễn phí 12 tháng cho sinh viên','open','https://aws.amazon.com/education','AWS Educate','Ưu đãi sinh viên',NULL);
+
+INSERT IGNORE INTO class_module (class_id, module_id, schedule_type) VALUES
+  (1,1,'fixed'),(1,2,'fixed'),(1,3,'fixed'),
+  (2,2,'online'),(2,4,'online'),
+  (3,5,'fixed'),(3,6,'flexible'),
+  (4,7,'offline'),(4,8,'offline'),
+  (5,9,'online'),(5,10,'online'),
+  (6,11,'fixed'),(6,12,'fixed'),
+  (7,13,'online'),(7,14,'online'),
+  (8,15,'offline'),
+  (9,19,'online'),
+  (10,1,'fixed'),(10,3,'fixed');
+
+INSERT IGNORE INTO class_module_schedules (class_id, module_id, start_date, end_date, status, instructor_id, module_session_id) VALUES
+  (1,1,'2025-01-10 08:00:00','2025-01-10 12:00:00','completed',2,1),
+  (1,1,'2025-01-17 whether 08:00:00','2025-01-17 12:00:00','completed',2,2),
+  (1,2,'2025-02-01 13:00:00','2025-02-01 17:00:00','ongoing',2,NULL),
+  (3,5,'2025-03-01 09:00:00','2025-03-01 12:00:00','planned',9,NULL),
+  (4,7,'2025-02-15 14:00:00','2025-02-15 17:00:00','ongoing',10,NULL),
+  (6,11,'2025-03-10 08:00:00','2025-03-10 12:00:00','planned',21,NULL),
+  (7,13,'2025-04-01 18:00:00','2025-04-01 21:00:00','planned',24,NULL),
+  (2,4,'2025-03-20 19:00:00','2025-03-20 22:00:00','planned',3,NULL),
+  (5,9,'2025-05-01 09:00:00','2025-05-01 12:00:00','planned',9,NULL),
+  (10,1,'2025-06-01 08:00:00','2025-06-01 12:00:00','planned',2,NULL);
+
+INSERT IGNORE INTO attendance_sessions (schedule_id, opened_by, opened_at, is_late, late_threshold_minutes) VALUES
+  (1,2,'2025-01-10 07:50:00',0,15),
+  (2,2,'2025-01-17 07:55:00',1,10),
+  (3,2,'2025-02-01 12:55:00',0,15);
+
+INSERT IGNORE INTO attendance_records (schedule_id, student_id, status, marked_by, marked_at) VALUES
+  (1,4,'present',2,'2025-01-10 08:05:00'),
+  (1,5,'late',2,'2025-01-10 08:20:00'),
+  (1,6,'present',2,'2025-01-10 08:00:00'),
+  (2,4,'present',2,'2025-01-17 08:10:00'),
+  (2,5,'absent',2,'2025-01-17 12:00:00'),
+  (3,4,'present',2,'2025-02-01 13:05:00');
+
+INSERT IGNORE INTO grades (class_module_id, student_id, theory_score, practice_score, entry_date, entered_by_user_id) VALUES
+  (1,4,8.5,9.0,'2025-01-20',2),
+  (1,5,7.0,7.5,'2025-01-20',2),
+  (1,6,9.5,9.0,'2025-01-20',2),
+  (2,11,8.0,8.5,'2025-03-10',9),
+  (3,14,9.0,8.0,'2025-02-20',10),
+  (4,19,7.5,9.5,'2025-03-15',21);
+
+INSERT IGNORE INTO grade_history (grade_id, component_changed, old_score, new_score, changed_by_user_id) VALUES
+  (1,'practice_score',8.0,9.0,2),
+  (2,'theory_score',6.5,7.0,2);
+
+INSERT IGNORE INTO files (post_id, file_url, file_type, file_name, file_size) VALUES
+  (8,'/uploads/spring-boot-guide.pdf','DOCUMENT','Spring Boot Guide 2025',5242880),
+  (11,'/uploads/react-hooks.png','IMAGE','React Hooks Diagram',245760),
+  (15,'/uploads/interview-questions.pdf','DOCUMENT','50 Câu hỏi phỏng vấn Fullstack',1048576),
+  (21,'/uploads/spring-security.pdf','DOCUMENT','Spring Security Tutorial',3670016);
+
+INSERT IGNORE INTO invalidated_tokens (jti, expiry_date) VALUES
+  ('sess-2025-001','2025-12-01 10:00:00'),
+  ('sess-2025-002','2025-11-30 15:30:00'),
+  ('sess-2025-003','2025-11-25 09:00:00');
+
+INSERT IGNORE INTO password_reset_requests (user_id, otp_hash, token_type, attempts, used, expires_at) VALUES
+  (19,'otp-789abc','OTP',0,0,DATE_ADD(NOW(), INTERVAL 30 MINUTE)),
+  (25,'otp-xyz456','OTP',1,0,DATE_ADD(NOW(), INTERVAL 20 MINUTE)),
+  (5,'link-reset-123','LINK',0,0,DATE_ADD(NOW(), INTERVAL 1 HOUR));
