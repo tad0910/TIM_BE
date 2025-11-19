@@ -19,6 +19,7 @@ public class SseService {
 
     /**
      * Khởi tạo và lưu trữ kết nối SseEmitter cho một người dùng.
+     *
      * @param userId ID của người dùng đang kết nối.
      * @return SseEmitter đã tạo.
      */
@@ -52,8 +53,8 @@ public class SseService {
         if (emitter != null) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name("NOTIFICATION") 
-                        .data(notificationDTO)); 
+                        .name("NOTIFICATION")
+                        .data(notificationDTO));
 
                 logger.info("SSE notification sent to User ID: {}", receiverId);
 
@@ -62,5 +63,24 @@ public class SseService {
                 emitters.remove(receiverId);
             }
         }
+    }
+
+    public void broadcastNotification(NotificationDTO notificationDTO) {
+        if (emitters.isEmpty()) {
+            logger.info("Không có user nào online để gửi broadcast.");
+            return;
+        }
+
+        logger.info("Đang gửi broadcast blog mới tới {} user online...", emitters.size());
+
+        emitters.forEach((userId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("BLOG_NEW")
+                        .data(notificationDTO));
+            } catch (IOException e) {
+                emitters.remove(userId);
+            }
+        });
     }
 }
