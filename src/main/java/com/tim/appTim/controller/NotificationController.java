@@ -34,6 +34,7 @@ public class NotificationController {
         return userService.findByUsernameOrEmail(authentication.getName());
     }
 
+
     @GetMapping("/subscribe")
     @PreAuthorize("isAuthenticated()")
     public SseEmitter subscribe(Authentication authentication) {
