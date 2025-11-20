@@ -30,7 +30,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(GradeServiceImpl.class);
 
-    // (Các repo và constructor giữ nguyên)
     private final GradeRepository gradeRepository;
     private final ClassMemberRepository classMemberRepository;
     private final ClassModuleRepository classModuleRepository;
@@ -62,16 +61,13 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         this.applicationContext = applicationContext;
     }
 
-    /**
-     * HÀM ĐÃ VIẾT LẠI LOGIC: Sửa lỗi TransientPropertyValueException
-     */
     @Override
     @Transactional
     public void batchCreateOrUpdateGrades(BatchGradeUpdateDTO dto, User teacher) {
-        try {
+
             logger.info("========== BẮT ĐẦU batchCreateOrUpdateGrades ==========");
             Long classModuleId = dto.getClassModuleId();
-            LocalDate entryDate = dto.getEntryDate(); // Lấy "Ngày"
+            LocalDate entryDate = dto.getEntryDate();
 
             logger.info("Input: classModuleId={}, entryDate={}, teacherId={}, teacherName={}", 
                     classModuleId, entryDate, teacher.getId(), teacher.getUsername());
@@ -101,9 +97,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             BigDecimal newPracticeScore = scoresMap.get("Điểm thực hành");
             logger.info("Scores từ request: theoryScore={}, practiceScore={}", newTheoryScore, newPracticeScore);
 
-            // --- Logic Upsert MỚI ---
-
-            // 1. Tìm hoặc Tạo Grade entity
             logger.info("Đang tìm existing grade...");
             Optional<Grade> existingGradeOpt = gradeRepository
                     .findByStudentIdAndClassModuleIdAndStatus(studentId, classModuleId, Grade.Status.ACTIVE);
@@ -113,29 +106,22 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             logger.info("isNewGrade={}", isNewGrade);
 
             if (isNewGrade) {
-                // TẠO MỚI
                 grade = new Grade();
                 grade.setStudent(student);
                 grade.setClassModule(classModule);
                 grade.setStatus(Grade.Status.ACTIVE);
             } else {
-                // CẬP NHẬT
                 grade = existingGradeOpt.get();
             }
 
-            // 2. Lấy giá trị cũ (ĐỂ SO SÁNH)
             BigDecimal oldTheoryScore = grade.getTheoryScore();
             BigDecimal oldPracticeScore = grade.getPracticeScore();
-            // LocalDate oldEntryDate = grade.getEntryDate(); // Tạm thời không dùng
 
-            // 3. Cập nhật giá trị mới vào entity (trong bộ nhớ)
             grade.setEnteredBy(teacher);
             grade.setEntryDate(entryDate);
             grade.setTheoryScore(newTheoryScore);
             grade.setPracticeScore(newPracticeScore);
 
-            // 4. LƯU GRADE (ĐÂY LÀ BƯỚC SỬA LỖI QUAN TRỌNG)
-            // Sau dòng này, 'grade' sẽ có ID và không còn là "transient"
             Grade savedGrade;
             try {
                 logger.info("========== BẮT ĐẦU LƯU GRADE ==========");
@@ -160,10 +146,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                 throw new RuntimeException("Không thể lưu điểm số: " + e.getMessage(), e);
             }
 
-            // 5. Bây giờ mới lưu lịch sử và gửi thông báo
-
-            // Xử lý Lịch sử/Thông báo cho Điểm lý thuyết
-            boolean theoryChanged = isNewGrade || 
+            boolean theoryChanged = isNewGrade ||
                     (newTheoryScore != null && oldTheoryScore == null) ||
                     (newTheoryScore == null && oldTheoryScore != null) ||
                     (newTheoryScore != null && oldTheoryScore != null && newTheoryScore.compareTo(oldTheoryScore) != 0);
@@ -172,18 +155,15 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                     Notification.NotificationType type = (isNewGrade || oldTheoryScore == null) ?
                             Notification.NotificationType.GRADE_NEW : Notification.NotificationType.GRADE_UPDATED;
 
-                    // Lưu history và gửi thông báo
                     saveHistoryAndNotify(savedGrade, "Điểm lý thuyết", oldTheoryScore, newTheoryScore,
                             teacher, student, moduleName, type);
                 } catch (Exception e) {
                     logger.error("Lỗi khi lưu lịch sử/thông báo cho điểm lý thuyết (studentId: {}, gradeId: {}): {}", 
                             studentId, savedGrade.getId(), e.getMessage(), e);
-                    // KHÔNG throw exception - không làm rollback transaction chính
                 }
             }
 
-            // Xử lý Lịch sử/Thông báo cho Điểm thực hành
-            boolean practiceChanged = isNewGrade || 
+            boolean practiceChanged = isNewGrade ||
                     (newPracticeScore != null && oldPracticeScore == null) ||
                     (newPracticeScore == null && oldPracticeScore != null) ||
                     (newPracticeScore != null && oldPracticeScore != null && newPracticeScore.compareTo(oldPracticeScore) != 0);
@@ -192,63 +172,30 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                     Notification.NotificationType type = (isNewGrade || oldPracticeScore == null) ?
                             Notification.NotificationType.GRADE_NEW : Notification.NotificationType.GRADE_UPDATED;
 
-                    // Lưu history và gửi thông báo
                     saveHistoryAndNotify(savedGrade, "Điểm thực hành", oldPracticeScore, newPracticeScore,
                             teacher, student, moduleName, type);
                 } catch (Exception e) {
                     logger.error("Lỗi khi lưu lịch sử/thông báo cho điểm thực hành (studentId: {}, gradeId: {}): {}", 
                             studentId, savedGrade.getId(), e.getMessage(), e);
-                    // KHÔNG throw exception - không làm rollback transaction chính
                 }
             }
 
-            // (Tùy chọn) Xử lý Lịch sử cho Ngày - TẠM THỜI BỎ QUA
-            // if (entryDate != null && !entryDate.equals(oldEntryDate)) {
-            //     try {
-            //         GradeHistory history = new GradeHistory();
-            //         history.setGrade(savedGrade);
-            //         history.setComponentChanged("entry_date");
-            //         history.setChangedBy(teacher);
-            //         gradeHistoryRepository.save(history);
-            //     } catch (Exception e) {
-            //         logger.error("Lỗi khi lưu lịch sử cho entry_date (studentId: {}, gradeId: {}): {}", 
-            //                 studentId, savedGrade.getId(), e.getMessage(), e);
-            //     }
-            // }
             logger.info("--- Hoàn thành xử lý student entry cho studentId={} ---", studentId);
         }
         
-        // Kiểm tra transaction status trước khi return
         boolean isActualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
         boolean isCurrentTransactionReadOnly = TransactionSynchronizationManager.isCurrentTransactionReadOnly();
         logger.info("Transaction status: isActive={}, isReadOnly={}", isActualTransactionActive, isCurrentTransactionReadOnly);
         
         logger.info("========== HOÀN THÀNH batchCreateOrUpdateGrades THÀNH CÔNG ==========");
-        } catch (Exception e) {
-            logger.error("========== LỖI NGHIÊM TRỌNG TRONG batchCreateOrUpdateGrades ==========");
-            logger.error("Exception type: {}", e.getClass().getName());
-            logger.error("Exception message: {}", e.getMessage());
-            logger.error("Exception cause: {}", e.getCause() != null ? e.getCause().getMessage() : "null");
-            if (e.getCause() != null) {
-                logger.error("Cause type: {}", e.getCause().getClass().getName());
-            }
-            logger.error("Full stack trace:", e);
-            logger.error("=====================================================================");
-            throw new RuntimeException("Lỗi hệ thống: " + e.getMessage(), e);
-        }
+
     }
 
-    /**
-     * HÀM HELPER MỚI (Tách ra từ hàm cũ):
-     * Hàm này giờ nhận 'savedGrade' (đã có ID)
-     * Lưu ý: Lưu history được bọc trong try-catch để không làm rollback transaction chính
-     */
     private void saveHistoryAndNotify(Grade savedGrade, String componentName,
                                       BigDecimal oldScore, BigDecimal newScore,
                                       User teacher, User student, String moduleName,
                                       Notification.NotificationType type) {
 
-        // 1. Lưu Lịch sử (bọc trong try-catch để không ảnh hưởng transaction chính)
         try {
             GradeHistory history = new GradeHistory();
             history.setGrade(savedGrade);
@@ -262,20 +209,15 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         } catch (Exception e) {
             logger.error("Lỗi khi lưu GradeHistory (component: {}, gradeId: {}): {}. Lỗi này không ảnh hưởng việc lưu điểm.", 
                     componentName, savedGrade.getId(), e.getMessage(), e);
-            // KHÔNG throw exception - lịch sử là tính năng phụ, không nên làm fail việc lưu điểm
-            // Exception này sẽ được bắt và không làm rollback transaction chính
         }
 
-        // 2. Gửi thông báo (không throw exception nếu lỗi)
         sendGradeNotification(teacher, student, moduleName, componentName, newScore,
                 savedGrade.getClassModule().getId(), savedGrade.getId(), type);
     }
 
-    // (Hàm sendGradeNotification cũ giữ nguyên)
     private void sendGradeNotification(User teacher, User student, String moduleName,
                                        String componentName, BigDecimal score, Long classModuleId,
                                        Long gradeId, Notification.NotificationType type) {
-        // Gọi method với transaction riêng để không ảnh hưởng transaction chính
         try {
             if (applicationContext != null) {
                 logger.info("[Notification] ApplicationContext available, invoking transactional notification sender...");
@@ -291,13 +233,9 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             }
         } catch (Exception e) {
             logger.error("Lỗi khi gửi thông báo (không ảnh hưởng việc lưu điểm): {}", e.getMessage(), e);
-            // KHÔNG throw exception - không làm rollback transaction chính
         }
     }
     
-    /**
-     * Gửi thông báo trong transaction riêng để không ảnh hưởng transaction chính
-     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendGradeNotificationInNewTransaction(User teacher, User student, String moduleName,
                                                       String componentName, BigDecimal score, Long classModuleId,
@@ -331,12 +269,9 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             logger.error("Exception cause: {}", e.getCause() != null ? e.getCause().getMessage() : "null");
             logger.error("Full stack trace:", e);
             logger.error("================================================================");
-            // KHÔNG throw exception - chỉ log, transaction riêng sẽ tự rollback, không ảnh hưởng transaction chính
-            // Không throw để không làm fail transaction chính
         }
     }
 
-    // --- CÁC HÀM CŨ ĐÃ VIẾT LẠI (CẦN CẬP NHẬT STATUS) ---
 
     @Override
     public GradebookDTO getGradebook(Long classModuleId, Long teacherId, Pageable pageable) {
@@ -353,7 +288,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                 .map(member -> member.getUser().getId())
                 .collect(Collectors.toList());
 
-        // CẬP NHẬT: Thêm Grade.Status.ACTIVE
         List<Grade> gradesForThisPage = (studentIdsOnPage.isEmpty())
                 ? List.of()
                 : gradeRepository.findByClassModuleIdAndStudentIdInAndStatus(
@@ -394,7 +328,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     public GradeDTO getMyGrades(Long classModuleId, Long studentId) {
         validateStudentMembership(classModuleId, studentId);
 
-        // CẬP NHẬT: Thêm Grade.Status.ACTIVE
         Grade grade = gradeRepository.findByClassModuleIdAndStudentIdAndStatus(
                         classModuleId, studentId, Grade.Status.ACTIVE)
                 .orElse(null);
@@ -409,7 +342,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     @Override
     public List<GradeHistoryDTO> getGradeHistory(Long gradeId, User currentUser) {
 
-        // Hàm @Where("status = 'ACTIVE'") trong Grade.java sẽ tự động xử lý
         Grade grade = gradeRepository.findById(gradeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Grade record not found (or deleted): " + gradeId));
 
@@ -445,7 +377,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                 .toList();
     }
 
-    // (Hàm deleteGrade và các hàm validate giữ nguyên)
     @Override
     @Transactional
     public void deleteGrade(Long gradeId, User currentUser) {
@@ -454,7 +385,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
         validateTeacherPermission(grade.getClassModule().getId(), currentUser.getId());
 
-        gradeRepository.delete(grade); // @SQLDelete sẽ tự động chạy
+        gradeRepository.delete(grade);
     }
 
     private void validateStudentMembership(Long classModuleId, Long studentId) {
@@ -468,7 +399,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         ClassMember member = memberOpt.get();
         ClassMember.Role vaiTroEnum = member.getRole();
         String vaiTroThucTe = (vaiTroEnum == null) ? "null" : vaiTroEnum.name();
-        if (!"sinh_vien".equals(vaiTroThucTe)) { // (Sửa chuỗi này nếu vai trò SV của bạn tên khác)
+        if (!"sinh_vien".equals(vaiTroThucTe)) {
             throw new ForbiddenException("Access Denied: User is in this class, but not as a student");
         }
     }
