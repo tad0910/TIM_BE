@@ -3,13 +3,11 @@ package com.tim.appTim.service;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.dto.NotificationDTO;
-import com.tim.appTim.entity.AttendanceSession;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.AttendanceSessionRepository;
 import com.tim.appTim.repository.NotificationRepository;
 import com.tim.appTim.repository.UserRepository;
-import com.tim.appTim.service.UserService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -53,9 +51,15 @@ public class NotificationService {
                                               String targetType, Long targetId,
                                               String title, String content) {
 
-        if (senderId != null && notificationRepository.existsByReceiverIdAndSenderIdAndNotificationTypeAndTargetTypeAndTargetId(
+        boolean shouldCheckDuplicate =
+                senderId != null
+                        && notificationType != Notification.NotificationType.GRADE_NEW
+                        && notificationType != Notification.NotificationType.GRADE_UPDATED;
+
+        if (shouldCheckDuplicate
+                && notificationRepository.existsByReceiverIdAndSenderIdAndNotificationTypeAndTargetTypeAndTargetId(
                 receiverId, senderId, notificationType, targetType, targetId)) {
-            return null; 
+            return null;
         }
 
         Notification notification = new Notification(receiverId, senderId, notificationType,
