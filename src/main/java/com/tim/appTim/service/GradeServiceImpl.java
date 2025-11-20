@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate; // <-- THÊM IMPORT
@@ -37,6 +38,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     private final UserRepository userRepository;
     private final GradeHistoryRepository gradeHistoryRepository;
     private final NotificationService notificationService;
+    private final TransactionTemplate transactionTemplate;
     
     private ApplicationContext applicationContext;
 
@@ -46,7 +48,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                             ClassModuleTeacherRepository classModuleTeacherRepository,
                             UserRepository userRepository,
                             GradeHistoryRepository gradeHistoryRepository,
-                            NotificationService notificationService) {
+                            NotificationService notificationService, TransactionTemplate transactionTemplate) {
         this.gradeRepository = gradeRepository;
         this.classMemberRepository = classMemberRepository;
         this.classModuleRepository = classModuleRepository;
@@ -54,6 +56,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         this.userRepository = userRepository;
         this.gradeHistoryRepository = gradeHistoryRepository;
         this.notificationService = notificationService;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
@@ -62,133 +65,102 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     }
 
     @Override
-    @Transactional
     public void batchCreateOrUpdateGrades(BatchGradeUpdateDTO dto, User teacher) {
+        logger.info("========== BẮT ĐẦU batchCreateOrUpdateGrades (OPTIMIZED) ==========");
 
-            logger.info("========== BẮT ĐẦU batchCreateOrUpdateGrades ==========");
-            Long classModuleId = dto.getClassModuleId();
-            LocalDate entryDate = dto.getEntryDate();
+        logger.info("Đang validate teacher permission...");
+        validateTeacherPermission(dto.getClassModuleId(), teacher.getId());
+        logger.info("Teacher permission validated OK");
 
-            logger.info("Input: classModuleId={}, entryDate={}, teacherId={}, teacherName={}", 
-                    classModuleId, entryDate, teacher.getId(), teacher.getUsername());
-            logger.info("Số lượng scores cần xử lý: {}", dto.getScores() != null ? dto.getScores().size() : 0);
+        transactionTemplate.execute(status -> {
+            processBatchLogic(dto, teacher);
+            return null;
+        });
 
-            logger.info("Đang validate teacher permission...");
-            validateTeacherPermission(classModuleId, teacher.getId());
-            logger.info("Teacher permission validated OK");
+        logger.info("========== HOÀN THÀNH batchCreateOrUpdateGrades ==========");
+    }
 
-            logger.info("Đang tìm ClassModule với id={}...", classModuleId);
-            ClassModule classModule = classModuleRepository.findById(classModuleId)
-                    .orElseThrow(() -> new ResourceNotFoundException("ClassModule not found: " + classModuleId));
-            String moduleName = classModule.getModule().getName();
-            logger.info("Đã tìm thấy ClassModule: moduleName={}, classId={}", moduleName, classModule.getClassEntity().getId());
+    private void processBatchLogic(BatchGradeUpdateDTO dto, User teacher) {
+        Long classModuleId = dto.getClassModuleId();
+        LocalDate entryDate = dto.getEntryDate();
+
+        ClassModule classModule = classModuleRepository.findById(classModuleId)
+                .orElseThrow(() -> new ResourceNotFoundException("ClassModule not found: " + classModuleId));
+        String moduleName = classModule.getModule().getName();
+
+        List<Long> studentIds = dto.getScores().stream()
+                .map(StudentScoreEntryDTO::getStudentId)
+                .collect(Collectors.toList());
+
+        if (studentIds.isEmpty()) return;
+
+        List<User> students = userRepository.findAllById(studentIds);
+        Map<Long, User> studentMap = students.stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+
+        List<Grade> existingGrades = gradeRepository.findByClassModuleIdAndStudentIdIn(classModuleId, studentIds);
+        Map<Long, Grade> existingGradeMap = existingGrades.stream()
+                .collect(Collectors.toMap(g -> g.getStudent().getId(), g -> g));
+
+        List<Grade> gradesToSave = new java.util.ArrayList<>();
 
         for (StudentScoreEntryDTO studentEntry : dto.getScores()) {
-            logger.info("--- Xử lý student entry ---");
             Long studentId = studentEntry.getStudentId();
-            logger.info("studentId={}", studentId);
-            
-            User student = userRepository.findById(studentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentId));
-            logger.info("Đã tìm thấy student: studentName={}", student.getUsername());
+            User student = studentMap.get(studentId);
 
-            Map<String, BigDecimal> scoresMap = studentEntry.getComponents();
-            BigDecimal newTheoryScore = scoresMap.get("Điểm lý thuyết");
-            BigDecimal newPracticeScore = scoresMap.get("Điểm thực hành");
-            logger.info("Scores từ request: theoryScore={}, practiceScore={}", newTheoryScore, newPracticeScore);
+            if (student == null) {
+                logger.warn("Student ID {} không tồn tại, bỏ qua.", studentId);
+                continue;
+            }
 
-            logger.info("Đang tìm existing grade...");
-            Optional<Grade> existingGradeOpt = gradeRepository
-                    .findByStudentIdAndClassModuleIdAndStatus(studentId, classModuleId, Grade.Status.ACTIVE);
-
-            Grade grade;
-            boolean isNewGrade = existingGradeOpt.isEmpty();
-            logger.info("isNewGrade={}", isNewGrade);
+            Grade grade = existingGradeMap.getOrDefault(studentId, new Grade());
+            boolean isNewGrade = (grade.getId() == null);
 
             if (isNewGrade) {
-                grade = new Grade();
                 grade.setStudent(student);
                 grade.setClassModule(classModule);
                 grade.setStatus(Grade.Status.ACTIVE);
-            } else {
-                grade = existingGradeOpt.get();
             }
 
             BigDecimal oldTheoryScore = grade.getTheoryScore();
             BigDecimal oldPracticeScore = grade.getPracticeScore();
+
+            Map<String, BigDecimal> scoresMap = studentEntry.getComponents();
+            BigDecimal newTheoryScore = scoresMap.get("Điểm lý thuyết");
+            BigDecimal newPracticeScore = scoresMap.get("Điểm thực hành");
 
             grade.setEnteredBy(teacher);
             grade.setEntryDate(entryDate);
             grade.setTheoryScore(newTheoryScore);
             grade.setPracticeScore(newPracticeScore);
 
-            Grade savedGrade;
-            try {
-                logger.info("========== BẮT ĐẦU LƯU GRADE ==========");
-                logger.info("studentId={}, classModuleId={}, theoryScore={}, practiceScore={}, entryDate={}", 
-                        studentId, classModuleId, newTheoryScore, newPracticeScore, entryDate);
-                logger.info("Grade entity trước khi save: id={}, status={}, student={}, classModule={}", 
-                        grade.getId(), grade.getStatus(), grade.getStudent() != null ? grade.getStudent().getId() : "null", 
-                        grade.getClassModule() != null ? grade.getClassModule().getId() : "null");
-                
-                savedGrade = gradeRepository.save(grade);
-                
-                logger.info("Đã lưu Grade thành công: gradeId={}", savedGrade.getId());
-                logger.info("========== KẾT THÚC LƯU GRADE ==========");
-            } catch (Exception e) {
-                logger.error("========== LỖI KHI LƯU GRADE ==========");
-                logger.error("studentId={}, classModuleId={}", studentId, classModuleId);
-                logger.error("Exception type: {}", e.getClass().getName());
-                logger.error("Exception message: {}", e.getMessage());
-                logger.error("Exception cause: {}", e.getCause() != null ? e.getCause().getMessage() : "null");
-                logger.error("Full stack trace:", e);
-                logger.error("=======================================");
-                throw new RuntimeException("Không thể lưu điểm số: " + e.getMessage(), e);
-            }
+            gradesToSave.add(grade);
 
-            boolean theoryChanged = isNewGrade ||
-                    (newTheoryScore != null && oldTheoryScore == null) ||
-                    (newTheoryScore == null && oldTheoryScore != null) ||
-                    (newTheoryScore != null && oldTheoryScore != null && newTheoryScore.compareTo(oldTheoryScore) != 0);
-            if (theoryChanged) {
-                try {
-                    Notification.NotificationType type = (isNewGrade || oldTheoryScore == null) ?
-                            Notification.NotificationType.GRADE_NEW : Notification.NotificationType.GRADE_UPDATED;
-
-                    saveHistoryAndNotify(savedGrade, "Điểm lý thuyết", oldTheoryScore, newTheoryScore,
-                            teacher, student, moduleName, type);
-                } catch (Exception e) {
-                    logger.error("Lỗi khi lưu lịch sử/thông báo cho điểm lý thuyết (studentId: {}, gradeId: {}): {}", 
-                            studentId, savedGrade.getId(), e.getMessage(), e);
-                }
-            }
-
-            boolean practiceChanged = isNewGrade ||
-                    (newPracticeScore != null && oldPracticeScore == null) ||
-                    (newPracticeScore == null && oldPracticeScore != null) ||
-                    (newPracticeScore != null && oldPracticeScore != null && newPracticeScore.compareTo(oldPracticeScore) != 0);
-            if (practiceChanged) {
-                try {
-                    Notification.NotificationType type = (isNewGrade || oldPracticeScore == null) ?
-                            Notification.NotificationType.GRADE_NEW : Notification.NotificationType.GRADE_UPDATED;
-
-                    saveHistoryAndNotify(savedGrade, "Điểm thực hành", oldPracticeScore, newPracticeScore,
-                            teacher, student, moduleName, type);
-                } catch (Exception e) {
-                    logger.error("Lỗi khi lưu lịch sử/thông báo cho điểm thực hành (studentId: {}, gradeId: {}): {}", 
-                            studentId, savedGrade.getId(), e.getMessage(), e);
-                }
-            }
-
-            logger.info("--- Hoàn thành xử lý student entry cho studentId={} ---", studentId);
+            checkAndNotify(grade, isNewGrade, oldTheoryScore, newTheoryScore, "Điểm lý thuyết", teacher, student, moduleName);
+            checkAndNotify(grade, isNewGrade, oldPracticeScore, newPracticeScore, "Điểm thực hành", teacher, student, moduleName);
         }
-        
-        boolean isActualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
-        boolean isCurrentTransactionReadOnly = TransactionSynchronizationManager.isCurrentTransactionReadOnly();
-        logger.info("Transaction status: isActive={}, isReadOnly={}", isActualTransactionActive, isCurrentTransactionReadOnly);
-        
-        logger.info("========== HOÀN THÀNH batchCreateOrUpdateGrades THÀNH CÔNG ==========");
 
+        gradeRepository.saveAll(gradesToSave);
+        logger.info("Đã lưu batch {} grades thành công.", gradesToSave.size());
+    }
+
+    private void checkAndNotify(Grade grade, boolean isNewGrade, BigDecimal oldVal, BigDecimal newVal,
+                                String componentName, User teacher, User student, String moduleName) {
+        boolean changed = isNewGrade ||
+                (newVal != null && oldVal == null) ||
+                (newVal == null && oldVal != null) ||
+                (newVal != null && oldVal != null && newVal.compareTo(oldVal) != 0);
+
+        if (changed) {
+            try {
+                Notification.NotificationType type = (isNewGrade || oldVal == null) ?
+                        Notification.NotificationType.GRADE_NEW : Notification.NotificationType.GRADE_UPDATED;
+
+                saveHistoryAndNotify(grade, componentName, oldVal, newVal, teacher, student, moduleName, type);
+            } catch (Exception e) {
+                logger.error("Lỗi notification: {}", e.getMessage());
+            }
+        }
     }
 
     private void saveHistoryAndNotify(Grade savedGrade, String componentName,
