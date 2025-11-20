@@ -418,5 +418,5 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         if (!isTeaching) {
             throw new ForbiddenException("Access Denied: User is not an authorized teacher for this module or an admin");
         }
-    }
+    }   
 }
