@@ -242,7 +242,7 @@ public class NotificationService {
 
             if (now.isAfter(startDate.plusMinutes(15)) && now.isBefore(endDate)) {
                 title = "Bạn chưa mở điểm danh";
-                content = String.format("Buổi học %s đã bắt đầu hơn 15 phút nhưng chưa được mở điểm danh.", moduleInfo);
+                content = String.format("Buổi học %s đã bắt đầu hơn 15 phút nhưng chưa được mở điểm danh.", moduleInfo); 
                 type = Notification.NotificationType.ATTENDANCE_REMINDER_LATE;
             }
 
@@ -275,17 +275,24 @@ public class NotificationService {
     @SuppressWarnings("unchecked")
     private List<Object[]> getActiveSchedulesForReminder(LocalDateTime now) {
         String sql = """
-            SELECT 
+            SELECT DISTINCT
                 cms.id,
-                cm.teacher_id,
+                COALESCE(cms.instructor_id, cmst.user_id) AS teacher_id,
                 cms.start_date,
                 cms.end_date,
-                CONCAT(cm.module_name, ' - Buổi ', cms.session_number)
+                CONCAT(
+                    COALESCE(m.name, 'Module'),
+                    ' - Buổi ',
+                    COALESCE(ms.session_number, '#')
+                ) AS module_info
             FROM class_module_schedules cms
-            JOIN class_modules cm ON cms.class_module_id = cm.id
+            LEFT JOIN class_module_schedule_teacher cmst 
+                   ON cmst.class_module_schedule_id = cms.id
+            LEFT JOIN modules m ON cms.module_id = m.id
+            LEFT JOIN module_sessions ms ON cms.module_session_id = ms.id
             WHERE cms.start_date <= ? 
               AND cms.end_date >= ?
-              AND cm.teacher_id IS NOT NULL
+              AND COALESCE(cms.instructor_id, cmst.user_id) IS NOT NULL
             """;
 
         return entityManager.createNativeQuery(sql)
