@@ -1,0 +1,105 @@
+name: CI/CD Pipeline (Test -> Backup -> Deploy -> Log)
+
+# 1. KÍCH HOẠT (TRIGGER)
+on:
+  push:
+    branches: [ "main", "develop", "feature/*" ] # Chạy khi có code mới từ bất kỳ nhánh nào
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  # -----------------------------------------------------------------
+  # GIAI ĐOẠN 1: CHẠY TEST CASE (CI)
+  # Áp dụng cho mọi nhánh code mới
+  # -----------------------------------------------------------------
+  run-tests:
+    name: 🧪 Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # Chạy lệnh test (Không build jar, chỉ test để tiết kiệm thời gian)
+      - name: Execute Tests
+        run: mvn -B test --file pom.xml
+
+  # -----------------------------------------------------------------
+  # GIAI ĐOẠN 2: BACKUP DỮ LIỆU
+  # Chỉ chạy khi ở nhánh quan trọng (dev, main) và Test đã qua
+  # -----------------------------------------------------------------
+  backup-data:
+    name: 💾 Backup Database & Code
+    needs: run-tests # Phải test xong mới làm
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Backup Placeholder
+        run: |
+          echo "--- BẮT ĐẦU QUY TRÌNH BACKUP ---"
+          echo "Hiện tại chưa cần thực hiện backup theo yêu cầu."
+          echo "Sau này có thể thêm lệnh dump database hoặc nén code tại đây."
+          echo "--- KẾT THÚC BACKUP ---"
+
+  # -----------------------------------------------------------------
+  # GIAI ĐOẠN 3: BUILD & DEPLOY (CD)
+  # Chỉ chạy khi ở nhánh quan trọng (dev, main) và Test đã qua
+  # -----------------------------------------------------------------
+  deploy:
+    name: 🚀 Build & Deploy
+    needs: run-tests
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build JAR
+        run: mvn -B clean package -DskipTests -Dproject.build.sourceEncoding=UTF-8 --file pom.xml
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Đóng gói và Đẩy Docker
+      # Logic: Nếu là main -> tag 'latest'. Nếu là develop -> tag 'dev'
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/apptim-be:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
+
+      # -----------------------------------------------------------
+      # KÍCH HOẠT SERVER (DEPLOY)
+      # -----------------------------------------------------------
+
+      # Trường hợp 1: Nếu là Main -> Gọi Server Production
+      - name: Trigger Render Production
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Đang deploy lên Production..."
+          curl -X POST ${{ secrets.RENDER_PROD_HOOK }}
+
+      # Trường hợp 2: Nếu là Develop -> Gọi Server Dev
+      - name: Trigger Render Dev
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          echo "Đang deploy lên Dev Environment..."
+          curl -X POST ${{ secrets.RENDER_DEV_HOOK }}
