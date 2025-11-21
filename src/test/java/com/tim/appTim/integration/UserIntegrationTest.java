@@ -830,8 +830,17 @@ public class UserIntegrationTest {
     void getDeletedUsers_WhenAdminAsksForAll_ShouldReturnAllUsers() throws Exception {
         Long targetUserId = 2L;
         String adminAllEndpoint = BASE_URL + "/all";
-
-        int totalUsersInSql = 6;
+        doCallRealMethod().when(userService).findAllUsersIncludingDeleted(any(Pageable.class));
+        int totalUsersBeforeDelete = objectMapper
+                .readTree(
+                        mockMvc.perform(get(adminAllEndpoint))
+                                .andExpect(status().isOk())
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString()
+                )
+                .get("totalElements")
+                .asInt();
 
         doCallRealMethod().when(userService).delete(targetUserId);
         mockMvc.perform(delete(BASE_URL + "/" + targetUserId))
@@ -840,11 +849,11 @@ public class UserIntegrationTest {
         doCallRealMethod().when(userService).findAll(any(Pageable.class));
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(totalUsersInSql - 1));
+                .andExpect(jsonPath("$.totalElements").value(totalUsersBeforeDelete - 1));
 
         doCallRealMethod().when(userService).findAllUsersIncludingDeleted(any(Pageable.class));
         mockMvc.perform(get(adminAllEndpoint))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(totalUsersInSql));
+                .andExpect(jsonPath("$.totalElements").value(totalUsersBeforeDelete));
     }
 }

@@ -61,57 +61,64 @@ INSERT INTO permissions (id, name) VALUES
 (28, 'grade:read_all'),
 (29, 'grade:update'),
 (30, 'grade:create'),
-(31, 'grade:read_detail');
+(31, 'grade:read_detail'),
+(32, 'attendance:open'),
+(33, 'attendance:mark'),
+(34, 'attendance:read_all'),
+(35, 'grade:delete');
 
 INSERT INTO users (id, username, password, email, deleted) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com', false),
 (2, 'another_user', '{noop}password', 'another@example.com', false),
 (3, 'admin_user', '{noop}password', 'admin@example.com', false),
+(4, 'stranger_user', '{noop}password', 'stranger@example.com', false),
 (5, 'giaovien1', '{noop}password', 'gv1@example.com', false),
 (6, 'giaovien2', '{noop}password', 'gv2@example.com', false),
 (7, 'giaovien3', '{noop}password', 'gv3@example.com', false);
 
 INSERT INTO user_roles (user_id, role_id) VALUES
-(1, 1), 
-(2, 1), 
+(1, 1),
+(2, 1),
 (3, 2),
-(5, 3), 
-(6, 1), 
+(4, 1),
+(5, 3),
+(6, 1),
 (7, 1);
 
 INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 11),
 (2, 12),
-(1, 1), 
+(1, 1),
 (1, 4),
-(2, 2), 
-(2, 3), 
-(2, 5), 
+(2, 2),
+(2, 3),
+(2, 5),
 (2, 6),
-(2, 7), 
-(2, 8), 
-(2, 9), 
-(2, 10), 
+(2, 7),
+(2, 8),
+(2, 9),
+(2, 10),
 (2, 13),
-(2, 14), 
-(2, 15), 
-(2, 16), 
-(2, 17), 
+(2, 14),
+(2, 15),
+(2, 16),
+(2, 17),
 (2, 18),
-(2, 19), 
-(2, 20), 
-(2, 21), 
-(2, 22), 
+(2, 19),
+(2, 20),
+(2, 21),
+(2, 22),
 (2, 23),
-(2, 24), 
-(2, 25), 
-(2, 26), 
-(2, 27), 
+(2, 24),
+(2, 25),
+(2, 26),
+(2, 27),
 (2, 28),
 (2, 29),
-(3, 29), 
-(3, 30), 
-(3, 31);
+(3, 29),
+(3, 30),
+(3, 31),
+(3, 35);
 
 INSERT INTO programs (id, name, description) VALUES
 (100, 'Khóa học Backend', 'Phát triển ứng dụng với Spring Boot.');
@@ -140,11 +147,12 @@ INSERT INTO class_members (lop_id, nguoi_dung_id, vai_tro, ngay_tham_gia) VALUES
 (10, 2, 'sinh_vien', NOW());
 
 INSERT INTO program_modules (program_id, module_id, position) VALUES
-(100, 200, 1), 
+(100, 200, 1),
 (100, 201, 2);
 
 INSERT INTO class_module_schedules (id, class_id, module_id, class_module_id, start_date, end_date, instructor_id, status) VALUES
 (1000, 10, 200, 500, '2025-11-01 00:00:00', '2025-11-08 00:00:00', 5, 'planned');
+
 
 INSERT INTO class_module_teacher (class_module_id, user_id) VALUES
 (500, 5);
@@ -170,6 +178,26 @@ INSERT INTO notifications (id, receiver_id, sender_id, notification_type, title,
 (50, 1, 2, 'POST_COMMENT', 'Thông báo mới', 'User 2 đã bình luận bài viết của bạn', NOW(), false, null, 'POST', 10),
 (51, 1, 3, 'SYSTEM_ANNOUNCEMENT', 'Thông báo hệ thống', 'Chào mừng bạn đến với hệ thống', DATEADD('DAY', -1, NOW()), true, DATEADD('HOUR', -12, NOW()), null, null);
 
-INSERT INTO grades (id, class_module_id, student_id, component_name, score, max_score, weight_percent, entered_by_user_id, created_at, updated_at) VALUES
-(1, 500, 1, 'Bài tập 1', 8.0, 10.0, 20.0, 5, NOW(), NOW()),
-(2, 500, 2, 'Bài tập 1', 7.0, 10.0, 20.0, 5, NOW(), NOW());
+INSERT INTO grades (id, class_module_id, student_id, theory_score, practice_score, entry_date, entered_by_user_id, status, created_at, updated_at) VALUES
+(1, 500, 1, 8.0, 7.5, CURRENT_DATE, 5, 'ACTIVE', NOW(), NOW()),
+(2, 500, 2, 7.0, 8.0, CURRENT_DATE, 5, 'ACTIVE', NOW(), NOW());
+
+
+
+DELETE FROM attendance_records;
+DELETE FROM attendance_sessions;
+
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(2, 32),
+(2, 33),
+(2, 34);
+
+
+INSERT INTO class_module_schedules (id, class_id, module_id, class_module_id, start_date, end_date, instructor_id, status) VALUES
+(1001, 10, 200, 500, '2025-11-02 00:00:00', '2025-11-09 00:00:00', 5, 'planned');
+
+INSERT INTO attendance_sessions (id, schedule_id, opened_by, is_late, opened_at) VALUES
+(1, 1001, 5, false, '2025-11-02 00:05:00');
+
+INSERT INTO attendance_records (marked_by, student_id, schedule_id, status, marked_at, notes) VALUES
+(5, 1, 1001, 'present', NOW(), 'Bản ghi điểm danh có sẵn dùng cho test mở lại phiên');

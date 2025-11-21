@@ -1,5 +1,6 @@
 package com.tim.appTim.controller;
 
+import com.tim.appTim.dto.AttendanceDetailDto;
 import com.tim.appTim.dto.AttendanceHistoryDto;
 import com.tim.appTim.dto.AttendanceStatsDto;
 import com.tim.appTim.dto.MarkAttendanceRequest;
@@ -62,6 +63,14 @@ public class AttendanceController {
     @PreAuthorize("hasAuthority('attendance:read_all')")
     public ResponseEntity<List<AttendanceStatsDto>> getAttendanceStats(@PathVariable Integer classId) {
         return ResponseEntity.ok(attendanceService.getAttendanceStats(classId));
+    }
+
+    @GetMapping("/schedules/{scheduleId}/details")
+    @PreAuthorize("hasAuthority('attendance:read_all') or " +
+                  "(authentication.authenticated and @attendanceService.isScheduleTeacher(authentication, #scheduleId))")
+    public ResponseEntity<List<AttendanceDetailDto>> getAttendanceDetails(@PathVariable Long scheduleId) {
+        List<AttendanceDetailDto> details = attendanceService.getAttendanceDetails(scheduleId);
+        return ResponseEntity.ok(details);
     }
     
 }

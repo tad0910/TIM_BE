@@ -9,17 +9,15 @@ import java.util.List;
 
 public interface GradeService {
 
-    List<StudentGradeDTO> getMyGrades(Long classModuleId, Long studentId);
-
-    List<StudentGradeDTO> getStudentGrades(Long classModuleId, Long studentId);
+    void batchCreateOrUpdateGrades(BatchGradeUpdateDTO dto, User teacher);
 
     GradebookDTO getGradebook(Long classModuleId, Long teacherId, Pageable pageable);
 
-    void validateTeacherPermission(Long classModuleId, Long teacherId);
-
-    StudentGradeDTO updateGrade(Long gradeId, GradeUpdateDTO dto, User teacher);
+    GradeDTO getMyGrades(Long classModuleId, Long studentId);
 
     List<GradeHistoryDTO> getGradeHistory(Long gradeId, User currentUser);
 
-    StudentGradeDTO createGrade(GradeCreateDTO dto, User teacher);
+    void validateTeacherPermission(Long classModuleId, Long teacherId);
+
+    void deleteGrade(Long gradeId, User currentUser);
 }

@@ -1,6 +1,7 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.dto.MarkAttendanceRequest;
+import com.tim.appTim.dto.AttendanceDetailDto;
 import com.tim.appTim.dto.AttendanceHistoryDto;
 import com.tim.appTim.dto.AttendanceMarkDto;
 import com.tim.appTim.dto.AttendanceStatsDto;
@@ -25,7 +26,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.security.core.Authentication; 
 import org.springframework.security.core.GrantedAuthority;
 
 
@@ -103,11 +103,6 @@ public class AttendanceService {
             throw new BadRequestException("teacherId là bắt buộc");
         }
 
-        Optional<AttendanceSession> existing = sessionRepository.findByScheduleId(scheduleId);
-        if (existing.isPresent()) {
-            throw new ConflictException("Buổi điểm danh đã được mở trước đó.");
-        }
-
         boolean isAdminOverride = false; 
 
         if (authentication != null && authentication.isAuthenticated()) {
@@ -121,17 +116,34 @@ public class AttendanceService {
         }
 
 
+        Optional<AttendanceSession> existing = sessionRepository.findByScheduleId(scheduleId);
+        
         LocalDateTime startDate = getScheduleStartDate(scheduleId);
         boolean isLate = startDate != null && LocalDateTime.now().isAfter(startDate.plusMinutes(15));
 
-        AttendanceSession session = new AttendanceSession();
-        session.setScheduleId(scheduleId);
-        session.setOpenedBy(teacherId);
-        session.setIsLate(isLate);
-        session.setOpenedAt(LocalDateTime.now());
+        if (existing.isPresent()) {
+            long markedCount = recordRepository.countByScheduleId(scheduleId);
+            if (markedCount > 0) {
 
-        return sessionRepository.save(session);
+                throw new ConflictException("Buổi điểm danh đã có sinh viên được đánh dấu, không thể mở lại.");
+            }
+
+            AttendanceSession session = existing.get();
+            session.setOpenedBy(teacherId); 
+            session.setIsLate(isLate);     
+            session.setOpenedAt(LocalDateTime.now()); 
+            return sessionRepository.save(session);
+
+        } else {
+            AttendanceSession session = new AttendanceSession();
+            session.setScheduleId(scheduleId);
+            session.setOpenedBy(teacherId);
+            session.setIsLate(isLate);
+            session.setOpenedAt(LocalDateTime.now());
+            return sessionRepository.save(session);
+        }
     }
+
 
     @Transactional
     public List<AttendanceRecord> markAttendanceBatch(Long scheduleId, MarkAttendanceRequest request, Authentication authentication) {
@@ -166,9 +178,17 @@ public class AttendanceService {
             record.setScheduleId(scheduleId);
             record.setStudentId(dto.getStudentId());
             try {
-                record.setStatus(AttendanceRecord.AttendanceStatus.valueOf(dto.getStatus()));
+
+                String statusStr = dto.getStatus();
+
+                if (statusStr != null) {
+                    statusStr = statusStr.trim().toLowerCase();
+                }
+
+                record.setStatus(AttendanceRecord.AttendanceStatus.valueOf(statusStr));
+                
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Trạng thái không hợp lệ: " + dto.getStatus());
+                throw new BadRequestException("Trạng thái không hợp lệ: " + dto.getStatus() + ". Các trạng thái hợp lệ: PRESENT, ABSENT, LATE, EXCUSED.");
             }
             record.setMarkedBy(teacherId);
             record.setNotes(dto.getNotes());
@@ -188,6 +208,26 @@ public class AttendanceService {
         }
 
         return savedRecords;
+    }
+
+    public List<AttendanceDetailDto> getAttendanceDetails(Long scheduleId) {
+        List<Object[]> results = recordRepository.getAttendanceDetailsByScheduleId(scheduleId);
+        List<AttendanceDetailDto> dtos = new ArrayList<>();
+
+        for (Object[] row : results) {
+            AttendanceDetailDto dto = new AttendanceDetailDto();
+            dto.setStudentId(row[0] instanceof Number ? ((Number) row[0]).longValue() : null);
+            dto.setStudentName((String) row[1]);
+            String statusStr = (String) row[2];
+            dto.setStatus(statusStr != null ? statusStr.toLowerCase() : "absent"); 
+            Timestamp markedAtTs = (Timestamp) row[3];
+            dto.setMarkedAt(markedAtTs != null ? markedAtTs.toLocalDateTime() : null);
+            dto.setNotes((String) row[4]);
+            Object markedByObj = row[5];
+            dto.setMarkedBy(markedByObj instanceof Number ? ((Number) markedByObj).intValue() : null);
+            dtos.add(dto);
+        }
+        return dtos;
     }
 
     private boolean isTeacherAuthorized(Long scheduleId, Integer teacherId) {

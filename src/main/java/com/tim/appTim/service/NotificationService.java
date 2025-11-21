@@ -3,13 +3,11 @@ package com.tim.appTim.service;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.dto.NotificationDTO;
-import com.tim.appTim.entity.AttendanceSession;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.AttendanceSessionRepository;
 import com.tim.appTim.repository.NotificationRepository;
 import com.tim.appTim.repository.UserRepository;
-import com.tim.appTim.service.UserService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -40,7 +38,7 @@ public class NotificationService {
 
     @PersistenceContext
     private EntityManager entityManager;
-    
+
     public NotificationService(NotificationRepository notificationRepository, UserService userService, UserRepository userRepository, SseService sseService) {
         this.notificationRepository = notificationRepository;
         this.userService = userService;
@@ -53,9 +51,15 @@ public class NotificationService {
                                               String targetType, Long targetId,
                                               String title, String content) {
 
-        if (senderId != null && notificationRepository.existsByReceiverIdAndSenderIdAndNotificationTypeAndTargetTypeAndTargetId(
+        boolean shouldCheckDuplicate =
+                senderId != null
+                        && notificationType != Notification.NotificationType.GRADE_NEW
+                        && notificationType != Notification.NotificationType.GRADE_UPDATED;
+
+        if (shouldCheckDuplicate
+                && notificationRepository.existsByReceiverIdAndSenderIdAndNotificationTypeAndTargetTypeAndTargetId(
                 receiverId, senderId, notificationType, targetType, targetId)) {
-            return null; 
+            return null;
         }
 
         Notification notification = new Notification(receiverId, senderId, notificationType,
@@ -95,8 +99,8 @@ public class NotificationService {
             throw new ForbiddenException("User not authorized to mark this notification as read");
         }
 
-        notification.setIsRead(true); 
-        notification.setReadAt(LocalDateTime.now()); 
+        notification.setIsRead(true);
+        notification.setReadAt(LocalDateTime.now());
 
         notificationRepository.save(notification);
     }
@@ -116,7 +120,7 @@ public class NotificationService {
                                            Notification.NotificationType notificationType,
                                            String targetType, Long targetId) {
 
-        if (senderId == null) return; 
+        if (senderId == null) return;
 
         Long receiverId = null;
         String title = "";
@@ -212,7 +216,7 @@ public class NotificationService {
         );
     }
 
-   // @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 300000)
     @Transactional
     public void remindTeachersToOpenAttendance() {
         LocalDateTime now = LocalDateTime.now();
@@ -250,13 +254,13 @@ public class NotificationService {
 
             if (type != null && !notificationAlreadySent(teacherId.longValue(), scheduleId, title)) {
                 createNotification(
-                    teacherId.longValue(),
-                    null, 
-                    type,
-                    "ATTENDANCE_SCHEDULE",
-                    scheduleId,
-                    title,
-                    content
+                        teacherId.longValue(),
+                        null,
+                        type,
+                        "ATTENDANCE_SCHEDULE",
+                        scheduleId,
+                        title,
+                        content
                 );
             }
         }
@@ -264,25 +268,31 @@ public class NotificationService {
 
     private boolean notificationAlreadySent(Long receiverId, Long targetId, String title) {
         return notificationRepository.existsByReceiverIdAndTargetTypeAndTargetIdAndTitle(
-            receiverId, "ATTENDANCE_SCHEDULE", targetId, title
+                receiverId, "ATTENDANCE_SCHEDULE", targetId, title
         );
     }
 
     @SuppressWarnings("unchecked")
     private List<Object[]> getActiveSchedulesForReminder(LocalDateTime now) {
         String sql = """
-            SELECT 
+            SELECT DISTINCT
                 cms.id,
-                cms.instructor_id,
+                COALESCE(cms.instructor_id, cmst.user_id) AS teacher_id,
                 cms.start_date,
                 cms.end_date,
-                CONCAT(m.name, ' - Buổi ', ms.session_number) -- <--- ĐÃ SỬA
+                CONCAT(
+                    COALESCE(m.name, 'Module'),
+                    ' - Buổi ',
+                    COALESCE(ms.session_number, '#')
+                ) AS module_info
             FROM class_module_schedules cms
-            JOIN modules m ON cms.module_id = m.id             -- <--- ĐÃ SỬA
-            JOIN module_sessions ms ON cms.module_session_id = ms.id -- <--- ĐÃ SỬA
+            LEFT JOIN class_module_schedule_teacher cmst 
+                   ON cmst.class_module_schedule_id = cms.id
+            LEFT JOIN modules m ON cms.module_id = m.id
+            LEFT JOIN module_sessions ms ON cms.module_session_id = ms.id
             WHERE cms.start_date <= ? 
               AND cms.end_date >= ?
-              AND cms.instructor_id IS NOT NULL
+              AND COALESCE(cms.instructor_id, cmst.user_id) IS NOT NULL
             """;
 
         return entityManager.createNativeQuery(sql)
@@ -292,7 +302,7 @@ public class NotificationService {
     }
 
     private String generateActionUrl(Notification notification) {
-        String baseUrl = "/"; 
+        String baseUrl = "/";
 
         switch (notification.getNotificationType()) {
             case POST_REACTION:
@@ -306,11 +316,11 @@ public class NotificationService {
             case USER_FOLLOW:
                 return baseUrl + "users/" + notification.getSenderId();
             case LATE_ATTENDANCE_OPENED:
-                return baseUrl + "attendance/schedule/" + notification.getTargetId(); 
+                return baseUrl + "attendance/schedule/" + notification.getTargetId();
             case ATTENDANCE_REMINDER_LATE:
-                return baseUrl + "attendance/schedule/" + notification.getTargetId(); 
+                return baseUrl + "attendance/schedule/" + notification.getTargetId();
             case ATTENDANCE_REMINDER_ENDING:
-                return baseUrl + "attendance/schedule/" + notification.getTargetId();                
+                return baseUrl + "attendance/schedule/" + notification.getTargetId();
             case GRADE_NEW, GRADE_UPDATED:
                 return baseUrl + "class-modules/" + notification.getTargetId() + "/my-grades";
 
@@ -323,11 +333,11 @@ public class NotificationService {
     }
 
     private Long getPostIdFromComment(Long commentId) {
-        return null; 
+        return null;
     }
 
     private Long getPostIdFromReply(Long replyId) {
-        return null; 
+        return null;
     }
 
     public boolean isReceiver(Authentication authentication, Long notificationId) {

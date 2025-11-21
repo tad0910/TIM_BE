@@ -90,28 +90,28 @@ public class CommentIntegrationTest {
                 .andExpect(jsonPath("$.userId").value(2L));
     }
 
-//     @Test
-//         @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-//         void testUpdateComment_WhenUserIsPostOwner_ShouldReturn200() throws Exception {
-//         Long commentId = 20L;
-//         String updatedContent = "Chủ post cập nhật comment.";
+    @Test
+        @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+        void testUpdateComment_WhenUserIsPostOwner_ShouldReturn200() throws Exception {
+        Long commentId = 20L;
+        String updatedContent = "Chủ post cập nhật comment.";
 
-//         mockMvc.perform(put("/comments/" + commentId)
-//                         .param("content", updatedContent))
-//                 .andExpect(status().isOk()) 
-//                 .andExpect(jsonPath("$.content").value(updatedContent));
-//         }
+        mockMvc.perform(put("/comments/" + commentId)
+                        .param("content", updatedContent))
+                .andExpect(status().isOk()) 
+                .andExpect(jsonPath("$.content").value(updatedContent));
+        }
 
-//         @Test
-//         @WithUserDetails(value = "stranger_user", userDetailsServiceBeanName = "userService")
-//         void testUpdateComment_WhenUserIsStranger_ShouldReturn403() throws Exception {
-//         Long commentId = 20L;
-//         String updatedContent = "Người lạ cố sửa comment.";
+        @Test
+        @WithUserDetails(value = "stranger_user", userDetailsServiceBeanName = "userService")
+        void testUpdateComment_WhenUserIsStranger_ShouldReturn403() throws Exception {
+        Long commentId = 20L;
+        String updatedContent = "Người lạ cố sửa comment.";
 
-//         mockMvc.perform(put("/comments/" + commentId)
-//                         .param("content", updatedContent))
-//                 .andExpect(status().isForbidden());     
-//         }       
+        mockMvc.perform(put("/comments/" + commentId)
+                        .param("content", updatedContent))
+                .andExpect(status().isForbidden());     
+        }       
 
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
@@ -145,14 +145,14 @@ public class CommentIntegrationTest {
                 .andExpect(status().isOk());
     }
 
-//     @Test
-//     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-//     void testDeleteComment_WhenUserIsNotOwner_ShouldReturn403() throws Exception {
-//         Long commentId = 20L;
+    @Test
+    @WithUserDetails(value = "stranger_user", userDetailsServiceBeanName = "userService")
+        void testDeleteComment_WhenUserIsStranger_ShouldReturn403() throws Exception {
+        Long commentId = 20L;
 
-//         mockMvc.perform(delete("/comments/" + commentId))
-//                 .andExpect(status().isForbidden());
-//     }
+        mockMvc.perform(delete("/comments/" + commentId))
+                .andExpect(status().isForbidden());
+        }
 
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
