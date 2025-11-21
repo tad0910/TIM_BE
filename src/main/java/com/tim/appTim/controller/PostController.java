@@ -5,6 +5,7 @@ import java.nio.file.*;
 import java.util.*;
 
 import com.tim.appTim.entity.User;
+import com.tim.appTim.service.FileUploadService;
 import com.tim.appTim.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,9 +28,10 @@ public class PostController {
 
     private final PostService postService;
     private final UserService userService;
+    @Autowired
+    private FileUploadService fileUploadService;
 
-    @Value("${upload.folder}")
-    private String uploadFolder;
+
 
     @Autowired
     public PostController(PostService postService, UserService userService) {
@@ -59,15 +61,10 @@ public class PostController {
                 for (MultipartFile mf : multipartFiles) {
                     if (mf.isEmpty()) continue;
 
-                    String originalName = mf.getOriginalFilename();
-                    String fileExt = originalName != null && originalName.contains(".")
-                            ? originalName.substring(originalName.lastIndexOf("."))
-                            : "";
+                    String fileUrl = fileUploadService.uploadFile(mf);
 
-                    String uniqueName = UUID.randomUUID().toString() + fileExt;
-                    Path uploadPath = Paths.get(uploadFolder, uniqueName);
-                    Files.createDirectories(uploadPath.getParent());
-                    Files.write(uploadPath, mf.getBytes());
+                    String originalName = mf.getOriginalFilename();
+                    long fileSize = mf.getSize();
 
                     String lowerName = originalName != null ? originalName.toLowerCase() : "";
                     File.FileType fileType;
@@ -80,9 +77,9 @@ public class PostController {
                     }
 
                     File f = new File();
-                    f.setFileUrl("/uploads/" + uniqueName);
+                    f.setFileUrl(fileUrl);
                     f.setFileName(originalName);
-                    f.setFileSize(mf.getSize());
+                    f.setFileSize(fileSize);
                     f.setFileType(fileType);
                     files.add(f);
                 }
@@ -93,8 +90,6 @@ public class PostController {
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(null);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }
@@ -132,7 +127,7 @@ public class PostController {
             @RequestParam("privacy") String privacy,
             @RequestParam(value = "files", required = false) List<MultipartFile> multipartFiles,
             @RequestParam(value = "fileIdsToDelete", required = false) List<Integer> fileIdsToDelete
-    ) throws IOException{
+    ) {
         System.out.println("File IDs to delete received from request: " + fileIdsToDelete);
         try {
             User currentUser = getUserFromAuthentication(authentication);
@@ -143,15 +138,10 @@ public class PostController {
                 for (MultipartFile mf : multipartFiles) {
                     if (mf.isEmpty()) continue;
 
-                    String originalName = mf.getOriginalFilename();
-                    String fileExt = originalName != null && originalName.contains(".")
-                            ? originalName.substring(originalName.lastIndexOf("."))
-                            : "";
+                    String fileUrl = fileUploadService.uploadFile(mf);
 
-                    String uniqueName = UUID.randomUUID().toString() + fileExt;
-                    Path uploadPath = Paths.get(uploadFolder, uniqueName);
-                    Files.createDirectories(uploadPath.getParent());
-                    Files.write(uploadPath, mf.getBytes());
+                    String originalName = mf.getOriginalFilename();
+                    long fileSize = mf.getSize();
 
                     String lowerName = originalName != null ? originalName.toLowerCase() : "";
                     File.FileType fileType;
@@ -164,7 +154,7 @@ public class PostController {
                     }
 
                     File f = new File();
-                    f.setFileUrl("/uploads/" + uniqueName);
+                    f.setFileUrl(fileUrl);
                     f.setFileName(originalName);
                     f.setFileSize(mf.getSize());
                     f.setFileType(fileType);
@@ -185,7 +175,7 @@ public class PostController {
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
-        } catch (IOException e) {
+        } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }

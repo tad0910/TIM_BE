@@ -1,8 +1,10 @@
 package com.tim.appTim.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tim.appTim.service.FileUploadService;
 import com.tim.appTim.service.KeycloakSyncService;
 import com.tim.appTim.service.PostService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,10 +20,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,6 +44,14 @@ public class CommentIntegrationTest {
 
     @MockBean
     private PostService postService;
+
+    @MockBean
+    private FileUploadService fileUploadService;
+
+    @BeforeEach
+    void setUp() {
+        doReturn("https://test.local/uploaded-file.jpg").when(fileUploadService).uploadFile(any());
+    }
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")

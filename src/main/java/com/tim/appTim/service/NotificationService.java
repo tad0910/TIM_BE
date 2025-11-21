@@ -38,7 +38,7 @@ public class NotificationService {
 
     @PersistenceContext
     private EntityManager entityManager;
-    
+
     public NotificationService(NotificationRepository notificationRepository, UserService userService, UserRepository userRepository, SseService sseService) {
         this.notificationRepository = notificationRepository;
         this.userService = userService;
@@ -99,8 +99,8 @@ public class NotificationService {
             throw new ForbiddenException("User not authorized to mark this notification as read");
         }
 
-        notification.setIsRead(true); 
-        notification.setReadAt(LocalDateTime.now()); 
+        notification.setIsRead(true);
+        notification.setReadAt(LocalDateTime.now());
 
         notificationRepository.save(notification);
     }
@@ -120,7 +120,7 @@ public class NotificationService {
                                            Notification.NotificationType notificationType,
                                            String targetType, Long targetId) {
 
-        if (senderId == null) return; 
+        if (senderId == null) return;
 
         Long receiverId = null;
         String title = "";
@@ -216,7 +216,7 @@ public class NotificationService {
         );
     }
 
-    @Scheduled(fixedRate = 300000) 
+    @Scheduled(fixedRate = 300000)
     @Transactional
     public void remindTeachersToOpenAttendance() {
         LocalDateTime now = LocalDateTime.now();
@@ -242,7 +242,7 @@ public class NotificationService {
 
             if (now.isAfter(startDate.plusMinutes(15)) && now.isBefore(endDate)) {
                 title = "Bạn chưa mở điểm danh";
-                content = String.format("Buổi học %s đã bắt đầu hơn 15 phút nhưng chưa được mở điểm danh.", moduleInfo); 
+                content = String.format("Buổi học %s đã bắt đầu hơn 15 phút nhưng chưa được mở điểm danh.", moduleInfo);
                 type = Notification.NotificationType.ATTENDANCE_REMINDER_LATE;
             }
 
@@ -254,13 +254,13 @@ public class NotificationService {
 
             if (type != null && !notificationAlreadySent(teacherId.longValue(), scheduleId, title)) {
                 createNotification(
-                    teacherId.longValue(),
-                    null, 
-                    type,
-                    "ATTENDANCE_SCHEDULE",
-                    scheduleId,
-                    title,
-                    content
+                        teacherId.longValue(),
+                        null,
+                        type,
+                        "ATTENDANCE_SCHEDULE",
+                        scheduleId,
+                        title,
+                        content
                 );
             }
         }
@@ -268,7 +268,7 @@ public class NotificationService {
 
     private boolean notificationAlreadySent(Long receiverId, Long targetId, String title) {
         return notificationRepository.existsByReceiverIdAndTargetTypeAndTargetIdAndTitle(
-            receiverId, "ATTENDANCE_SCHEDULE", targetId, title
+                receiverId, "ATTENDANCE_SCHEDULE", targetId, title
         );
     }
 
@@ -296,13 +296,13 @@ public class NotificationService {
             """;
 
         return entityManager.createNativeQuery(sql)
-            .setParameter(1, now.plusMinutes(15))
-            .setParameter(2, now.minusMinutes(10))
-            .getResultList();
+                .setParameter(1, now.plusMinutes(15))
+                .setParameter(2, now.minusMinutes(10))
+                .getResultList();
     }
 
     private String generateActionUrl(Notification notification) {
-        String baseUrl = "/"; 
+        String baseUrl = "/";
 
         switch (notification.getNotificationType()) {
             case POST_REACTION:
@@ -316,11 +316,11 @@ public class NotificationService {
             case USER_FOLLOW:
                 return baseUrl + "users/" + notification.getSenderId();
             case LATE_ATTENDANCE_OPENED:
-                return baseUrl + "attendance/schedule/" + notification.getTargetId(); 
+                return baseUrl + "attendance/schedule/" + notification.getTargetId();
             case ATTENDANCE_REMINDER_LATE:
-                return baseUrl + "attendance/schedule/" + notification.getTargetId(); 
+                return baseUrl + "attendance/schedule/" + notification.getTargetId();
             case ATTENDANCE_REMINDER_ENDING:
-                return baseUrl + "attendance/schedule/" + notification.getTargetId();                
+                return baseUrl + "attendance/schedule/" + notification.getTargetId();
             case GRADE_NEW, GRADE_UPDATED:
                 return baseUrl + "class-modules/" + notification.getTargetId() + "/my-grades";
 
@@ -333,11 +333,11 @@ public class NotificationService {
     }
 
     private Long getPostIdFromComment(Long commentId) {
-        return null; 
+        return null;
     }
 
     private Long getPostIdFromReply(Long replyId) {
-        return null; 
+        return null;
     }
 
     public boolean isReceiver(Authentication authentication, Long notificationId) {

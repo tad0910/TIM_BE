@@ -1,15 +1,13 @@
-# Bước 1: Dùng image Java 21 làm nền (vì bạn dùng Java 21)
-FROM openjdk:21-jdk-slim
+# 1. Dùng ảnh nền Java 21 (nhẹ)
+FROM eclipse-temurin:21-jdk-alpine
 
-# Đặt tên cho file .jar sẽ được build
-ARG JAR_FILE=target/*.jar
+# 2. Tạo thư mục tạm
+VOLUME /tmp
 
-# Copy file .jar từ thư mục 'target' vào bên trong image
-# và đổi tên thành 'app.jar' cho thống nhất
-COPY ${JAR_FILE} app.jar
+# 3. Copy file .jar đã build vào trong ảnh
+# (Lưu ý: tên file phải KHỚP với tên trong pom.xml của bạn)
+COPY target/appTim-0.0.1-SNAPSHOT.jar app.jar
 
-# Mở cổng 8080 (cổng mặc định của Spring Boot)
-EXPOSE 8080
-
-# Lệnh để chạy ứng dụng khi container khởi động
-ENTRYPOINT ["java","-jar","/app.jar"]
+# 4. Lệnh chạy ứng dụng
+# (Lưu ý: Thêm các tham số bộ nhớ để tránh sập trên gói Free)
+ENTRYPOINT ["java", "-Xmx300m", "-jar", "/app.jar"]

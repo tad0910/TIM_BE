@@ -1,6 +1,7 @@
 package com.tim.appTim.integration;
 
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.service.FileUploadService;
 import com.tim.appTim.service.KeycloakSyncService;
 import com.tim.appTim.service.PostService;
 import com.tim.appTim.service.UserImageService;
@@ -54,6 +55,9 @@ public class ImageControllerIntegrationTest {
     @MockBean
     private PostService postService;
 
+    @MockBean
+    private FileUploadService fileUploadService;
+
     private final String BASE_URL = "/api/users";
     private UserImage testImage;
 
@@ -68,6 +72,8 @@ public class ImageControllerIntegrationTest {
         testImage.setId(100L);
         testImage.setUserId(1L);
         testImage.setImageUrl("/uploads/image-cua-user-1.jpg");
+
+        when(fileUploadService.uploadFile(any())).thenReturn("https://test.local/uploaded-file.jpg");
     }
 
     @Test

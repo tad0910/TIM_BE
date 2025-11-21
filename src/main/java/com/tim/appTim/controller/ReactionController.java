@@ -92,7 +92,7 @@ public class ReactionController {
 
         User currentUser = getUserFromAuthentication(authentication);
         Reaction.EmotionType emotionTypeEnum;
-
+//test
         try {
             emotionTypeEnum = Reaction.EmotionType.valueOf(emotionType.toLowerCase());
         } catch (IllegalArgumentException e) {

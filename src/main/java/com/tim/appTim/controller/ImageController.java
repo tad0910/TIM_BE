@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.tim.appTim.service.FileUploadService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +41,8 @@ public class ImageController {
     @Autowired
     private UserImageService userImageService;
 
-    @Value("${upload.folder}")
-    private String uploadFolder;
+    @Autowired
+    private FileUploadService fileUploadService;
 
     @PostMapping("/{userId}/image")
     @PreAuthorize("hasAuthority('user:update_all') or @userService.isSelf(authentication, #userId)")
@@ -55,36 +56,25 @@ public class ImageController {
         }
 
         try {
-            File uploadDir = new File(uploadFolder);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = (originalFilename != null && originalFilename.contains("."))
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : ".jpg";
-            String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
-
-            Path filePath = Paths.get(uploadFolder + File.separator + uniqueFilename);
-            Files.write(filePath, file.getBytes());
+            String imageUrl = fileUploadService.uploadFile(file);
 
             User user = userService.findById(userId);
             if (user == null) {
-                Files.deleteIfExists(filePath);
                 throw new ResourceNotFoundException("Không tìm thấy người dùng có ID: " + userId);
             }
 
             UserImage userImage = new UserImage();
             userImage.setUserId(userId);
-            userImage.setImageUrl("/uploads/" + uniqueFilename);
+            userImage.setImageUrl(imageUrl);
             userImage.setCreatedAt(LocalDateTime.now());
             userImageService.save(userImage);
 
-            logger.info("Tải ảnh thành công cho userId {}: {}", userId, uniqueFilename);
-            return ResponseEntity.ok("Tải ảnh thành công: " + uniqueFilename);
+            logger.info("Tải ảnh thành công cho userId {}: {}", userId, imageUrl);
+            return ResponseEntity.ok("Tải ảnh thành công: " + imageUrl);
 
-        } catch (IOException e) {
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
             logger.error("Lỗi khi tải ảnh cho userId {}: {}", userId, e.getMessage());
             throw new InternalServerErrorException("Không thể lưu ảnh: " + e.getMessage());
         }

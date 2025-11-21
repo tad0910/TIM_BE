@@ -5,6 +5,7 @@ import com.tim.appTim.dto.BatchGradeUpdateDTO;
 import com.tim.appTim.dto.StudentScoreEntryDTO;
 import com.tim.appTim.service.GradeService;
 import com.tim.appTim.service.NotificationService;
+import com.tim.appTim.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +14,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -36,7 +35,7 @@ import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Sql("/test-data.sql") // Đảm bảo file này tạo dữ liệu khớp với logic (users, roles, classes)
+@Sql("/test-data.sql")
 @ActiveProfiles("test")
 class GradeIntegrationTest {
 
@@ -46,9 +45,15 @@ class GradeIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    // Dùng SpyBean để chạy logic thật của Service
     @SpyBean
     private GradeService gradeService;
 
+    // Dùng SpyBean cho UserService để lấy User thật từ DB (quan trọng để fix lỗi 500)
+    @SpyBean
+    private UserService userService;
+
+    // Mock Notification vì đây là service bên ngoài (email/push), không cần test logic DB
     @MockBean
     private NotificationService notificationService;
 
@@ -61,68 +66,86 @@ class GradeIntegrationTest {
                 .apply(springSecurity())
                 .build();
 
-        // Mock notification để không bị lỗi khi service gọi nó
+        // Giả lập notification thành công để không ảnh hưởng luồng test
         doReturn(null).when(notificationService).createNotification(any(), any(), any(), any(), any(), any(), any());
     }
 
-    // --- TEST KỊCH BẢN 1: SINH VIÊN XEM ĐIỂM ---
+    // --- TEST GET MY GRADES ---
 
     @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService") // Giả sử đây là student 1
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getMyGradesInModule_WhenStudentIsSelf_ShouldReturn200() throws Exception {
-        // API: /grades/class-modules/{id}/my-grades
+        // post_owner (id=1) là sinh viên lớp module 500
         mockMvc.perform(get(BASE_URL + "/class-modules/500/my-grades"))
                 .andExpect(status().isOk())
-                // Kiểm tra cấu trúc DTO mới (không còn là List)
-                .andExpect(jsonPath("$.studentId").exists())
-                .andExpect(jsonPath("$.theoryScore").exists());
+                .andExpect(jsonPath("$.studentId").value(1))
+                .andExpect(jsonPath("$.theoryScore").value(8.0)); // Dữ liệu từ test-data.sql
     }
 
     @Test
-    @WithMockUser(username = "stranger_user", authorities = "ROLE_USER") // User không có trong lớp
+    @WithUserDetails(value = "stranger_user", userDetailsServiceBeanName = "userService")
     void getMyGradesInModule_WhenUserNotInClass_ShouldReturnForbidden() throws Exception {
-        // Sẽ bị chặn bởi validateStudentMembership
-        ResultActions resultActions = mockMvc.perform(get(BASE_URL + "/class-modules/500/my-grades"))
+        // stranger_user (id=4) không có trong bảng class_members
+        mockMvc.perform(get(BASE_URL + "/class-modules/500/my-grades"))
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void getMyGradesInModule_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/class-modules/500/my-grades"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- TEST GRADEBOOK (TEACHER) ---
 
     @Test
-    @WithMockUser(username = "giaovien1", authorities = "grade:read_detail") // Giả sử có quyền đọc
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
     void getModuleGradebook_WhenTeacherIsAuthorized_ShouldReturn200() throws Exception {
-        // API: /grades/class-modules/{id}/gradebook
+        // giaovien1 (id=5) là giáo viên của module 500
         mockMvc.perform(get(BASE_URL + "/class-modules/500/gradebook")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.classModuleId").value(500))
-                // Kiểm tra cấu trúc DTO mới
                 .andExpect(jsonPath("$.students").isArray())
-                .andExpect(jsonPath("$.currentPage").value(0));
+                // Kiểm tra có sinh viên post_owner trong danh sách
+                .andExpect(jsonPath("$.students[?(@.studentId == 1)].studentName").exists());
     }
 
-    // --- TEST KỊCH BẢN 3: NHẬP ĐIỂM HÀNG LOẠT (MỚI) ---
+    @Test
+    @WithUserDetails(value = "giaovien2", userDetailsServiceBeanName = "userService")
+    void getModuleGradebook_WhenTeacherNotAuthorized_ShouldReturn403() throws Exception {
+        // giaovien2 (id=6) không dạy module 500
+        mockMvc.perform(get(BASE_URL + "/class-modules/500/gradebook"))
+                .andExpect(status().isForbidden());
+    }
 
     @Test
-    @WithMockUser(username = "giaovien1", authorities = "grade:create") // Cần quyền create
-    void batchCreateOrUpdateGrades_WhenTeacherIsAuthorized_ShouldReturn200() throws Exception {
-        // 1. Tạo DTO Batch
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void getModuleGradebook_WhenUserIsStudent_ShouldReturn403() throws Exception {
+        // Sinh viên không được xem sổ điểm cả lớp
+        mockMvc.perform(get(BASE_URL + "/class-modules/500/gradebook"))
+                .andExpect(status().isForbidden());
+    }
+
+    // --- TEST BATCH CREATE/UPDATE (Thay thế cho Create/Update đơn lẻ) ---
+
+    @Test
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
+    void batchUpdateGrades_WhenTeacherIsAuthorized_ShouldReturn200() throws Exception {
         BatchGradeUpdateDTO batchDTO = new BatchGradeUpdateDTO();
         batchDTO.setClassModuleId(500L);
         batchDTO.setEntryDate(LocalDate.now());
 
-        // 2. Tạo 1 hàng điểm cho sinh viên (ID 1)
-        StudentScoreEntryDTO studentScore = new StudentScoreEntryDTO();
-        studentScore.setStudentId(1L);
-        // Map điểm
-        studentScore.setComponents(Map.of(
-                "Điểm lý thuyết", new BigDecimal("8.5"),
-                "Điểm thực hành", new BigDecimal("9.0")
+        StudentScoreEntryDTO scoreEntry = new StudentScoreEntryDTO();
+        scoreEntry.setStudentId(1L); // post_owner
+        scoreEntry.setComponents(Map.of(
+                "Điểm lý thuyết", new BigDecimal("9.5"),
+                "Điểm thực hành", new BigDecimal("10.0")
         ));
 
-        batchDTO.setScores(List.of(studentScore));
+        batchDTO.setScores(List.of(scoreEntry));
 
-        // 3. Gọi API
         mockMvc.perform(post(BASE_URL + "/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(batchDTO)))
@@ -130,41 +153,94 @@ class GradeIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "giaovien2", authorities = "grade:create") // GV không dạy lớp này
-    void batchCreateOrUpdateGrades_WhenTeacherNotAuthorized_ShouldReturn403() throws Exception {
+    @WithUserDetails(value = "giaovien2", userDetailsServiceBeanName = "userService")
+    void batchUpdateGrades_WhenTeacherNotAuthorized_ShouldReturn403() throws Exception {
         BatchGradeUpdateDTO batchDTO = new BatchGradeUpdateDTO();
         batchDTO.setClassModuleId(500L);
-        batchDTO.setScores(List.of()); // List rỗng cũng được, vì sẽ check quyền trước
+        batchDTO.setScores(List.of());
 
         mockMvc.perform(post(BASE_URL + "/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(batchDTO)))
-                .andExpect(status().isForbidden()); // Lỗi từ validateTeacherPermission
+                .andExpect(status().isForbidden());
     }
 
-    // --- TEST KỊCH BẢN 4: LỊCH SỬ ---
+    @Test
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
+    void batchUpdateGrades_WhenStudentNotFound_ShouldLogWarningButReturn200() throws Exception {
+        // Logic service hiện tại log warn và bỏ qua student không tồn tại, không throw error
+        BatchGradeUpdateDTO batchDTO = new BatchGradeUpdateDTO();
+        batchDTO.setClassModuleId(500L);
+
+        StudentScoreEntryDTO scoreEntry = new StudentScoreEntryDTO();
+        scoreEntry.setStudentId(999L); // ID không tồn tại
+        scoreEntry.setComponents(Map.of("Điểm lý thuyết", BigDecimal.TEN));
+        batchDTO.setScores(List.of(scoreEntry));
+
+        mockMvc.perform(post(BASE_URL + "/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(batchDTO)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void batchUpdateGrades_WhenUnauthenticated_ShouldReturn401() throws Exception {
+        BatchGradeUpdateDTO batchDTO = new BatchGradeUpdateDTO();
+        mockMvc.perform(post(BASE_URL + "/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(batchDTO)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- TEST GRADE HISTORY ---
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getGradeHistory_WhenStudentOwner_ShouldReturn200() throws Exception {
-        // Giả sử gradeId = 1 thuộc về post_owner
+        // Grade ID 1 thuộc về post_owner
         mockMvc.perform(get(BASE_URL + "/1/history"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", instanceOf(Iterable.class)));
+                .andExpect(jsonPath("$", instanceOf(List.class)));
+    }
+
+    @Test
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
+    void getGradeHistory_WhenAuthorizedTeacher_ShouldReturn200() throws Exception {
+        // Giáo viên dạy lớp đó được xem history
+        mockMvc.perform(get(BASE_URL + "/1/history"))
+                .andExpect(status().isOk());
     }
 
     @Test
     @WithUserDetails(value = "another_user", userDetailsServiceBeanName = "userService")
     void getGradeHistory_WhenOtherStudent_ShouldReturn403() throws Exception {
+        // another_user (id=2) không được xem history của post_owner (id=1)
         mockMvc.perform(get(BASE_URL + "/1/history"))
                 .andExpect(status().isForbidden());
     }
 
-    // --- TEST BẢO MẬT CHUNG ---
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void getGradeHistory_WhenGradeNotFound_ShouldReturn404() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/9999/history"))
+                .andExpect(status().isNotFound());
+    }
+
+    // --- TEST DELETE GRADE ---
 
     @Test
-    void getMyGradesInModule_WhenUnauthenticated_ShouldReturn401() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/class-modules/500/my-grades"))
-                .andExpect(status().isUnauthorized());
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
+    void deleteGrade_WhenTeacherIsAuthorized_ShouldReturn204() throws Exception {
+        // Grade ID 2 thuộc về student 2 (another_user), module 500 -> GV1 có quyền xóa
+        mockMvc.perform(delete(BASE_URL + "/2"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+    void deleteGrade_WhenStudentTriesToDelete_ShouldReturn403() throws Exception {
+        // Sinh viên không được xóa điểm
+        mockMvc.perform(delete(BASE_URL + "/1"))
+                .andExpect(status().isForbidden());
     }
 }

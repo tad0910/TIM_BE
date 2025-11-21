@@ -46,3 +46,6 @@ buildNumber.properties
 *.ear
 
 uploads/
+
+# Bỏ qua file biến môi trường
+.env

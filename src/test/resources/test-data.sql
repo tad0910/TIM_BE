@@ -64,7 +64,8 @@ INSERT INTO permissions (id, name) VALUES
 (31, 'grade:read_detail'),
 (32, 'attendance:open'),
 (33, 'attendance:mark'),
-(34, 'attendance:read_all');
+(34, 'attendance:read_all'),
+(35, 'grade:delete');
 
 INSERT INTO users (id, username, password, email, deleted) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com', false),
@@ -76,47 +77,48 @@ INSERT INTO users (id, username, password, email, deleted) VALUES
 (7, 'giaovien3', '{noop}password', 'gv3@example.com', false);
 
 INSERT INTO user_roles (user_id, role_id) VALUES
-(1, 1), 
-(2, 1), 
+(1, 1),
+(2, 1),
 (3, 2),
 (4, 1),
-(5, 1), 
-(6, 1), 
+(5, 3),
+(6, 1),
 (7, 1);
 
 INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 11),
 (2, 12),
-(1, 1), 
+(1, 1),
 (1, 4),
-(2, 2), 
-(2, 3), 
-(2, 5), 
+(2, 2),
+(2, 3),
+(2, 5),
 (2, 6),
-(2, 7), 
-(2, 8), 
-(2, 9), 
-(2, 10), 
+(2, 7),
+(2, 8),
+(2, 9),
+(2, 10),
 (2, 13),
-(2, 14), 
-(2, 15), 
-(2, 16), 
-(2, 17), 
+(2, 14),
+(2, 15),
+(2, 16),
+(2, 17),
 (2, 18),
-(2, 19), 
-(2, 20), 
-(2, 21), 
-(2, 22), 
+(2, 19),
+(2, 20),
+(2, 21),
+(2, 22),
 (2, 23),
-(2, 24), 
-(2, 25), 
-(2, 26), 
-(2, 27), 
+(2, 24),
+(2, 25),
+(2, 26),
+(2, 27),
 (2, 28),
 (2, 29),
-(3, 29), 
-(3, 30), 
-(3, 31);
+(3, 29),
+(3, 30),
+(3, 31),
+(3, 35);
 
 INSERT INTO programs (id, name, description) VALUES
 (100, 'Khóa học Backend', 'Phát triển ứng dụng với Spring Boot.');
@@ -145,7 +147,7 @@ INSERT INTO class_members (lop_id, nguoi_dung_id, vai_tro, ngay_tham_gia) VALUES
 (10, 2, 'sinh_vien', NOW());
 
 INSERT INTO program_modules (program_id, module_id, position) VALUES
-(100, 200, 1), 
+(100, 200, 1),
 (100, 201, 2);
 
 INSERT INTO class_module_schedules (id, class_id, module_id, class_module_id, start_date, end_date, instructor_id, status) VALUES
@@ -199,4 +201,3 @@ INSERT INTO attendance_sessions (id, schedule_id, opened_by, is_late, opened_at)
 
 INSERT INTO attendance_records (marked_by, student_id, schedule_id, status, marked_at, notes) VALUES
 (5, 1, 1001, 'present', NOW(), 'Bản ghi điểm danh có sẵn dùng cho test mở lại phiên');
-

@@ -15,11 +15,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
-import java.time.LocalDate; // <-- THÊM IMPORT
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(GradeServiceImpl.class);
@@ -39,7 +39,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     private final GradeHistoryRepository gradeHistoryRepository;
     private final NotificationService notificationService;
     private final TransactionTemplate transactionTemplate;
-    
+
     private ApplicationContext applicationContext;
 
     public GradeServiceImpl(GradeRepository gradeRepository,
@@ -65,6 +65,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     }
 
     @Override
+    @Transactional
     public void batchCreateOrUpdateGrades(BatchGradeUpdateDTO dto, User teacher) {
         logger.info("========== BẮT ĐẦU batchCreateOrUpdateGrades (OPTIMIZED) ==========");
 
@@ -176,10 +177,10 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             history.setNewScore(newScore);
             history.setChangedBy(teacher);
             gradeHistoryRepository.save(history);
-            logger.debug("Đã lưu lịch sử: component={}, oldScore={}, newScore={}", 
+            logger.debug("Đã lưu lịch sử: component={}, oldScore={}, newScore={}",
                     componentName, oldScore, newScore);
         } catch (Exception e) {
-            logger.error("Lỗi khi lưu GradeHistory (component: {}, gradeId: {}): {}. Lỗi này không ảnh hưởng việc lưu điểm.", 
+            logger.error("Lỗi khi lưu GradeHistory (component: {}, gradeId: {}): {}. Lỗi này không ảnh hưởng việc lưu điểm.",
                     componentName, savedGrade.getId(), e.getMessage(), e);
         }
 
@@ -207,16 +208,16 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             logger.error("Lỗi khi gửi thông báo (không ảnh hưởng việc lưu điểm): {}", e.getMessage(), e);
         }
     }
-    
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendGradeNotificationInNewTransaction(User teacher, User student, String moduleName,
                                                       String componentName, BigDecimal score, Long classModuleId,
                                                       Long gradeId, Notification.NotificationType type) {
         try {
             logger.info("--- Bắt đầu gửi thông báo (transaction riêng) ---");
-            logger.info("studentId={}, teacherId={}, type={}, componentName={}, score={}", 
+            logger.info("studentId={}, teacherId={}, type={}, componentName={}, score={}",
                     student.getId(), teacher.getId(), type.name(), componentName, score);
-            
+
             String title = (type == Notification.NotificationType.GRADE_NEW) ? "Bạn có điểm mới" : "Điểm của bạn đã được cập nhật";
             String content = String.format(
                     "Bạn có điểm [ %s ] môn [ %s ]: %.1f",
@@ -390,5 +391,5 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         if (!isTeaching) {
             throw new ForbiddenException("Access Denied: User is not an authorized teacher for this module or an admin");
         }
-    }   
+    }
 }
