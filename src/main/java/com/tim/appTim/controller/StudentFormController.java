@@ -1,0 +1,69 @@
+package com.tim.appTim.controller;
+
+import com.tim.appTim.dto.ApprovalRequestDTO;
+import com.tim.appTim.dto.StudentFormCreateDTO;
+import com.tim.appTim.dto.StudentFormResponseDTO;
+import com.tim.appTim.entity.FormTemplate;
+import com.tim.appTim.entity.StudentForm;
+import com.tim.appTim.entity.User;
+import com.tim.appTim.service.StudentFormService;
+import com.tim.appTim.service.UserService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/forms")
+public class StudentFormController {
+
+    private final StudentFormService formService;
+    private final UserService userService;
+
+    public StudentFormController(StudentFormService formService, UserService userService) {
+        this.formService = formService;
+        this.userService = userService;
+    }
+
+    private User getUserFromAuthentication(Authentication authentication) {
+        return userService.findByUsernameOrEmail(authentication.getName());
+    }
+
+    @GetMapping("/templates")
+    public ResponseEntity<List<FormTemplate>> getTemplates() {
+        return ResponseEntity.ok(formService.getAllActiveTemplates());
+    }
+
+    @PostMapping
+    public ResponseEntity<StudentFormResponseDTO> createForm(
+            @RequestBody StudentFormCreateDTO createDTO,
+            Authentication authentication
+    ) {
+        User currentUser = getUserFromAuthentication(authentication);
+        StudentForm newForm = formService.createForm(createDTO, currentUser);
+        return ResponseEntity.ok(formService.mapToDTO(newForm));
+    }
+
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<StudentFormResponseDTO> approveForm(
+            @PathVariable Long id,
+            @RequestBody ApprovalRequestDTO request,
+            Authentication authentication
+    ) {
+        User currentUser = getUserFromAuthentication(authentication);
+        StudentForm updatedForm = formService.approveForm(id, currentUser, request);
+        return ResponseEntity.ok(formService.mapToDTO(updatedForm));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteForm(@PathVariable Long id) {
+        formService.deleteForm(id);
+        return ResponseEntity.ok("Đã xóa đơn thành công");
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<StudentFormResponseDTO> getFormDetail(@PathVariable Long id) {
+        StudentForm form = formService.getFormDetail(id);
+        return ResponseEntity.ok(formService.mapToDTO(form));
+    }
+}
