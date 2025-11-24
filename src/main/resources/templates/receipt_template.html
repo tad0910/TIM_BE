@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Phiếu Thu</title>
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 20px;
+        }
+        .header-container {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            width: 60%;
+            vertical-align: top;
+        }
+        .header-right {
+            display: table-cell;
+            width: 40%;
+            text-align: center;
+            vertical-align: top;
+            font-weight: bold;
+        }
+        .title-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .date-italic {
+            font-style: italic;
+        }
+        .content-line {
+            margin-bottom: 8px;
+        }
+        .label {
+            min-width: 150px;
+            display: inline-block;
+        }
+        .signatures {
+            margin-top: 30px;
+            width: 100%;
+            display: table;
+        }
+        .signature-col {
+            display: table-cell;
+            width: 20%;
+            text-align: center;
+            vertical-align: top;
+        }
+        .signature-title {
+            font-weight: bold;
+        }
+        .signature-note {
+            font-style: italic;
+            font-size: 12px;
+        }
+        .right-align {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-container">
+    <div class="header-left">
+        <b th:text="${data.companyName}">CodeGym Hà Nội</b><br /> <span th:text="${data.companyAddress}">Địa chỉ...</span>
+    </div>
+    <div class="header-right">
+        Mẫu số 01 - TT<br /> <span style="font-weight: normal; font-size: 12px;">(Ban hành theo TT số 200/2014/QĐ-BTC...)</span>
+    </div>
+</div>
+
+<div style="width: 100%; position: relative;">
+    <div class="title-section">
+        <div class="title">PHIẾU THU</div>
+        <div class="date-italic">
+            Ngày <span th:text="${#temporals.format(data.paymentDate, 'dd')}">21</span>
+            tháng <span th:text="${#temporals.format(data.paymentDate, 'MM')}">11</span>
+            năm <span th:text="${#temporals.format(data.paymentDate, 'yyyy')}">2025</span>
+        </div>
+    </div>
+
+    <div style="position: absolute; top: 0; right: 0; text-align: left;">
+        Quyển số:...........<br /> Số: <b th:text="${data.receiptId}">PT001</b><br /> Nợ:.................<br /> Có:.................
+    </div>
+</div>
+
+<div class="content">
+    <div class="content-line">
+        Họ tên người nộp tiền: <b th:text="${data.payerName}">Nguyễn Văn A</b>
+    </div>
+    <div class="content-line">
+        Địa chỉ: <span th:text="${data.payerAddress}">HN-C10...</span>
+    </div>
+    <div class="content-line">
+        Lý do nộp: <span th:text="${data.paymentReason}">Đóng học phí</span>
+    </div>
+    <div class="content-line">
+        Số tiền: <b th:text="${data.amountNumber}">9,500,000</b>
+        (Viết bằng chữ): <i th:text="${data.amountInWords}">Chín triệu...</i>
+    </div>
+    <div class="content-line">
+        Kèm theo: <span th:text="${data.attachment}">................</span>
+        <span style="float: right;">Chứng từ gốc:................</span>
+    </div>
+</div>
+
+<div class="right-align date-italic" style="margin-top: 10px;">
+    Ngày <span th:text="${#temporals.format(data.paymentDate, 'dd')}">21</span>
+    tháng <span th:text="${#temporals.format(data.paymentDate, 'MM')}">11</span>
+    năm <span th:text="${#temporals.format(data.paymentDate, 'yyyy')}">2025</span>
+</div>
+
+<div class="signatures">
+    <div class="signature-col">
+        <div class="signature-title">Giám đốc</div>
+        <div class="signature-note">(Ký, họ tên, đóng dấu)</div>
+    </div>
+    <div class="signature-col">
+        <div class="signature-title">Kế toán</div>
+        <div class="signature-note">(Ký, họ tên)</div>
+    </div>
+    <div class="signature-col">
+        <div class="signature-title">Người nộp tiền</div>
+        <div class="signature-note">(Ký, họ tên)</div>
+    </div>
+    <div class="signature-col">
+        <div class="signature-title">Người lập phiếu</div>
+        <div class="signature-note">(Ký, họ tên)</div>
+    </div>
+    <div class="signature-col">
+        <div class="signature-title">Thủ quỹ</div>
+        <div class="signature-note">(Ký, họ tên)</div>
+    </div>
+</div>
+
+</body>
+</html>
