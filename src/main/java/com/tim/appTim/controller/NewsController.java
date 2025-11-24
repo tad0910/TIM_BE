@@ -48,4 +48,9 @@ public class NewsController {
         List<BlogDTO> blogs = newsService.getTechNews();
         return ResponseEntity.ok(blogs);
     }
+
+    @GetMapping("/ping")
+    public String ping() {
+        return "pong";
+    }
 }
