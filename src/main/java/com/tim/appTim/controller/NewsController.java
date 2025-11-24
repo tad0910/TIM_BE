@@ -1,7 +1,9 @@
 package com.tim.appTim.controller; // Đảm bảo đúng package
 
 import com.tim.appTim.dto.BlogDTO;
+import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.NewsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +16,8 @@ import java.util.List;
 public class NewsController {
 
     private final NewsService newsService;
+    @Autowired
+    private UserRepository userRepository;
 
     public NewsController(NewsService newsService) {
         this.newsService = newsService;
@@ -51,6 +55,7 @@ public class NewsController {
 
     @GetMapping("/ping")
     public String ping() {
-        return "pong";
+        long count = userRepository.count();
+        return "pong - DB active (Users: " + count + ")";
     }
 }
