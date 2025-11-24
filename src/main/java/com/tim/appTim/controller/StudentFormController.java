@@ -9,6 +9,7 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.service.StudentFormService;
 import com.tim.appTim.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -30,11 +31,13 @@ public class StudentFormController {
     }
 
     @GetMapping("/templates")
+    @PreAuthorize("hasAuthority('form:read_all')")
     public ResponseEntity<List<FormTemplate>> getTemplates() {
         return ResponseEntity.ok(formService.getAllActiveTemplates());
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('form:create')")
     public ResponseEntity<StudentFormResponseDTO> createForm(
             @RequestBody StudentFormCreateDTO createDTO,
             Authentication authentication
@@ -45,6 +48,7 @@ public class StudentFormController {
     }
 
     @PutMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('form:approve')")
     public ResponseEntity<StudentFormResponseDTO> approveForm(
             @PathVariable Long id,
             @RequestBody ApprovalRequestDTO request,
@@ -56,14 +60,17 @@ public class StudentFormController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('form:delete')")
     public ResponseEntity<String> deleteForm(@PathVariable Long id) {
         formService.deleteForm(id);
         return ResponseEntity.ok("Đã xóa đơn thành công");
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('form:read_all')")
     public ResponseEntity<StudentFormResponseDTO> getFormDetail(@PathVariable Long id) {
         StudentForm form = formService.getFormDetail(id);
         return ResponseEntity.ok(formService.mapToDTO(form));
     }
+
 }

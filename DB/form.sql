@@ -3,6 +3,19 @@ INSERT IGNORE INTO roles (id, name) VALUES
   (4, 'ROLE_KE_TOAN'),
   (5, 'ROLE_GIAO_VU');
 
+INSERT IGNORE INTO permissions (id, name) VALUES 
+  (43, 'form:create'),
+  (44, 'form:read_all'),
+  (45, 'form:approve'),
+  (46, 'form:delete');
+
+  INSERT INTO role_permissions (role_id, permission_id) VALUES
+  (1, 43), 
+  (1, 44),
+  (1, 45), 
+  (1, 46);
+
+
   CREATE TABLE IF NOT EXISTS `form_templates` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `code` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Mã code để dev xử lý logic (VD: FORM_BAO_LUU)',
