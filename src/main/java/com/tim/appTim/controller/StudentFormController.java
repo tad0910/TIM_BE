@@ -4,7 +4,6 @@ import com.tim.appTim.dto.ApprovalRequestDTO;
 import com.tim.appTim.dto.StudentFormCreateDTO;
 import com.tim.appTim.dto.StudentFormResponseDTO;
 import com.tim.appTim.entity.FormTemplate;
-import com.tim.appTim.entity.StudentForm;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.StudentFormService;
 import com.tim.appTim.service.UserService;
@@ -43,8 +42,8 @@ public class StudentFormController {
             Authentication authentication
     ) {
         User currentUser = getUserFromAuthentication(authentication);
-        StudentForm newForm = formService.createForm(createDTO, currentUser);
-        return ResponseEntity.ok(formService.mapToDTO(newForm));
+        StudentFormResponseDTO newForm = formService.createForm(createDTO, currentUser);
+        return ResponseEntity.ok(newForm);
     }
 
     @PutMapping("/{id}/approve")
@@ -55,8 +54,8 @@ public class StudentFormController {
             Authentication authentication
     ) {
         User currentUser = getUserFromAuthentication(authentication);
-        StudentForm updatedForm = formService.approveForm(id, currentUser, request);
-        return ResponseEntity.ok(formService.mapToDTO(updatedForm));
+        StudentFormResponseDTO updatedForm = formService.approveForm(id, currentUser, request);
+        return ResponseEntity.ok(updatedForm);
     }
 
     @DeleteMapping("/{id}")
@@ -69,8 +68,8 @@ public class StudentFormController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('form:read_all')")
     public ResponseEntity<StudentFormResponseDTO> getFormDetail(@PathVariable Long id) {
-        StudentForm form = formService.getFormDetail(id);
-        return ResponseEntity.ok(formService.mapToDTO(form));
+        StudentFormResponseDTO form = formService.getFormDetail(id);
+        return ResponseEntity.ok(form);
     }
-
+    
 }

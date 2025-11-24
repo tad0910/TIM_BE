@@ -39,7 +39,7 @@ public class StudentFormService {
     }
     
     @Transactional 
-    public StudentForm approveForm(Long formId, User currentUser, ApprovalRequestDTO request) {
+    public StudentFormResponseDTO approveForm(Long formId, User currentUser, ApprovalRequestDTO request) {
         
         StudentForm form = formRepo.findById(formId)
                 .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
@@ -80,11 +80,12 @@ public class StudentFormService {
 
         updateOverallStatus(form);
 
-        return formRepo.save(form);
+        StudentForm savedForm = formRepo.save(form);
+        return mapToDTO(savedForm);
     }
 
     @Transactional
-    public StudentForm createForm(StudentFormCreateDTO dto, User creator) {
+    public StudentFormResponseDTO createForm(StudentFormCreateDTO dto, User creator) {
         FormTemplate template = templateRepo.findById(dto.getTemplateId())
                 .orElseThrow(() -> new ResourceNotFoundException("Mẫu đơn không tồn tại"));
 
@@ -120,7 +121,8 @@ public class StudentFormService {
         form.setFeeAmount(dto.getFeeAmount());
         form.setStatus(FormStatus.PENDING); 
         
-        return formRepo.save(form);
+        StudentForm savedForm = formRepo.save(form);
+        return mapToDTO(savedForm);
     }
 
     private void updateOverallStatus(StudentForm form) {
@@ -167,9 +169,11 @@ public class StudentFormService {
         formRepo.deleteById(formId);
     }
 
-    public StudentForm getFormDetail(Long id) {
-        return formRepo.findById(id)
+    @Transactional(readOnly = true)
+    public StudentFormResponseDTO getFormDetail(Long id) {
+        StudentForm form = formRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
+        return mapToDTO(form);
     }
 
     public StudentFormResponseDTO mapToDTO(StudentForm form) {
