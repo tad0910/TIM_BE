@@ -1,0 +1,13 @@
+package com.tim.appTim.repository;
+
+import com.tim.appTim.entity.TuitionReceipt;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface TuitionReceiptRepository extends JpaRepository<TuitionReceipt, Long> {
+
+    Optional<TuitionReceipt> findByReceiptCode(String receiptCode);
+}
