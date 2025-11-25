@@ -12,13 +12,16 @@ import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/receipts")
-public class ReceiptController {
+public class    ReceiptController {
 
     @Autowired
     private PdfService pdfService;
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> downloadReceipt(@PathVariable Long id) {
+    public ResponseEntity<byte[]> downloadReceipt(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "Người nộp tiền") String name,
+            @RequestParam(required = false, defaultValue = "Thanh toán") String reason) {
 
         BigDecimal amount = new BigDecimal("9500000");
 
@@ -27,12 +30,13 @@ public class ReceiptController {
 
         ReceiptDTO receiptData = ReceiptDTO.builder()
                 .companyName("CodeGym Hà Nội")
-                .companyAddress("Nhà số 23, Lô TT01, Đường Hàm Nghi, Khu đô thị Mon City, Mỹ Đình 2, Nam Từ Liêm, Hà Nội")
+                .companyAddress(
+                        "Nhà số 23, Lô TT01, Đường Hàm Nghi, Khu đô thị Mon City, Mỹ Đình 2, Nam Từ Liêm, Hà Nội")
                 .receiptId("PT-" + id)
                 .paymentDate(java.time.LocalDate.of(2025, 11, 21))
-                .payerName("Nguyễn Thái Sơn")
+                .payerName(name)
                 .payerAddress("HN-C1025G1-JV101")
-                .paymentReason("Đóng học phí")
+                .paymentReason(reason)
                 .amountNumber(moneyFormatted)
                 .amountInWords(moneyText)
                 // -----------------
