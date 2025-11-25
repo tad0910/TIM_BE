@@ -18,6 +18,7 @@ import com.tim.appTim.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentFormService {
@@ -174,6 +175,14 @@ public class StudentFormService {
         StudentForm form = formRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
         return mapToDTO(form);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudentFormResponseDTO> getAllForms() {
+        List<StudentForm> forms = formRepo.findAll();
+        return forms.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     public StudentFormResponseDTO mapToDTO(StudentForm form) {
