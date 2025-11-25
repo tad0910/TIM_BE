@@ -1,22 +1,22 @@
 package com.tim.appTim.service;
-    
+
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set; 
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.tim.appTim.dto.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication; 
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt; 
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,8 +49,7 @@ import com.tim.appTim.repository.UserImageRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.FileRepository;
 
-
-@Service("userService") 
+@Service("userService")
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -67,15 +66,14 @@ public class UserService implements UserDetailsService {
     private final FileRepository fileRepository;
     private final RoleRepository roleRepository;
     private final PostService postService;
-    
 
-    public UserService(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
-                       ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
-                       UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
-                       ProgramsRepository programsRepository, ProgramModuleRepository programModuleRepository,
-                       ClassRepository classRepository, @Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository,
-                       RoleRepository roleRepository, PostService postService
-    ) {
+    public UserService(UserRepository userRepository, PostRepository postRepository,
+            CommentRepository commentRepository,
+            ReplyCommentRepository replyCommentRepository, ReactionRepository reactionRepository,
+            UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
+            ProgramsRepository programsRepository, ProgramModuleRepository programModuleRepository,
+            ClassRepository classRepository, @Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository,
+            RoleRepository roleRepository, PostService postService) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
@@ -124,10 +122,10 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(usernameOrEmail)
                 .or(() -> userRepository.findByEmail(usernameOrEmail))
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
-            return new UserDetailsImpl(user);
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User not found with username or email: " + usernameOrEmail));
+        return new UserDetailsImpl(user);
     }
-
 
     public User findById(Long id) {
         return userRepository.findById(id)
@@ -175,7 +173,7 @@ public class UserService implements UserDetailsService {
                     .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
         }
         user.setRoles(new HashSet<>(Collections.singleton(selectedRole)));
-        
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         if (user.getCreatedAt() == null) {
             user.setCreatedAt(LocalDateTime.now());
@@ -231,7 +229,8 @@ public class UserService implements UserDetailsService {
 
             if (existingUser.getRoles() == null || existingUser.getRoles().isEmpty()) {
                 Role defaultRole = roleRepository.findByName("ROLE_USER")
-                        .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException("Lỗi: Role 'ROLE_USER' không tồn tại trong DB."));
                 existingUser.setRoles(new HashSet<>(Collections.singleton(defaultRole)));
             }
         }
@@ -241,9 +240,10 @@ public class UserService implements UserDetailsService {
         } catch (Exception e) {
             String errorMessage = e.getMessage();
             if (errorMessage == null || errorMessage.isEmpty()) {
-                errorMessage = e.getClass().getSimpleName() + ": " + (e.getCause() != null ? e.getCause().getMessage() : "Unknown error");
+                errorMessage = e.getClass().getSimpleName() + ": "
+                        + (e.getCause() != null ? e.getCause().getMessage() : "Unknown error");
             }
-            e.printStackTrace(); 
+            e.printStackTrace();
             throw new InternalServerErrorException("Không thể cập nhật thông tin người dùng: " + errorMessage);
         }
     }
@@ -268,7 +268,6 @@ public class UserService implements UserDetailsService {
         }
     }
 
-
     public Page<User> findAll(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
@@ -283,6 +282,7 @@ public class UserService implements UserDetailsService {
         return userRepository.findByEmail(email).orElse(null);
     }
 
+    @Transactional(readOnly = true)
     public ProfileResponse getUserProfileByEmail(String email, Pageable pageable) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
@@ -291,14 +291,14 @@ public class UserService implements UserDetailsService {
             pageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    Sort.by("createdAt").descending()
-            );
+                    Sort.by("createdAt").descending());
         }
 
         Page<PostDTO> postsPage = postService.getPostsByUserId(user.getId(), pageable);
 
         List<UserImageDTO> images = userImageRepository.findByUserId(user.getId()).stream()
-                .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
+                .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(),
+                        image.getCreatedAt()))
                 .collect(Collectors.toList());
 
         List<ProgramsDTO> programs = getUserPrograms(user.getId());
@@ -306,8 +306,7 @@ public class UserService implements UserDetailsService {
         return new ProfileResponse(user, postsPage, images, programs);
     }
 
-
-
+    @Transactional(readOnly = true)
     public ProfileResponse getUserProfile(Long userId, Pageable pageable) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -315,12 +314,12 @@ public class UserService implements UserDetailsService {
             pageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    Sort.by("createdAt").descending()
-            );
+                    Sort.by("createdAt").descending());
         }
         Page<PostDTO> postsPage = postService.getPostsByUserId(userId, pageable);
         List<UserImageDTO> images = userImageRepository.findByUserId(userId).stream()
-                .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(), image.getCreatedAt()))
+                .map(image -> new UserImageDTO(image.getId(), image.getImageUrl(), image.getDescription(),
+                        image.getCreatedAt()))
                 .collect(Collectors.toList());
 
         List<ProgramsDTO> programs = getUserPrograms(userId);
@@ -334,8 +333,7 @@ public class UserService implements UserDetailsService {
                         image.getId(),
                         image.getImageUrl(),
                         image.getDescription(),
-                        image.getCreatedAt()
-                ))
+                        image.getCreatedAt()))
                 .collect(Collectors.toList());
     }
 
@@ -345,7 +343,7 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found")));
         image.setImageUrl(imageUrl);
         image.setDescription(description);
-        image.setCreatedAt( LocalDateTime.now());
+        image.setCreatedAt(LocalDateTime.now());
 
         UserImage saved = userImageRepository.save(image);
         return convertToDTO(saved);
@@ -355,19 +353,19 @@ public class UserService implements UserDetailsService {
         UserImage image = userImageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
 
-
         if (!image.getUser().getId().equals(userId)) {
             throw new UnauthorizedException("You can only update your own images");
         }
 
-        if (imageUrl != null) image.setImageUrl(imageUrl);
-        if (description != null) image.setDescription(description);
-        image.setCreatedAt( LocalDateTime.now());
+        if (imageUrl != null)
+            image.setImageUrl(imageUrl);
+        if (description != null)
+            image.setDescription(description);
+        image.setCreatedAt(LocalDateTime.now());
 
         UserImage saved = userImageRepository.save(image);
         return convertToDTO(saved);
     }
-
 
     public void deleteUserImage(Long userId, Long imageId) {
         UserImage image = userImageRepository.findById(imageId)
@@ -385,8 +383,7 @@ public class UserService implements UserDetailsService {
                 image.getId(),
                 image.getImageUrl(),
                 image.getDescription(),
-                image.getCreatedAt()
-        );
+                image.getCreatedAt());
     }
 
     public User updateProfileImage(Long userId, String imageUrl) {
@@ -468,7 +465,6 @@ public class UserService implements UserDetailsService {
         }
     }
 
-
     public User save(User user) {
         return userRepository.save(user);
     }
@@ -522,31 +518,30 @@ public class UserService implements UserDetailsService {
         if (user == null) {
             return "Người dùng";
         }
-        
+
         String firstName = user.getFirstName();
         String lastName = user.getLastName();
         String username = user.getUsername();
-        
-        if (firstName != null && !firstName.trim().isEmpty() && 
-            lastName != null && !lastName.trim().isEmpty()) {
+
+        if (firstName != null && !firstName.trim().isEmpty() &&
+                lastName != null && !lastName.trim().isEmpty()) {
             return firstName + " " + lastName;
         }
-        
+
         if (firstName != null && !firstName.trim().isEmpty()) {
             return firstName;
         }
-        
+
         if (lastName != null && !lastName.trim().isEmpty()) {
             return lastName;
         }
-        
+
         if (username != null && !username.trim().isEmpty()) {
             return username;
         }
-        
+
         return "Người dùng";
     }
-
 
     private List<ProgramsDTO> getUserPrograms(Long userId) {
         List<ClassMember> classMembers = classMemberRepository.findByUserId(userId);
@@ -556,7 +551,7 @@ public class UserService implements UserDetailsService {
                 .collect(Collectors.toSet());
 
         Set<Integer> programIds = new HashSet<>();
-        
+
         for (Long classId : classIds) {
             classRepository.findById(classId).ifPresent(classEntity -> {
                 if (classEntity.getSchedules() != null) {
@@ -574,7 +569,7 @@ public class UserService implements UserDetailsService {
                 }
             });
         }
-        
+
         return programIds.stream()
                 .map(id -> programsRepository.findById(id))
                 .filter(Optional::isPresent)

@@ -1,6 +1,5 @@
 package com.tim.appTim.service;
 
-
 import com.tim.appTim.repository.FileRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,7 +33,6 @@ import java.util.regex.Matcher;
 import java.net.URISyntaxException;
 import java.io.IOException;
 
-
 @Service
 public class PostService {
 
@@ -47,13 +45,12 @@ public class PostService {
     private final FileRepository fileRepository;
 
     private static final Pattern URL_PATTERN = Pattern.compile(
-        "\\b(https?://[\\w.-]+(?:\\:[0-9]+)?(?:/[^\\s]*)?)\\b",
-        Pattern.CASE_INSENSITIVE
-    );
+            "\\b(https?://[\\w.-]+(?:\\:[0-9]+)?(?:/[^\\s]*)?)\\b",
+            Pattern.CASE_INSENSITIVE);
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, 
-                       CommentService commentService, ReactionService reactionService, CommentRepository commentRepository,
-                       LinkPreviewService linkPreviewService, FileRepository fileRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository,
+            CommentService commentService, ReactionService reactionService, CommentRepository commentRepository,
+            LinkPreviewService linkPreviewService, FileRepository fileRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentService = commentService;
@@ -70,15 +67,15 @@ public class PostService {
         Matcher matcher = URL_PATTERN.matcher(content);
         return matcher.find() ? matcher.group(1) : null;
     }
+
     private boolean hasMediaFiles(List<File> files) {
         if (files == null || files.isEmpty()) {
             return false;
         }
-        return files.stream().anyMatch(f ->
-            f.getFileType() == File.FileType.IMAGE ||
-            f.getFileType() == File.FileType.VIDEO
-        );
+        return files.stream().anyMatch(f -> f.getFileType() == File.FileType.IMAGE ||
+                f.getFileType() == File.FileType.VIDEO);
     }
+
     @Async("linkPreviewTaskExecutor")
     public void generateLinkPreviewAsync(Long postId, String url) {
         try {
@@ -108,7 +105,8 @@ public class PostService {
     }
 
     @Transactional
-    public PostDTO createPostWithFiles(Long userId, String content, Post.Privacy privacy, List<File> filesFromController) {
+    public PostDTO createPostWithFiles(Long userId, String content, Post.Privacy privacy,
+            List<File> filesFromController) {
 
         boolean isFilesEmpty = (filesFromController == null || filesFromController.isEmpty());
 
@@ -145,7 +143,6 @@ public class PostService {
             }
         }
 
-
         Post savedPost = postRepository.save(post);
 
         if (savedPost.getLinkUrl() != null && !hasMedia) {
@@ -158,8 +155,7 @@ public class PostService {
                         file.getFileUrl(),
                         file.getFileType().name(),
                         file.getFileName() != null ? file.getFileName() : extractFileName(file.getFileUrl()),
-                        file.getFileSize() != null ? file.getFileSize() : 0L
-                ))
+                        file.getFileSize() != null ? file.getFileSize() : 0L))
                 .collect(Collectors.toList());
 
         String displayName = getUserDisplayName(user);
@@ -167,12 +163,11 @@ public class PostService {
         LinkPreviewDTO linkPreview = null;
         if (savedPost.getLinkUrl() != null && savedPost.hasLinkPreview()) {
             linkPreview = new LinkPreviewDTO(
-                savedPost.getLinkUrl(),
-                savedPost.getLinkTitle(),
-                savedPost.getLinkDescription(),
-                savedPost.getLinkImageUrl(),
-                savedPost.getLinkDomain()
-            );
+                    savedPost.getLinkUrl(),
+                    savedPost.getLinkTitle(),
+                    savedPost.getLinkDescription(),
+                    savedPost.getLinkImageUrl(),
+                    savedPost.getLinkDomain());
         }
 
         return new PostDTO(
@@ -190,21 +185,22 @@ public class PostService {
                 user.getProfileImage(),
                 user.getUsername(),
                 displayName,
-                linkPreview
-        );
+                linkPreview);
     }
+
+    @Transactional(readOnly = true)
     public Page<PostDTO> getAllPosts(Pageable pageable) {
         if (!pageable.getSort().isSorted()) {
             pageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    Sort.by("createdAt").descending()
-            );
+                    Sort.by("createdAt").descending());
         }
         Page<Post> postPage = postRepository.findAll(pageable);
         return postPage.map(this::convertToDto);
     }
 
+    @Transactional(readOnly = true)
     public Page<PostDTO> getPostsByUserId(Long userId, Pageable pageable) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -213,8 +209,7 @@ public class PostService {
             pageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    Sort.by("createdAt").descending()
-            );
+                    Sort.by("createdAt").descending());
         }
 
         Page<Post> postsPage = postRepository.findByUserId(userId, pageable);
@@ -223,13 +218,14 @@ public class PostService {
     }
 
     @Transactional
-    public PostDTO updatePostWithFiles(User currentUser, Authentication authentication, Long postId, String content, Post.Privacy privacy,
-                                       List<com.tim.appTim.entity.File> newFiles, List<Integer> fileIdsToDelete) {
+    public PostDTO updatePostWithFiles(User currentUser, Authentication authentication, Long postId, String content,
+            Post.Privacy privacy,
+            List<com.tim.appTim.entity.File> newFiles, List<Integer> fileIdsToDelete) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("post:update_all")); 
+                .anyMatch(a -> a.getAuthority().equals("post:update_all"));
         boolean isOwner = post.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
@@ -291,7 +287,7 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("post:update_all")); 
+                .anyMatch(a -> a.getAuthority().equals("post:update_all"));
         boolean isOwner = post.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
@@ -304,7 +300,7 @@ public class PostService {
     public boolean isOwner(String username, Long postId) {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) {
-            return false; 
+            return false;
         }
 
         return postRepository.findById(postId)
@@ -323,8 +319,7 @@ public class PostService {
                         file.getFileUrl(),
                         file.getFileType().name(),
                         file.getFileName() != null ? file.getFileName() : extractFileName(file.getFileUrl()),
-                        file.getFileSize() != null ? file.getFileSize() : 0L
-                ))
+                        file.getFileSize() != null ? file.getFileSize() : 0L))
                 .collect(Collectors.toList());
 
         String displayName = getUserDisplayName(post.getUser());
@@ -336,8 +331,7 @@ public class PostService {
                     post.getLinkTitle(),
                     post.getLinkDescription(),
                     post.getLinkImageUrl(),
-                    post.getLinkDomain()
-            );
+                    post.getLinkDomain());
         }
 
         return new PostDTO(
@@ -355,8 +349,7 @@ public class PostService {
                 post.getUser().getProfileImage(),
                 post.getUser().getUsername(),
                 displayName,
-                linkPreview
-        );
+                linkPreview);
     }
 
     private String extractFileName(String fileUrl) {
@@ -366,7 +359,6 @@ public class PostService {
         String[] parts = fileUrl.split("/");
         return parts[parts.length - 1];
     }
-
 
     public PostDTO getPostByIdForUser(Long requestingUserId, Long postId) {
         User requestingUser = userRepository.findById(requestingUserId)
@@ -393,9 +385,10 @@ public class PostService {
                 throw new ForbiddenException("You do not have permission to access this post");
         }
     }
+
     private String getUserDisplayName(User user) {
         if (user == null) {
-            return "Người dùng"; 
+            return "Người dùng";
         }
 
         String firstName = user.getFirstName();
@@ -432,12 +425,12 @@ public class PostService {
         return postRepository.findById(postId)
                 .map(post -> {
                     User owner = post.getUser();
-                    return owner != null && currentUsername.equals(owner.getUsername());                
+                    return owner != null && currentUsername.equals(owner.getUsername());
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
     }
 
-        private String extractUsername(Authentication authentication) {
+    private String extractUsername(Authentication authentication) {
         Object principal = authentication.getPrincipal();
 
         if (principal instanceof UserDetails userDetails) {
@@ -450,14 +443,13 @@ public class PostService {
 
         if (principal instanceof String token && token.startsWith("Bearer ")) {
             token.substring(7);
-        }
-        else {
+        } else {
             return null;
         }
 
         try {
             JwtParser parser = Jwts.parserBuilder()
-                    .build(); 
+                    .build();
 
             Claims claims = parser.parseClaimsJws((String) principal).getBody();
 
