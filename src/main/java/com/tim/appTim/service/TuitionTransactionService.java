@@ -2,6 +2,7 @@ package com.tim.appTim.service;
 
 import com.tim.appTim.dto.PaymentRequestDTO;
 import com.tim.appTim.dto.TuitionOverviewDTO;
+import com.tim.appTim.dto.TuitionTransactionDTO;
 import com.tim.appTim.entity.StudentPaymentSchedule;
 import com.tim.appTim.entity.TuitionReceipt;
 import com.tim.appTim.entity.TuitionTransaction;
@@ -12,6 +13,8 @@ import com.tim.appTim.repository.StudentPaymentScheduleRepository;
 import com.tim.appTim.repository.TuitionTransactionRepository;
 import com.tim.appTim.repository.TuitionReceiptRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,5 +98,17 @@ public class TuitionTransactionService {
         receipt.setReceiptCode("REC-" + datePart + "-" + uniquePart);
 
         return receiptRepository.save(receipt);
+    }
+
+    public Page<TuitionTransactionDTO> getTransactionHistory(Long studentId, Pageable pageable) {
+        Page<TuitionTransaction> transactions = transactionRepository
+                .findByStudentTuition_Student_IdOrderByTransactionDateDesc(studentId, pageable);
+
+        return transactions.map(TuitionTransactionDTO::new);
+    }
+
+    public Page<TuitionTransactionDTO> getAllTransactions(Pageable pageable) {
+        return transactionRepository.findAll(pageable)
+                .map(TuitionTransactionDTO::new);
     }
 }
