@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TuitionRouteRepository extends JpaRepository<TuitionRoute, Long> {
-
+    boolean existsByProgram_Id(Integer programId);
 }

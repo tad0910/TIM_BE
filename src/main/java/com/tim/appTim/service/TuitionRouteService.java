@@ -41,6 +41,10 @@ public class TuitionRouteService {
                 .orElseThrow(() -> new RuntimeException("Chương trình học không tồn tại với ID: " + dto.getProgramId()));
 
         route.setProgram(program);
+        if (tuitionRouteRepository.existsByProgram_Id(program.getId())) {
+            throw new RuntimeException("Chương trình đã có lộ trình học phí, không thể tạo thêm");
+        }
+
         TuitionRoute savedRoute = tuitionRouteRepository.save(route);
         TuitionRouteDTO resultDTO = convertToDTO(savedRoute);
         resultDTO.setProgramId(program.getId());
