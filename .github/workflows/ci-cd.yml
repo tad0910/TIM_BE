@@ -13,7 +13,7 @@ jobs:
   # -----------------------------------------------------------------
   run-tests:
     name: 🧪 Run Unit Tests
-    runs-on: self-hosted  # <--- Đã đúng
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
           cache: 'maven'
 
       - name: Execute Tests
-        # Thêm shell: cmd hoặc powershell để chắc chắn chạy được trên Windows
+        shell: cmd
         run: mvn -B test --file pom.xml
 
   # -----------------------------------------------------------------
@@ -36,13 +36,14 @@ jobs:
     name: 💾 Backup Database & Code
     needs: run-tests
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: self-hosted  # <--- SỬA THÀNH SELF-HOSTED
+    runs-on: self-hosted
     steps:
       - name: Backup Placeholder
+        # Chạy mặc định (PowerShell) là tốt nhất cho lệnh echo đơn giản
         run: |
-          echo "--- BẮT ĐẦU QUY TRÌNH BACKUP ---"
+          echo "--- BAT DAU QUY TRINH BACKUP ---"
           echo "Run on Self-hosted runner"
-          echo "--- KẾT THÚC BACKUP ---"
+          echo "--- KET THUC BACKUP ---"
 
   # -----------------------------------------------------------------
   # GIAI ĐOẠN 3: BUILD & DEPLOY (CD)
@@ -51,7 +52,7 @@ jobs:
     name: 🚀 Build & Deploy
     needs: run-tests
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: self-hosted  # <--- SỬA THÀNH SELF-HOSTED (QUAN TRỌNG NHẤT)
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -64,8 +65,8 @@ jobs:
           cache: 'maven'
 
       - name: Build JAR
-        # Chạy mvn clean package
-        run: mvn -B clean package -DskipTests -Dproject.build.sourceEncoding=UTF-8 --file pom.xml
+        # Đã xóa tham số gây lỗi "-Dproject.build...", chỉ giữ lại các tham số cần thiết
+        run: mvn -B clean package -DskipTests --file pom.xml
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -85,19 +86,16 @@ jobs:
       # KÍCH HOẠT SERVER (DEPLOY)
       # -----------------------------------------------------------
 
-      # Lưu ý: Trên Windows, lệnh curl đôi khi bị trùng với lệnh của PowerShell.
-      # Nên ta thêm 'shell: bash' để dùng Git Bash chạy curl chuẩn xác.
-
       - name: Trigger Render Production
         if: github.ref == 'refs/heads/main'
-        shell: cmd  # <--- Quan trọng để chạy curl trên Windows
+        shell: cmd  # Bắt buộc dùng cmd để chạy curl trên Windows ổn định
         run: |
-          echo "Đang deploy lên Production..."
+          echo Dang deploy len Production...
           curl -X POST ${{ secrets.RENDER_PROD_HOOK }}
 
       - name: Trigger Render Dev
         if: github.ref == 'refs/heads/develop'
-        shell: cmd  # <--- Quan trọng để chạy curl trên Windows
+        shell: cmd  # Bắt buộc dùng cmd để chạy curl trên Windows ổn định
         run: |
-          echo "Đang deploy lên Dev Environment..."
+          echo Dang deploy len Dev Environment...
           curl -X POST ${{ secrets.RENDER_DEV_HOOK }}
