@@ -71,5 +71,13 @@ public class StudentFormController {
         StudentFormResponseDTO form = formService.getFormDetail(id);
         return ResponseEntity.ok(form);
     }
+
+   @GetMapping
+    @PreAuthorize("hasAuthority('form:read_all')")
+    public ResponseEntity<List<StudentFormResponseDTO>> getAllForms(Authentication authentication) {
+        User currentUser = getUserFromAuthentication(authentication);
+        List<StudentFormResponseDTO> forms = formService.getAllForms(currentUser);
+        return ResponseEntity.ok(forms);
+    }
     
 }
