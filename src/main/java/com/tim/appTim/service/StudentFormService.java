@@ -2,11 +2,11 @@ package com.tim.appTim.service;
 
 import com.tim.appTim.dto.StudentFormCreateDTO;
 import com.tim.appTim.dto.StudentFormResponseDTO;
-import com.tim.appTim.dto.StudentFormUpdateDTO;
 import com.tim.appTim.dto.ApprovalRequestDTO;
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.FormTemplate;
 import com.tim.appTim.entity.StudentForm;
+import com.tim.appTim.entity.StudentForm.ApprovalStatus;
 import com.tim.appTim.entity.StudentForm.FormStatus;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.BadRequestException;
@@ -45,13 +45,10 @@ public class StudentFormService {
         
         StudentForm form = formRepo.findById(formId)
                 .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
+       
+        String targetRole = determineTargetSection(currentUser, request.getTargetRole());
 
-        String roleName = currentUser.getRoles().stream()
-                .findFirst()
-                .map(role -> role.getName())
-                .orElseThrow(() -> new RuntimeException("User has no role assigned"));
-
-        switch (roleName) { 
+        switch (targetRole) { 
             case "ROLE_GIAO_VIEN":
                 form.setCoachApproval(request.getDecision());
                 form.setCoachNote(request.getNote());
@@ -82,9 +79,40 @@ public class StudentFormService {
 
         updateOverallStatus(form);
 
-        StudentForm savedForm = formRepo.save(form);
-        return mapToDTO(savedForm);
+        return mapToDTO(formRepo.save(form));
     }
+
+
+    private String determineTargetSection(User user, String requestedTarget) {
+        String userRole = user.getRoles().stream()
+                .findFirst()
+                .map(role -> role.getName())
+                .orElseThrow(() -> new ForbiddenException("User chưa được gán quyền hạn (Role)"));
+
+        if ("ROLE_ADMIN".equals(userRole)) {
+
+            if (requestedTarget == null || requestedTarget.isBlank()) {
+                return "ROLE_ADMIN";
+            }
+
+            String upperTarget = requestedTarget.toUpperCase();
+            List<String> validTargets = List.of("ROLE_GIAO_VIEN", "ROLE_GIAO_VU", "ROLE_KE_TOAN", "ROLE_ADMIN");
+            
+            if (validTargets.contains(upperTarget)) {
+                return upperTarget; 
+            }
+            
+            throw new BadRequestException("Target Role không hợp lệ. Admin chỉ được chọn: " + validTargets);
+        }
+
+        if (userRole.equals("ROLE_GIAO_VIEN")) return "ROLE_GIAO_VIEN";
+        if (userRole.equals("ROLE_GIAO_VU"))   return "ROLE_GIAO_VU";
+        if (userRole.equals("ROLE_KE_TOAN"))   return "ROLE_KE_TOAN";
+
+        throw new ForbiddenException("Tài khoản của bạn (" + userRole + ") không có quyền duyệt đơn này.");
+    }
+
+    
 
     @Transactional
     public StudentFormResponseDTO createForm(StudentFormCreateDTO dto, User creator) {
@@ -129,10 +157,10 @@ public class StudentFormService {
 
     private void updateOverallStatus(StudentForm form) {
         boolean isRejected = 
-            form.getCoachApproval() == StudentForm.ApprovalStatus.REJECTED ||
-            form.getAcademicApproval() == StudentForm.ApprovalStatus.REJECTED ||
-            form.getAccountantApproval() == StudentForm.ApprovalStatus.REJECTED ||
-            form.getAdminApproval() == StudentForm.ApprovalStatus.REJECTED;
+            form.getCoachApproval() == ApprovalStatus.REJECTED ||
+            form.getAcademicApproval() == ApprovalStatus.REJECTED ||
+            form.getAccountantApproval() == ApprovalStatus.REJECTED ||
+            form.getAdminApproval() == ApprovalStatus.REJECTED;
 
         if (isRejected) {
             form.setStatus(StudentForm.FormStatus.REJECTED);
@@ -140,78 +168,17 @@ public class StudentFormService {
         }
 
         boolean isAllApproved = 
-            form.getCoachApproval() == StudentForm.ApprovalStatus.APPROVED &&
-            form.getAcademicApproval() == StudentForm.ApprovalStatus.APPROVED &&
-            form.getAccountantApproval() == StudentForm.ApprovalStatus.APPROVED &&
-            form.getAdminApproval() == StudentForm.ApprovalStatus.APPROVED;
+            form.getCoachApproval() == ApprovalStatus.APPROVED &&
+            form.getAcademicApproval() == ApprovalStatus.APPROVED &&
+            form.getAccountantApproval() == ApprovalStatus.APPROVED;
 
         if (isAllApproved) {
             form.setStatus(StudentForm.FormStatus.APPROVED);
-            return;
-        }
-
-        boolean isAllPending = 
-             form.getCoachApproval() == StudentForm.ApprovalStatus.PENDING &&
-             form.getAcademicApproval() == StudentForm.ApprovalStatus.PENDING &&
-             form.getAccountantApproval() == StudentForm.ApprovalStatus.PENDING &&
-             form.getAdminApproval() == StudentForm.ApprovalStatus.PENDING;
-             
-        if(isAllPending) {
-             form.setStatus(StudentForm.FormStatus.PENDING);
         } else {
-             form.setStatus(StudentForm.FormStatus.PROCESSING);
+            form.setStatus(StudentForm.FormStatus.PROCESSING);
         }
     }
 
-    @Transactional
-    public StudentFormResponseDTO updateForm(Long formId, StudentFormUpdateDTO dto) {
-        StudentForm form = formRepo.findById(formId)
-                .orElseThrow(() -> new ResourceNotFoundException("Đơn không tồn tại"));
-
-        if (form.getStatus() == FormStatus.APPROVED || form.getStatus() == FormStatus.REJECTED) {
-             throw new BadRequestException("Không thể chỉnh sửa đơn đã hoàn tất quy trình duyệt.");
-        }
-
-        if (dto.getTemplateId() != null && !dto.getTemplateId().equals(form.getTemplate().getId())) {
-            FormTemplate template = templateRepo.findById(dto.getTemplateId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Mẫu đơn không tồn tại"));
-            form.setTemplate(template);
-        }
-
-        if (dto.getStudentId() != null) {
-            User student = userRepo.findById(dto.getStudentId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Học sinh không tồn tại"));
-
-            if (dto.getFullName() != null && !dto.getFullName().isBlank()) {
-                String dbLastName = student.getLastName() == null ? "" : student.getLastName();
-                String dbFirstName = student.getFirstName() == null ? "" : student.getFirstName();
-                String dbFullName = (dbLastName + " " + dbFirstName).trim();
-                String inputFullName = dto.getFullName().trim();
-
-                if (!dbFullName.equalsIgnoreCase(inputFullName)) {
-                    throw new BadRequestException(
-                        "Dữ liệu không hợp lệ: Tên '" + inputFullName + 
-                        "' không khớp với mã học viên ID " + dto.getStudentId()
-                    );
-                }
-            }
-            form.setStudent(student);
-        }
-
-        if (dto.getClassId() != null && !dto.getClassId().equals(form.getClassRoom().getId())) {
-            Class newClass = classRepo.findById(dto.getClassId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Lớp học không tồn tại"));
-            form.setClassRoom(newClass);
-        }
-
-        if (dto.getReason() != null) form.setReason(dto.getReason());
-        if (dto.getStartDate() != null) form.setStartDate(dto.getStartDate());
-        if (dto.getEndDate() != null) form.setEndDate(dto.getEndDate());
-        if (dto.getFeeAmount() != null) form.setFeeAmount(dto.getFeeAmount());
-
-        StudentForm updatedForm = formRepo.save(form);
-        return mapToDTO(updatedForm);
-    }
 
     @Transactional
     public void deleteForm(Long formId) {
