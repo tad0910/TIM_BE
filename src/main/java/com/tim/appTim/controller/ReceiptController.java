@@ -25,8 +25,8 @@ public class    ReceiptController {
 
         BigDecimal amount = new BigDecimal("9500000");
 
-        String moneyText = com.tim.appTim.utils.NumberToWordsVietnamese.convert(amount);
-        String moneyFormatted = com.tim.appTim.utils.NumberToWordsVietnamese.formatMoney(amount);
+        String moneyText = com.tim.appTim.util.NumberToWordsVietnamese.convert(amount);
+        String moneyFormatted = com.tim.appTim.util.NumberToWordsVietnamese.formatMoney(amount);
 
         ReceiptDTO receiptData = ReceiptDTO.builder()
                 .companyName("CodeGym Hà Nội")

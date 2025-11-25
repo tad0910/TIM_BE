@@ -3,18 +3,17 @@ name: CI/CD Pipeline (Test -> Backup -> Deploy -> Log)
 # 1. KÍCH HOẠT (TRIGGER)
 on:
   push:
-    branches: [ "main", "develop", "feature/*" ] # Chạy khi có code mới từ bất kỳ nhánh nào
+    branches: [ "main", "develop", "feature/*" ]
   pull_request:
     branches: [ "main", "develop" ]
 
 jobs:
   # -----------------------------------------------------------------
   # GIAI ĐOẠN 1: CHẠY TEST CASE (CI)
-  # Áp dụng cho mọi nhánh code mới
   # -----------------------------------------------------------------
   run-tests:
     name: 🧪 Run Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # <--- Đã đúng
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,36 +25,34 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # Chạy lệnh test (Không build jar, chỉ test để tiết kiệm thời gian)
       - name: Execute Tests
+        # Thêm shell: cmd hoặc powershell để chắc chắn chạy được trên Windows
         run: mvn -B test --file pom.xml
 
   # -----------------------------------------------------------------
   # GIAI ĐOẠN 2: BACKUP DỮ LIỆU
-  # Chỉ chạy khi ở nhánh quan trọng (dev, main) và Test đã qua
   # -----------------------------------------------------------------
   backup-data:
     name: 💾 Backup Database & Code
-    needs: run-tests # Phải test xong mới làm
+    needs: run-tests
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # <--- SỬA THÀNH SELF-HOSTED
     steps:
       - name: Backup Placeholder
+        shell: bash # Dùng bash để lệnh echo chạy giống Linux
         run: |
           echo "--- BẮT ĐẦU QUY TRÌNH BACKUP ---"
-          echo "Hiện tại chưa cần thực hiện backup theo yêu cầu."
-          echo "Sau này có thể thêm lệnh dump database hoặc nén code tại đây."
+          echo "Run on Self-hosted runner"
           echo "--- KẾT THÚC BACKUP ---"
 
   # -----------------------------------------------------------------
   # GIAI ĐOẠN 3: BUILD & DEPLOY (CD)
-  # Chỉ chạy khi ở nhánh quan trọng (dev, main) và Test đã qua
   # -----------------------------------------------------------------
   deploy:
     name: 🚀 Build & Deploy
     needs: run-tests
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # <--- SỬA THÀNH SELF-HOSTED (QUAN TRỌNG NHẤT)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,6 +65,7 @@ jobs:
           cache: 'maven'
 
       - name: Build JAR
+        # Chạy mvn clean package
         run: mvn -B clean package -DskipTests -Dproject.build.sourceEncoding=UTF-8 --file pom.xml
 
       - name: Login to Docker Hub
@@ -76,8 +74,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Đóng gói và Đẩy Docker
-      # Logic: Nếu là main -> tag 'latest'. Nếu là develop -> tag 'dev'
       - name: Build & Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -90,16 +86,19 @@ jobs:
       # KÍCH HOẠT SERVER (DEPLOY)
       # -----------------------------------------------------------
 
-      # Trường hợp 1: Nếu là Main -> Gọi Server Production
+      # Lưu ý: Trên Windows, lệnh curl đôi khi bị trùng với lệnh của PowerShell.
+      # Nên ta thêm 'shell: bash' để dùng Git Bash chạy curl chuẩn xác.
+
       - name: Trigger Render Production
         if: github.ref == 'refs/heads/main'
+        shell: bash  # <--- Quan trọng để chạy curl trên Windows
         run: |
           echo "Đang deploy lên Production..."
           curl -X POST ${{ secrets.RENDER_PROD_HOOK }}
 
-      # Trường hợp 2: Nếu là Develop -> Gọi Server Dev
       - name: Trigger Render Dev
         if: github.ref == 'refs/heads/develop'
+        shell: bash  # <--- Quan trọng để chạy curl trên Windows
         run: |
           echo "Đang deploy lên Dev Environment..."
           curl -X POST ${{ secrets.RENDER_DEV_HOOK }}

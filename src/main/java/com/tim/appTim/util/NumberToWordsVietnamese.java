@@ -1,4 +1,4 @@
-package com.tim.appTim.utils;
+package com.tim.appTim.util;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
