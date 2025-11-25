@@ -39,7 +39,6 @@ jobs:
     runs-on: self-hosted  # <--- SỬA THÀNH SELF-HOSTED
     steps:
       - name: Backup Placeholder
-        shell: bash # Dùng bash để lệnh echo chạy giống Linux
         run: |
           echo "--- BẮT ĐẦU QUY TRÌNH BACKUP ---"
           echo "Run on Self-hosted runner"
@@ -91,14 +90,14 @@ jobs:
 
       - name: Trigger Render Production
         if: github.ref == 'refs/heads/main'
-        shell: bash  # <--- Quan trọng để chạy curl trên Windows
+        shell: cmd  # <--- Quan trọng để chạy curl trên Windows
         run: |
           echo "Đang deploy lên Production..."
           curl -X POST ${{ secrets.RENDER_PROD_HOOK }}
 
       - name: Trigger Render Dev
         if: github.ref == 'refs/heads/develop'
-        shell: bash  # <--- Quan trọng để chạy curl trên Windows
+        shell: cmd  # <--- Quan trọng để chạy curl trên Windows
         run: |
           echo "Đang deploy lên Dev Environment..."
           curl -X POST ${{ secrets.RENDER_DEV_HOOK }}
