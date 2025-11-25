@@ -4,6 +4,7 @@ import com.tim.appTim.dto.StudentFormCreateDTO;
 import com.tim.appTim.dto.StudentFormResponseDTO;
 import com.tim.appTim.dto.ApprovalRequestDTO;
 import com.tim.appTim.entity.Class;
+import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.FormTemplate;
 import com.tim.appTim.entity.StudentForm;
 import com.tim.appTim.entity.StudentForm.ApprovalStatus;
@@ -12,12 +13,14 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.ClassRepository;
 import com.tim.appTim.repository.FormTemplateRepository;
 import com.tim.appTim.repository.StudentFormRepository;
 import com.tim.appTim.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,12 +31,15 @@ public class StudentFormService {
     private final FormTemplateRepository templateRepo;
     private final UserRepository userRepo;
     private final ClassRepository classRepo;
+    private final ClassMemberRepository classMemberRepo;
 
-    public StudentFormService(StudentFormRepository formRepo, FormTemplateRepository templateRepo, UserRepository userRepo, ClassRepository classRepo) {
+    public StudentFormService(StudentFormRepository formRepo, FormTemplateRepository templateRepo,
+         UserRepository userRepo, ClassRepository classRepo, ClassMemberRepository classMemberRepo) {
         this.formRepo = formRepo;
         this.templateRepo = templateRepo;
         this.userRepo = userRepo;
         this.classRepo = classRepo;
+        this.classMemberRepo = classMemberRepo;
     }
 
     public List<FormTemplate> getAllActiveTemplates() {
@@ -196,8 +202,29 @@ public class StudentFormService {
     }
 
     @Transactional(readOnly = true)
-    public List<StudentFormResponseDTO> getAllForms() {
-        List<StudentForm> forms = formRepo.findAll();
+    public List<StudentFormResponseDTO> getAllForms(User currentUser) {
+        List<StudentForm> forms;
+        String userRole = currentUser.getRoles().stream()
+                .findFirst()
+                .map(r -> r.getName())
+                .orElse("");
+
+        if ("ROLE_GIAO_VIEN".equals(userRole)) {
+            List<Long> classIds = classMemberRepo.findClassIdsByUserIdAndRole(
+                    currentUser.getId(), 
+                    ClassMember.Role.giao_vien 
+            );
+
+            if (classIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            forms = formRepo.findByClassRoomIdIn(classIds);
+        } else {
+
+            forms = formRepo.findAll();
+        }
+
         return forms.stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
