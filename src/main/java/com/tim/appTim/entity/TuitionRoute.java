@@ -45,7 +45,7 @@ public class TuitionRoute {
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "program_id")
+    @JoinColumn(name = "program_id", nullable = false)
     private Programs program;
 
     public enum TuitionRouteType {

@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 public class TuitionRouteDTO {
     private Long id;
 
+    @NotNull(message = "Phải chọn chương trình học cho lộ trình này")
+    private Integer programId;
+
     @NotBlank(message = "Tên lộ trình không được để trống")
     private String name;
 
