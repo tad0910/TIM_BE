@@ -12,6 +12,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class StudentTuitionService {
@@ -26,6 +27,9 @@ public class StudentTuitionService {
     private UserRepository userRepository;
     @Autowired
     private CouponRepository couponRepository;
+
+    @Autowired
+    private ClassMemberRepository classMemberRepository;
 
     @Transactional
     public StudentTuition registerStudent(Long studentId, Long routeId, LocalDate enrollmentDate, String couponCode) {
@@ -221,5 +225,41 @@ public class StudentTuitionService {
 
         profile.setTotalActualFee(newTotal);
         studentTuitionRepository.save(profile);
+    }
+
+    @Transactional
+    public Map<String, Object> batchRegisterByProgram(Long programId, Long routeId, LocalDate enrollmentDate) {
+
+        List<ClassMember> members = classMemberRepository.findStudentsByProgramId(programId);
+
+        int successCount = 0;
+        int skipCount = 0;
+        List<String> errors = new ArrayList<>();
+
+        for (ClassMember member : members) {
+            Long studentId = member.getUser().getId();
+
+            boolean alreadyHasTuition = studentTuitionRepository
+                    .existsByStudentIdAndTuitionRoute_ProgramId(studentId, programId);
+
+            if (alreadyHasTuition) {
+                skipCount++;
+                continue;
+            }
+
+            try {
+                registerStudent(studentId, routeId, enrollmentDate, null);
+                successCount++;
+            } catch (Exception e) {
+                errors.add("Lỗi SV ID " + studentId + ": " + e.getMessage());
+            }
+        }
+
+        return Map.of(
+                "totalStudents", members.size(),
+                "success", successCount,
+                "skipped", skipCount,
+                "errors", errors
+        );
     }
 }
