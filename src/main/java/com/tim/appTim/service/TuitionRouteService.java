@@ -44,7 +44,7 @@ public class TuitionRouteService {
         TuitionRoute savedRoute = tuitionRouteRepository.save(route);
         TuitionRouteDTO resultDTO = convertToDTO(savedRoute);
         resultDTO.setProgramId(program.getId());
-        return convertToDTO(savedRoute);
+        return resultDTO;
     }
 
     @Transactional
@@ -67,6 +67,9 @@ public class TuitionRouteService {
     private TuitionRouteDTO convertToDTO(TuitionRoute entity) {
         TuitionRouteDTO dto = new TuitionRouteDTO();
         BeanUtils.copyProperties(entity, dto);
+        if (entity.getProgram() != null) {
+            dto.setProgramId(entity.getProgram().getId());
+        }
         return dto;
     }
 }
