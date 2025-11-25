@@ -327,6 +327,9 @@ public class NotificationService {
             case BLOG_NEW:
                 return baseUrl + "news";
 
+            case TUITION_OVERDUE:
+                return baseUrl + "tuition/my-overview";
+
             default:
                 return baseUrl;
         }
