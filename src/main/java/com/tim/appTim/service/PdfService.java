@@ -1,5 +1,6 @@
 package com.tim.appTim.service;
 
+import com.lowagie.text.pdf.BaseFont;
 import com.tim.appTim.dto.ReceiptDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -26,8 +27,29 @@ public class PdfService {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ITextRenderer renderer = new ITextRenderer();
 
-            String fontPath = new ClassPathResource("/fonts/times.ttf").getURL().toString();
-            renderer.getFontResolver().addFont(fontPath, true);
+            // Load SVN fonts with BaseFont.EMBEDDED to ensure all Vietnamese characters are
+            // included
+            String fontBasePath = "/fonts/";
+
+            // Use SVN-Times New Roman fonts for better Vietnamese support
+            String[] fontFiles = {
+                    "SVN-Times New Roman.ttf",
+                    "SVN-Times New Roman Bold.ttf",
+                    "SVN-Times New Roman Italic.ttf",
+                    "SVN-Times New Roman Bold Italic.ttf"
+            };
+
+            for (String fontFile : fontFiles) {
+                try {
+                    String fontPath = new ClassPathResource(fontBasePath + fontFile).getURL().toString();
+                    renderer.getFontResolver().addFont(
+                            fontPath,
+                            BaseFont.IDENTITY_H,
+                            BaseFont.EMBEDDED);
+                } catch (Exception e) {
+                    System.err.println("Could not load font: " + fontFile + " - " + e.getMessage());
+                }
+            }
 
             renderer.setDocumentFromString(htmlContent);
             renderer.layout();

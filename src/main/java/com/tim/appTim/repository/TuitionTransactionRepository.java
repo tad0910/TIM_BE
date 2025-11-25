@@ -2,6 +2,8 @@ package com.tim.appTim.repository;
 
 import com.tim.appTim.dto.TuitionOverviewDTO;
 import com.tim.appTim.entity.TuitionTransaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,4 +31,7 @@ public interface TuitionTransactionRepository extends JpaRepository<TuitionTrans
             "CAST(0 AS bigdecimal) ) " +
             "FROM TuitionTransaction t")
     TuitionOverviewDTO getSystemOverview();
+
+    Page<TuitionTransaction> findByStudentTuition_Student_IdOrderByTransactionDateDesc(
+            Long studentId, Pageable pageable);
 }

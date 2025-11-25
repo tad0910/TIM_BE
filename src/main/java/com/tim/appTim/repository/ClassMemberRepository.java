@@ -22,4 +22,7 @@ public interface ClassMemberRepository extends JpaRepository<ClassMember, Long> 
     Page<ClassMember> findByClassIdAndRole(Long classId, ClassMember.Role role, Pageable pageable);
     @Query("SELECT cm.classId FROM ClassMember cm WHERE cm.userId = :userId AND cm.role = :role")
     List<Long> findClassIdsByUserIdAndRole(@Param("userId") Long userId, @Param("role") ClassMember.Role role);
+
+    @Query("SELECT cm FROM ClassMember cm WHERE cm.classEntity.program.id = :programId AND cm.role = com.tim.appTim.entity.ClassMember.Role.sinh_vien")
+    List<ClassMember> findStudentsByProgramId(@Param("programId") Long programId);
 }

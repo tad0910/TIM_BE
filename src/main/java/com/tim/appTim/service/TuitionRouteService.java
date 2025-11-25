@@ -1,8 +1,10 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.dto.TuitionRouteDTO;
+import com.tim.appTim.entity.Programs;
 import com.tim.appTim.entity.TuitionRoute;
 import com.tim.appTim.repository.TuitionRouteRepository;
+import com.tim.appTim.repository.ProgramsRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,9 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class TuitionRouteService {
 
     private final TuitionRouteRepository tuitionRouteRepository;
+    private final ProgramsRepository programsRepository;
 
-    public TuitionRouteService(TuitionRouteRepository tuitionRouteRepository) {
+    public TuitionRouteService(TuitionRouteRepository tuitionRouteRepository, ProgramsRepository programsRepository) {
         this.tuitionRouteRepository = tuitionRouteRepository;
+        this.programsRepository = programsRepository;
     }
 
     public Page<TuitionRouteDTO> getAllRoutes(Pageable pageable) {
@@ -33,7 +37,13 @@ public class TuitionRouteService {
     public TuitionRouteDTO createRoute(TuitionRouteDTO dto) {
         TuitionRoute route = new TuitionRoute();
         BeanUtils.copyProperties(dto, route);
+        Programs program = programsRepository.findById(dto.getProgramId())
+                .orElseThrow(() -> new RuntimeException("Chương trình học không tồn tại với ID: " + dto.getProgramId()));
+
+        route.setProgram(program);
         TuitionRoute savedRoute = tuitionRouteRepository.save(route);
+        TuitionRouteDTO resultDTO = convertToDTO(savedRoute);
+        resultDTO.setProgramId(program.getId());
         return convertToDTO(savedRoute);
     }
 
