@@ -13,6 +13,6 @@ import java.util.List;
 public interface StudentPaymentScheduleRepository extends JpaRepository<StudentPaymentSchedule, Long> {
 
     List<StudentPaymentSchedule> findByStudentTuitionIdAndStatus(Long studentTuitionId, PaymentStatus status);
-
     List<StudentPaymentSchedule> findByStatusNotAndDueDateBefore(PaymentStatus status, LocalDate date);
+    List<StudentPaymentSchedule> findByStudentTuition_Student_Id(Long studentId);
 }
