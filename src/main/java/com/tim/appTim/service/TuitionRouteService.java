@@ -29,15 +29,16 @@ public class TuitionRouteService {
         this.programsRepository = programsRepository;
     }
 
+    @Transactional(readOnly = true)
     public Page<TuitionRouteDTO> getAllRoutes(Pageable pageable) {
         return tuitionRouteRepository.findAll(pageable)
-                .map(this::convertToDTO);
+                .map(entity -> convertToDTO(entity, false));
     }
 
     public TuitionRouteDTO getRouteById(Long id) {
         TuitionRoute route = tuitionRouteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lộ trình học phí với ID: " + id));
-        return convertToDTO(route);
+        return convertToDTO(route, true);
     }
 
     @Transactional
@@ -69,7 +70,7 @@ public class TuitionRouteService {
         }
 
         TuitionRoute savedRoute = tuitionRouteRepository.save(route);
-        TuitionRouteDTO resultDTO = convertToDTO(savedRoute);
+        TuitionRouteDTO resultDTO = convertToDTO(savedRoute, true);
         resultDTO.setProgramId(program.getId());
         return resultDTO;
     }
@@ -97,7 +98,7 @@ public class TuitionRouteService {
         }
 
         TuitionRoute updatedRoute = tuitionRouteRepository.save(existingRoute);
-        return convertToDTO(updatedRoute);
+        return convertToDTO(updatedRoute, true);
     }
 
     @Transactional
@@ -109,24 +110,29 @@ public class TuitionRouteService {
     }
 
     private TuitionRouteDTO convertToDTO(TuitionRoute entity) {
+        return convertToDTO(entity, true);
+    }
+
+    private TuitionRouteDTO convertToDTO(TuitionRoute entity, boolean includeConfigs) {
         TuitionRouteDTO dto = new TuitionRouteDTO();
         BeanUtils.copyProperties(entity, dto, "installmentConfigs");
         if (entity.getProgram() != null) {
             dto.setProgramId(entity.getProgram().getId());
         }
 
-        // Convert configs to DTOs
-        if (entity.getInstallmentConfigs() != null && !entity.getInstallmentConfigs().isEmpty()) {
-            List<InstallmentConfigDTO> configDTOs = entity.getInstallmentConfigs().stream()
-                    .map(config -> {
-                        InstallmentConfigDTO configDTO = new InstallmentConfigDTO();
-                        configDTO.setInstallmentNumber(config.getInstallmentNumber());
-                        configDTO.setBaseAmount(config.getBaseAmount());
-                        configDTO.setDaysFromPrevious(config.getDaysFromPrevious());
-                        return configDTO;
-                    })
-                    .collect(Collectors.toList());
-            dto.setInstallmentConfigs(configDTOs);
+        if (includeConfigs) {
+            if (entity.getInstallmentConfigs() != null && !entity.getInstallmentConfigs().isEmpty()) {
+                List<InstallmentConfigDTO> configDTOs = entity.getInstallmentConfigs().stream()
+                        .map(config -> {
+                            InstallmentConfigDTO configDTO = new InstallmentConfigDTO();
+                            configDTO.setInstallmentNumber(config.getInstallmentNumber());
+                            configDTO.setBaseAmount(config.getBaseAmount());
+                            configDTO.setDaysFromPrevious(config.getDaysFromPrevious());
+                            return configDTO;
+                        })
+                        .collect(Collectors.toList());
+                dto.setInstallmentConfigs(configDTOs);
+            }
         }
 
         return dto;
