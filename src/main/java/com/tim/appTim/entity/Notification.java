@@ -64,7 +64,9 @@ public class Notification {
         ATTENDANCE_REMINDER_ENDING,
         GRADE_NEW,
         GRADE_UPDATED,
-        BLOG_NEW
+        BLOG_NEW,
+        TUITION_OVERDUE,
+        TUITION_REMINDER
     }
 
     public Notification() {}
