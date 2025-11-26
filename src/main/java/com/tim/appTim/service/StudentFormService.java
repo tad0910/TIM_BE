@@ -239,6 +239,7 @@ public class StudentFormService {
         dto.setEndDate(form.getEndDate());
         dto.setFeeAmount(form.getFeeAmount());
         dto.setStatus(form.getStatus());
+        dto.setCreatedAt(form.getCreatedAt());
 
         if (form.getTemplate() != null) {
             dto.setTemplateName(form.getTemplate().getName());
@@ -281,7 +282,7 @@ public class StudentFormService {
         if (form.getAdminUser() != null) {
             dto.setAdminName(form.getAdminUser().getLastName() + " " + form.getAdminUser().getFirstName());
         }
-
+        
         return dto;
     }
 }

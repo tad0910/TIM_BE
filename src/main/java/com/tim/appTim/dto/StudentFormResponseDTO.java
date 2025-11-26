@@ -3,6 +3,7 @@ package com.tim.appTim.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import com.tim.appTim.entity.StudentForm;
 
 public class StudentFormResponseDTO {
@@ -33,6 +34,7 @@ public class StudentFormResponseDTO {
     private String adminName;
 
     private StudentForm.FormStatus status;
+    private LocalDateTime createdAt;
 
     public StudentFormResponseDTO() {}
 
@@ -110,4 +112,7 @@ public class StudentFormResponseDTO {
 
     public StudentForm.FormStatus getStatus() { return status; }
     public void setStatus(StudentForm.FormStatus status) { this.status = status; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
