@@ -35,6 +35,7 @@ public class TuitionRouteService {
                 .map(entity -> convertToDTO(entity, false));
     }
 
+    @Transactional(readOnly = true)
     public TuitionRouteDTO getRouteById(Long id) {
         TuitionRoute route = tuitionRouteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lộ trình học phí với ID: " + id));
