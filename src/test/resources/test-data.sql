@@ -8,6 +8,7 @@ DELETE FROM class_module_schedules;
 DELETE FROM module_sessions;
 DELETE FROM program_modules;
 DELETE FROM class_members;
+DELETE FROM student_forms;
 
 DELETE FROM class_module;
 DELETE FROM classes;
@@ -20,6 +21,7 @@ DELETE FROM notifications;
 DELETE FROM reply_comments;
 DELETE FROM comments;
 
+DELETE FROM form_templates;
 DELETE FROM posts;
 DELETE FROM users;
 DELETE FROM roles;
@@ -28,7 +30,9 @@ DELETE FROM permissions;
 INSERT INTO roles (id, name) VALUES 
 (1, 'ROLE_USER'), 
 (2, 'ROLE_ADMIN'),
-(3, 'ROLE_GIAO_VIEN');
+(3, 'ROLE_GIAO_VIEN'),
+(4, 'ROLE_GIAO_VU'),
+(5, 'ROLE_KE_TOAN');
 
 INSERT INTO permissions (id, name) VALUES
 (1, 'post:create'),
@@ -65,7 +69,11 @@ INSERT INTO permissions (id, name) VALUES
 (32, 'attendance:open'),
 (33, 'attendance:mark'),
 (34, 'attendance:read_all'),
-(35, 'grade:delete');
+(35, 'grade:delete'),
+(36, 'form:create'),
+(37, 'form:read_all'),
+(38, 'form:approve'),
+(39, 'form:delete');
 
 INSERT INTO users (id, username, password, email, deleted) VALUES
 (1, 'post_owner', '{noop}password', 'owner@example.com', false),
@@ -74,7 +82,18 @@ INSERT INTO users (id, username, password, email, deleted) VALUES
 (4, 'stranger_user', '{noop}password', 'stranger@example.com', false),
 (5, 'giaovien1', '{noop}password', 'gv1@example.com', false),
 (6, 'giaovien2', '{noop}password', 'gv2@example.com', false),
-(7, 'giaovien3', '{noop}password', 'gv3@example.com', false);
+(7, 'giaovien3', '{noop}password', 'gv3@example.com', false),
+(8, 'form_student', '{noop}password', 'form.student@example.com', false),
+(9, 'form_admin', '{noop}password', 'form.admin@example.com', false),
+(10, 'giaovu_user', '{noop}password', 'giaovu@example.com', false),
+(11, 'ketoan_user', '{noop}password', 'ketoan@example.com', false);
+
+UPDATE users SET firstname = 'Owner', lastname = 'Post', so_dien_thoai = '0911000001' WHERE id = 1;
+UPDATE users SET firstname = 'Student', lastname = 'Form', so_dien_thoai = '0911000008' WHERE id = 8;
+UPDATE users SET firstname = 'Admin', lastname = 'Form', so_dien_thoai = '0911000009' WHERE id = 9;
+UPDATE users SET firstname = 'Coach', lastname = 'Teacher', so_dien_thoai = '0911000005' WHERE id = 5;
+UPDATE users SET firstname = 'Academic', lastname = 'Officer', so_dien_thoai = '0911000010' WHERE id = 10;
+UPDATE users SET firstname = 'Account', lastname = 'Ant', so_dien_thoai = '0911000011' WHERE id = 11;
 
 INSERT INTO user_roles (user_id, role_id) VALUES
 (1, 1),
@@ -83,7 +102,11 @@ INSERT INTO user_roles (user_id, role_id) VALUES
 (4, 1),
 (5, 3),
 (6, 1),
-(7, 1);
+(7, 1),
+(8, 1),
+(9, 2),
+(10, 4),
+(11, 5);
 
 INSERT INTO role_permissions (role_id, permission_id) VALUES
 (2, 11),
@@ -118,7 +141,19 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (3, 29),
 (3, 30),
 (3, 31),
-(3, 35);
+(3, 35),
+(1, 36),
+(2, 36),
+(2, 37),
+(2, 38),
+(2, 39),
+(3, 37),
+(3, 38),
+(4, 37),
+(4, 38),
+(4, 39),
+(5, 37),
+(5, 38);
 
 INSERT INTO programs (id, name, description) VALUES
 (100, 'Khóa học Backend', 'Phát triển ứng dụng với Spring Boot.');
@@ -136,7 +171,9 @@ INSERT INTO module_sessions (id, module_id, session_number, title, content) VALU
 
 INSERT INTO classes (id, name, description, program_id) VALUES
 (10, 'BE Class K10', 'Lớp học Test A', 100),
-(11, 'FE Class K11', 'Lớp học Test B', 100);
+(11, 'FE Class K11', 'Lớp học Test B', 100),
+(12, 'Form Class K12', 'Lớp học Test C', 100),
+(13, 'Form Class K13', 'Lớp học Test D', 100);
 
 INSERT INTO class_module (id, class_id, module_id, schedule_type) VALUES
 (500, 10, 200, 'fixed');
@@ -144,7 +181,8 @@ INSERT INTO class_module (id, class_id, module_id, schedule_type) VALUES
 INSERT INTO class_members (lop_id, nguoi_dung_id, vai_tro, ngay_tham_gia) VALUES
 (10, 1, 'sinh_vien', NOW()),
 (10, 5, 'giao_vien', NOW()),
-(10, 2, 'sinh_vien', NOW());
+(10, 2, 'sinh_vien', NOW()),
+(10, 8, 'sinh_vien', NOW());
 
 INSERT INTO program_modules (program_id, module_id, position) VALUES
 (100, 200, 1),
@@ -161,6 +199,26 @@ INSERT INTO posts (id, nguoi_dung_id, noi_dung, quyen_rieng_tu) VALUES
 (10, 1, 'Bài viết của owner', 'open'),
 (11, 1, 'Bài viết private của owner', 'only_me'),
 (12, 2, 'Bài viết của user khác', 'friends');
+
+INSERT INTO form_templates (id, code, name, description, is_active) VALUES
+(1000, 'RESERVATION', 'Đơn Bảo lưu', 'Dùng cho học viên xin bảo lưu', true),
+(1001, 'TRANSFER', 'Đơn Chuyển lớp', 'Dùng cho học viên muốn chuyển lớp', true),
+(1002, 'DROPOUT', 'Đơn Thôi học', 'Dùng cho học viên thôi học', false);
+
+INSERT INTO student_forms (
+    id, template_id, student_id, class_id, created_by_user_id,
+    reason, start_date, end_date, fee_amount,
+    coach_approval, academic_approval, accountant_approval, admin_approval,
+    status
+) VALUES
+(2000, 1000, 8, 10, 9,
+ 'Xin bảo lưu 1 tháng', '2025-01-01', '2025-02-01', 0,
+ 'PENDING', 'PENDING', 'PENDING', 'PENDING',
+ 'PENDING'),
+(2001, 1001, 8, 12, 9,
+ 'Xin chuyển lớp khác', '2025-03-01', '2025-03-15', 500000,
+ 'APPROVED', 'PENDING', 'PENDING', 'PENDING',
+ 'PROCESSING');
 
 INSERT INTO comments (id, bai_viet_id, nguoi_dung_id, noi_dung, thoi_gian_tao) VALUES
 (20, 10, 2, 'Bình luận gốc của user 2', NOW()),
