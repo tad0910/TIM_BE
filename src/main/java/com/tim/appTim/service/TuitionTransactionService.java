@@ -4,6 +4,7 @@ import com.tim.appTim.dto.PaymentRequestDTO;
 import com.tim.appTim.dto.TuitionOverviewDTO;
 import com.tim.appTim.dto.TuitionTransactionDTO;
 import com.tim.appTim.entity.StudentPaymentSchedule;
+import com.tim.appTim.entity.StudentTuition;
 import com.tim.appTim.entity.TuitionReceipt;
 import com.tim.appTim.entity.TuitionTransaction;
 import com.tim.appTim.entity.User;
@@ -12,6 +13,7 @@ import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.StudentPaymentScheduleRepository;
 import com.tim.appTim.repository.TuitionTransactionRepository;
 import com.tim.appTim.repository.TuitionReceiptRepository;
+import com.tim.appTim.repository.StudentTuitionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,26 +37,67 @@ public class TuitionTransactionService {
     @Autowired
     private TuitionReceiptRepository receiptRepository;
 
-    public TuitionOverviewDTO getStudentOverview(Long studentId) {
-        TuitionOverviewDTO overview = transactionRepository.getOverviewByStudentId(studentId);
+    @Autowired
+    private StudentTuitionRepository studentTuitionRepository;
 
-        if (overview == null || overview.getTotalPaid() == null) {
+    @Transactional(readOnly = true)
+    public TuitionOverviewDTO getStudentOverview(Long studentId) {
+        java.util.List<StudentPaymentSchedule> schedules = scheduleRepository.findByStudentTuition_Student_Id(studentId);
+
+        if (schedules == null || schedules.isEmpty()) {
             return TuitionOverviewDTO.builder()
                     .totalPaid(BigDecimal.ZERO)
                     .totalRefunded(BigDecimal.ZERO)
                     .totalException(BigDecimal.ZERO)
-                    .totalUsed(BigDecimal.ZERO)
-                    .currentBalance(BigDecimal.ZERO)
+                    .totalUsed(BigDecimal.ZERO) 
+                    .currentBalance(BigDecimal.ZERO) 
+                    .totalWaived(BigDecimal.ZERO)
                     .build();
         }
 
-        BigDecimal balance = overview.getTotalPaid()
-                .subtract(overview.getTotalRefunded())
-                .subtract(overview.getTotalUsed())
-                .add(overview.getTotalException());
+        BigDecimal totalExpected = BigDecimal.ZERO; 
+        BigDecimal totalPaid = BigDecimal.ZERO;     
 
-        overview.setCurrentBalance(balance);
-        return overview;
+        for (StudentPaymentSchedule sch : schedules) {
+            BigDecimal expected = sch.getExpectedAmount() != null ? sch.getExpectedAmount() : BigDecimal.ZERO;
+            totalExpected = totalExpected.add(expected);
+
+            switch (sch.getStatus()) {
+                case PAID:
+                    totalPaid = totalPaid.add(expected);
+                    break;
+                case PARTIAL:
+                    totalPaid = totalPaid.add(sch.getPaidAmount() != null ? sch.getPaidAmount() : BigDecimal.ZERO);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        BigDecimal listedPlusAdmissionSum = BigDecimal.ZERO;
+        java.util.List<Object[]> sums = studentTuitionRepository.sumListedAndAdmissionByStudent(studentId);
+        if (sums != null && !sums.isEmpty()) {
+            Object[] row = sums.get(0);
+            BigDecimal listedSum = row != null && row.length > 0 && row[0] != null ? (BigDecimal) row[0] : BigDecimal.ZERO;
+            BigDecimal admissionSum = row != null && row.length > 1 && row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO;
+            listedPlusAdmissionSum = listedSum.add(admissionSum);
+        }
+        BigDecimal totalWaived = listedPlusAdmissionSum.subtract(totalExpected);
+        if (totalWaived.compareTo(BigDecimal.ZERO) < 0) {
+            totalWaived = BigDecimal.ZERO;
+        }
+
+        BigDecimal remaining = totalExpected.subtract(totalPaid);
+        if (remaining.compareTo(BigDecimal.ZERO) < 0) remaining = BigDecimal.ZERO;
+
+        return TuitionOverviewDTO.builder()
+                .totalPaid(totalPaid)
+                .totalRefunded(BigDecimal.ZERO)
+                .totalException(BigDecimal.ZERO)
+                .totalUsed(totalPaid)
+                .currentBalance(remaining)
+                .totalWaived(totalWaived)
+                .build();
     }
 
     public TuitionOverviewDTO getAdminOverview() {
