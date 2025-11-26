@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -20,7 +21,8 @@ public class TuitionRouteController {
     private final TuitionRouteService tuitionRouteService;
     private final StudentTuitionService studentTuitionService;
 
-    public TuitionRouteController(TuitionRouteService tuitionRouteService, StudentTuitionService studentTuitionService) {
+    public TuitionRouteController(TuitionRouteService tuitionRouteService,
+            StudentTuitionService studentTuitionService) {
         this.tuitionRouteService = tuitionRouteService;
         this.studentTuitionService = studentTuitionService;
     }
@@ -40,7 +42,7 @@ public class TuitionRouteController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('tuition:create')")
-    public ResponseEntity<TuitionRouteDTO> createRoute(@RequestBody TuitionRouteDTO dto) {
+    public ResponseEntity<TuitionRouteDTO> createRoute(@Valid @RequestBody TuitionRouteDTO dto) {
         TuitionRouteDTO created = tuitionRouteService.createRoute(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -61,7 +63,7 @@ public class TuitionRouteController {
     @PreAuthorize("hasAuthority('tuition:update')")
     public ResponseEntity<TuitionRouteDTO> updateRoute(
             @PathVariable Long id,
-            @RequestBody TuitionRouteDTO dto) {
+            @Valid @RequestBody TuitionRouteDTO dto) {
         return ResponseEntity.ok(tuitionRouteService.updateRoute(id, dto));
     }
 

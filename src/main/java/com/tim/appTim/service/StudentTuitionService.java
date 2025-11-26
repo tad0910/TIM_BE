@@ -2,6 +2,7 @@ package com.tim.appTim.service;
 
 import com.tim.appTim.dto.FeeAdjustmentDTO;
 import com.tim.appTim.entity.*;
+import com.tim.appTim.entity.TuitionInstallmentConfig;
 import com.tim.appTim.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -103,12 +104,14 @@ public class StudentTuitionService {
         }
 
         int totalInstallments = route.getNumberOfInstallments();
-        int frequencyMonths = route.getFrequency();
+        List<TuitionInstallmentConfig> configs = route.getInstallmentConfigs();
 
-        BigDecimal baseAmountPerInstallment = route.getTotalListedFee().divide(
-                BigDecimal.valueOf(totalInstallments), 2, RoundingMode.HALF_UP);
+        // Fallback to old frequency-based logic if no configs defined
+        if (configs == null || configs.isEmpty()) {
+            configs = generateConfigsFromFrequency(route);
+        }
 
-        LocalDate currentFromDate = enrollmentDate;
+        LocalDate currentDueDate = enrollmentDate;
 
         for (int i = 1; i <= totalInstallments; i++) {
             StudentPaymentSchedule schedule = new StudentPaymentSchedule();
@@ -117,61 +120,33 @@ public class StudentTuitionService {
             schedule.setPaidAmount(BigDecimal.ZERO);
             schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PENDING);
 
-            schedule.setFromDate(currentFromDate);
-            LocalDate dueDate = currentFromDate.plusMonths(frequencyMonths);
+            // Find matching config
+            final int installmentNum = i;
+            TuitionInstallmentConfig config = configs.stream()
+                    .filter(c -> c.getInstallmentNumber().equals(installmentNum))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy cấu hình cho kỳ " + installmentNum));
+
+            // Timeline: daysFromPrevious calculated from previous dueDate
+            schedule.setFromDate(currentDueDate);
+            LocalDate dueDate = currentDueDate.plusDays(config.getDaysFromPrevious());
             schedule.setDueDate(dueDate);
-            currentFromDate = dueDate;
+            currentDueDate = dueDate;
 
+            // Discount calculation
             BigDecimal discountForThisInstallment = BigDecimal.ZERO;
-
             if (coupon != null) {
-                Coupon.CouponScenario scenario = coupon.getScenario();
-                if (scenario == null) scenario = Coupon.CouponScenario.SPREAD_EVENLY;
-
-                switch (scenario) {
-                    case SPREAD_EVENLY:
-                        discountForThisInstallment = totalDiscountAmount.divide(
-                                BigDecimal.valueOf(totalInstallments), 2, RoundingMode.HALF_UP);
-                        break;
-
-                    case DEDUCT_FIRST_FULL:
-                        if (i == 1) {
-                            discountForThisInstallment = totalDiscountAmount;
-                        }
-                        break;
-
-                    case DEDUCT_LAST_FULL:
-                        if (i == totalInstallments) {
-                            discountForThisInstallment = totalDiscountAmount;
-                        }
-                        break;
-
-                    case PARTIAL_FIRST_THEN_SPREAD:
-                        BigDecimal firstPart = totalDiscountAmount.multiply(new BigDecimal("0.5"));
-                        BigDecimal restPart = totalDiscountAmount.subtract(firstPart);
-
-                        if (i == 1) {
-                            if (totalInstallments > 1) {
-                                discountForThisInstallment = firstPart;
-                            } else {
-                                discountForThisInstallment = totalDiscountAmount;
-                            }
-                        } else {
-                            discountForThisInstallment = restPart.divide(
-                                    BigDecimal.valueOf(totalInstallments - 1), 2, RoundingMode.HALF_UP);
-                        }
-                        break;
-                }
+                discountForThisInstallment = calculateDiscountForInstallment(
+                        coupon, i, totalInstallments, config.getBaseAmount(),
+                        route.getTotalListedFee(), totalDiscountAmount);
             }
 
-            BigDecimal finalAmount = baseAmountPerInstallment.subtract(discountForThisInstallment);
-
+            BigDecimal finalAmount = config.getBaseAmount().subtract(discountForThisInstallment);
             if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
                 finalAmount = BigDecimal.ZERO;
             }
 
             schedule.setExpectedAmount(finalAmount);
-
             schedules.add(schedule);
         }
 
@@ -261,5 +236,63 @@ public class StudentTuitionService {
                 "skipped", skipCount,
                 "errors", errors
         );
+    }
+
+    private List<TuitionInstallmentConfig> generateConfigsFromFrequency(TuitionRoute route) {
+        List<TuitionInstallmentConfig> configs = new ArrayList<>();
+        int totalInstallments = route.getNumberOfInstallments();
+        BigDecimal baseAmount = route.getTotalListedFee().divide(
+                BigDecimal.valueOf(totalInstallments), 2, RoundingMode.HALF_UP);
+
+        int daysPerInstallment = route.getFrequency() * 30;
+
+        for (int i = 1; i <= totalInstallments; i++) {
+            TuitionInstallmentConfig config = new TuitionInstallmentConfig();
+            config.setInstallmentNumber(i);
+            config.setBaseAmount(baseAmount);
+            config.setDaysFromPrevious(daysPerInstallment);
+            configs.add(config);
+        }
+
+        return configs;
+    }
+
+    private BigDecimal calculateDiscountForInstallment(
+            Coupon coupon, int installmentNumber, int totalInstallments,
+            BigDecimal baseAmount, BigDecimal totalListedFee, BigDecimal totalDiscount
+    ) {
+        Coupon.CouponScenario scenario = coupon.getScenario();
+        if (scenario == null) scenario = Coupon.CouponScenario.SPREAD_EVENLY;
+
+        switch (scenario) {
+            case SPREAD_EVENLY:
+                // Proportional to baseAmount
+                return totalDiscount.multiply(baseAmount)
+                        .divide(totalListedFee, 2, RoundingMode.HALF_UP);
+
+            case DEDUCT_FIRST_FULL:
+                return (installmentNumber == 1) ? totalDiscount : BigDecimal.ZERO;
+
+            case DEDUCT_LAST_FULL:
+                return (installmentNumber == totalInstallments) ? totalDiscount : BigDecimal.ZERO;
+
+            case PARTIAL_FIRST_THEN_SPREAD:
+                BigDecimal firstPart = totalDiscount.multiply(new BigDecimal("0.5"));
+                BigDecimal restPart = totalDiscount.subtract(firstPart);
+
+                if (installmentNumber == 1) {
+                    return firstPart;
+                } else {
+                    BigDecimal totalRemainingBase = totalListedFee.subtract(baseAmount);
+                    if (totalRemainingBase.compareTo(BigDecimal.ZERO) == 0) {
+                        return BigDecimal.ZERO;
+                    }
+                    return restPart.multiply(baseAmount)
+                            .divide(totalRemainingBase, 2, RoundingMode.HALF_UP);
+                }
+
+            default:
+                return BigDecimal.ZERO;
+        }
     }
 }

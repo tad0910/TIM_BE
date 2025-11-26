@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tuition_routes")
@@ -43,6 +45,10 @@ public class TuitionRoute {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @OneToMany(mappedBy = "tuitionRoute", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("installmentNumber ASC")
+    private List<TuitionInstallmentConfig> installmentConfigs = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "program_id", nullable = false)
