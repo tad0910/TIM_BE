@@ -4,8 +4,10 @@ import com.tim.appTim.entity.TuitionRoute;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class TuitionRouteDTO {
@@ -32,8 +34,12 @@ public class TuitionRouteDTO {
     @Min(value = 1, message = "Số đợt phải ít nhất là 1")
     private Integer numberOfInstallments;
 
-    @NotNull(message = "Tần suất không được để trống")
+    // frequency is optional when installmentConfigs is provided
     @Min(value = 1, message = "Tần suất phải ít nhất là 1 tháng")
     private Integer frequency;
+
     private String description;
+
+    @Valid
+    private List<InstallmentConfigDTO> installmentConfigs;
 }
