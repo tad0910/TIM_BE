@@ -176,7 +176,8 @@ public class StudentFormService {
         boolean isAllApproved = 
             form.getCoachApproval() == ApprovalStatus.APPROVED &&
             form.getAcademicApproval() == ApprovalStatus.APPROVED &&
-            form.getAccountantApproval() == ApprovalStatus.APPROVED;
+            form.getAccountantApproval() == ApprovalStatus.APPROVED &&
+            form.getAdminApproval() == ApprovalStatus.APPROVED;
 
         if (isAllApproved) {
             form.setStatus(StudentForm.FormStatus.APPROVED);
