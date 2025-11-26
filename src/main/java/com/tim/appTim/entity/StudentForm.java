@@ -3,6 +3,7 @@ package com.tim.appTim.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime; 
 
 @Entity
 @Table(name = "student_forms")
@@ -69,6 +70,22 @@ public class StudentForm {
 
     @Enumerated(EnumType.STRING)
     private FormStatus status = FormStatus.PENDING;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     public enum ApprovalStatus {
         APPROVED, REJECTED, PENDING, PROCESSING
@@ -149,4 +166,10 @@ public class StudentForm {
 
     public FormStatus getStatus() {return status;    }
     public void setStatus(FormStatus status) {this.status = status;    }
+
+    public LocalDateTime getCreatedAt() {return createdAt;    }
+    public void setCreatedAt(LocalDateTime createdAt) {this.createdAt = createdAt;    }
+
+    public LocalDateTime getUpdatedAt() {return updatedAt;    }
+    public void setUpdatedAt(LocalDateTime updatedAt) {this.updatedAt = updatedAt;    }
 }
