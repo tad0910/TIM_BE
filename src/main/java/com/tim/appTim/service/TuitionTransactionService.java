@@ -45,10 +45,11 @@ public class TuitionTransactionService {
 
     @Transactional(readOnly = true)
     public TuitionOverviewDTO getStudentOverview(Long studentId) {
-        java.util.List<StudentPaymentSchedule> schedules = scheduleRepository.findByStudentTuition_Student_Id(studentId);
-        
-        BigDecimal totalExpected = BigDecimal.ZERO; 
-        BigDecimal totalPaid = BigDecimal.ZERO;     
+        java.util.List<StudentPaymentSchedule> schedules = scheduleRepository
+                .findByStudentTuition_Student_Id(studentId);
+
+        BigDecimal totalExpected = BigDecimal.ZERO;
+        BigDecimal totalPaid = BigDecimal.ZERO;
 
         if (schedules != null && !schedules.isEmpty()) {
             for (StudentPaymentSchedule sch : schedules) {
@@ -72,18 +73,21 @@ public class TuitionTransactionService {
         java.util.List<Object[]> sums = studentTuitionRepository.sumListedAndAdmissionByStudent(studentId);
         if (sums != null && !sums.isEmpty()) {
             Object[] row = sums.get(0);
-            BigDecimal listedSum = row != null && row.length > 0 && row[0] != null ? (BigDecimal) row[0] : BigDecimal.ZERO;
-            BigDecimal admissionSum = row != null && row.length > 1 && row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO;
+            BigDecimal listedSum = row != null && row.length > 0 && row[0] != null ? (BigDecimal) row[0]
+                    : BigDecimal.ZERO;
+            BigDecimal admissionSum = row != null && row.length > 1 && row[1] != null ? (BigDecimal) row[1]
+                    : BigDecimal.ZERO;
             listedPlusAdmissionSum = listedSum.add(admissionSum);
         }
-        
+
         BigDecimal totalWaived = listedPlusAdmissionSum.subtract(totalExpected);
         if (totalWaived.compareTo(BigDecimal.ZERO) < 0) {
             totalWaived = BigDecimal.ZERO;
         }
 
         BigDecimal remaining = totalExpected.subtract(totalPaid);
-        if (remaining.compareTo(BigDecimal.ZERO) < 0) remaining = BigDecimal.ZERO;
+        if (remaining.compareTo(BigDecimal.ZERO) < 0)
+            remaining = BigDecimal.ZERO;
 
         return TuitionOverviewDTO.builder()
                 .totalPaid(totalPaid)
@@ -129,11 +133,11 @@ public class TuitionTransactionService {
                 .existsByStudentTuitionIdAndInstallmentNumberLessThanAndStatus(
                         schedule.getStudentTuition().getId(),
                         schedule.getInstallmentNumber(),
-                        StudentPaymentSchedule.PaymentStatus.PENDING
-                );
+                        StudentPaymentSchedule.PaymentStatus.PENDING);
 
         if (hasUnpaidPrevious) {
-            throw new BadRequestException("Vui lòng thanh toán các đợt trước (Đợt " + (schedule.getInstallmentNumber() - 1) + " trở về trước) trước khi đóng đợt này.");
+            throw new BadRequestException("Vui lòng thanh toán các đợt trước (Đợt "
+                    + (schedule.getInstallmentNumber() - 1) + " trở về trước) trước khi đóng đợt này.");
         }
 
         schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PAID);
@@ -146,7 +150,8 @@ public class TuitionTransactionService {
         transaction.setAmount(schedule.getExpectedAmount());
         transaction.setTransactionDate(LocalDateTime.now());
         transaction.setPerformedBy(collector);
-        transaction.setDescription("Thanh toán đợt " + schedule.getInstallmentNumber() + " - " + request.getPaymentMethod());
+        transaction.setDescription(
+                "Thanh toán đợt " + schedule.getInstallmentNumber() + " - " + request.getPaymentMethod());
 
         transactionRepository.save(transaction);
 
@@ -175,5 +180,10 @@ public class TuitionTransactionService {
     public Page<TuitionTransactionDTO> getAllTransactions(Pageable pageable) {
         return transactionRepository.findAll(pageable)
                 .map(TuitionTransactionDTO::new);
+    }
+
+    public TuitionTransaction getTransactionById(Long id) {
+        return transactionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Giao dịch không tồn tại"));
     }
 }
