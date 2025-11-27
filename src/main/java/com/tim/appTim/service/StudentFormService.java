@@ -59,6 +59,8 @@ public class StudentFormService {
                 form.setCoachApproval(request.getDecision());
                 form.setCoachNote(request.getNote());
                 form.setCoachUser(currentUser); 
+                form.setModuleId(request.getModuleId());
+                form.setModuleSessionId(request.getModuleSessionId());
                 break;
 
             case "ROLE_GIAO_VU":
@@ -241,6 +243,8 @@ public class StudentFormService {
         dto.setFeeAmount(form.getFeeAmount());
         dto.setStatus(form.getStatus());
         dto.setCreatedAt(form.getCreatedAt());
+        dto.setModuleId(form.getModuleId());
+        dto.setModuleSessionId(form.getModuleSessionId());
 
         if (form.getTemplate() != null) {
             dto.setTemplateName(form.getTemplate().getName());
