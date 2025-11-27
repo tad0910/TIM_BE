@@ -35,6 +35,10 @@ public class StudentTuitionService {
     @Transactional
     public StudentTuition registerStudent(Long studentId, Long routeId, LocalDate enrollmentDate, String couponCode) {
 
+        if (studentTuitionRepository.existsByStudentIdAndTuitionRouteId(studentId, routeId)) {
+            throw new RuntimeException("Sinh viên này đã đăng ký lộ trình học phí này rồi!");
+        }
+
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Sinh viên không tồn tại với ID: " + studentId));
 

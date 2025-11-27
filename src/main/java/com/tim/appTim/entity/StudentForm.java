@@ -87,6 +87,12 @@ public class StudentForm {
         updatedAt = LocalDateTime.now();
     }
 
+    @Column(name = "module_id")
+    private Long moduleId;
+
+    @Column(name = "module_session_id")
+    private Long moduleSessionId;
+
     public enum ApprovalStatus {
         APPROVED, REJECTED, PENDING, PROCESSING
     }
@@ -172,4 +178,10 @@ public class StudentForm {
 
     public LocalDateTime getUpdatedAt() {return updatedAt;    }
     public void setUpdatedAt(LocalDateTime updatedAt) {this.updatedAt = updatedAt;    }
+
+    public Long getModuleId() {return moduleId;    }
+    public void setModuleId(Long moduleId) {this.moduleId = moduleId;    }
+
+    public Long getModuleSessionId() {return moduleSessionId;    }
+    public void setModuleSessionId(Long moduleSessionId) {this.moduleSessionId = moduleSessionId;    }
 }

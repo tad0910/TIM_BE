@@ -12,42 +12,52 @@ import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/receipts")
-public class    ReceiptController {
+public class ReceiptController {
 
-    @Autowired
-    private PdfService pdfService;
+        @Autowired
+        private PdfService pdfService;
 
-    @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> downloadReceipt(
-            @PathVariable Long id,
-            @RequestParam(required = false, defaultValue = "Người nộp tiền") String name,
-            @RequestParam(required = false, defaultValue = "Thanh toán") String reason) {
+        @Autowired
+        private com.tim.appTim.service.TuitionTransactionService tuitionTransactionService;
 
-        BigDecimal amount = new BigDecimal("9500000");
+        @GetMapping("/{id}/download")
+        public ResponseEntity<byte[]> downloadReceipt(
+                        @PathVariable Long id,
+                        @RequestParam(required = false) String name,
+                        @RequestParam(required = false) String reason) {
 
-        String moneyText = com.tim.appTim.util.NumberToWordsVietnamese.convert(amount);
-        String moneyFormatted = com.tim.appTim.util.NumberToWordsVietnamese.formatMoney(amount);
+                com.tim.appTim.entity.TuitionTransaction transaction = tuitionTransactionService.getTransactionById(id);
+                com.tim.appTim.entity.User student = transaction.getStudentTuition().getStudent();
 
-        ReceiptDTO receiptData = ReceiptDTO.builder()
-                .companyName("CodeGym Hà Nội")
-                .companyAddress(
-                        "Nhà số 23, Lô TT01, Đường Hàm Nghi, Khu đô thị Mon City, Mỹ Đình 2, Nam Từ Liêm, Hà Nội")
-                .receiptId("PT-" + id)
-                .paymentDate(java.time.LocalDate.of(2025, 11, 21))
-                .payerName(name)
-                .payerAddress("HN-C1025G1-JV101")
-                .paymentReason(reason)
-                .amountNumber(moneyFormatted)
-                .amountInWords(moneyText)
-                // -----------------
-                .attachment("................")
-                .build();
+                BigDecimal amount = transaction.getAmount();
 
-        byte[] pdfBytes = pdfService.generateReceiptPdf(receiptData);
+                String moneyText = com.tim.appTim.util.NumberToWordsVietnamese.convert(amount);
+                String moneyFormatted = com.tim.appTim.util.NumberToWordsVietnamese.formatMoney(amount);
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=receipt_" + id + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdfBytes);
-    }
+                String finalPayerName = (name != null && !name.isEmpty()) ? name
+                                : (student.getLastName() + " " + student.getFirstName());
+                String finalReason = (reason != null && !reason.isEmpty()) ? reason : transaction.getDescription();
+
+                ReceiptDTO receiptData = ReceiptDTO.builder()
+                                .companyName("CodeGym Hà Nội")
+                                .companyAddress(
+                                                "Nhà số 23, Lô TT01, Đường Hàm Nghi, Khu đô thị Mon City, Mỹ Đình 2, Nam Từ Liêm, Hà Nội")
+                                .receiptId("PT-" + transaction.getId())
+                                .paymentDate(transaction.getTransactionDate().toLocalDate())
+                                .payerName(finalPayerName)
+                                .payerAddress("HN-C1025G1-JV101")
+                                .paymentReason(finalReason)
+                                .amountNumber(moneyFormatted)
+                                .amountInWords(moneyText)
+                                // -----------------
+                                .attachment("................")
+                                .build();
+
+                byte[] pdfBytes = pdfService.generateReceiptPdf(receiptData);
+
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=receipt_" + id + ".pdf")
+                                .contentType(MediaType.APPLICATION_PDF)
+                                .body(pdfBytes);
+        }
 }
