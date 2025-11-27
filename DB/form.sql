@@ -82,6 +82,3 @@ CREATE TABLE IF NOT EXISTS `student_forms` (
   FOREIGN KEY (`admin_user_id`) REFERENCES `users`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4;
 
-ALTER TABLE `student_forms`
-ADD COLUMN `module_id` BIGINT AFTER `reason`,
-ADD COLUMN `module_session_id` BIGINT AFTER `module_id`;
