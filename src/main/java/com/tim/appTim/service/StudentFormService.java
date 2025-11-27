@@ -176,7 +176,8 @@ public class StudentFormService {
         boolean isAllApproved = 
             form.getCoachApproval() == ApprovalStatus.APPROVED &&
             form.getAcademicApproval() == ApprovalStatus.APPROVED &&
-            form.getAccountantApproval() == ApprovalStatus.APPROVED;
+            form.getAccountantApproval() == ApprovalStatus.APPROVED &&
+            form.getAdminApproval() == ApprovalStatus.APPROVED;
 
         if (isAllApproved) {
             form.setStatus(StudentForm.FormStatus.APPROVED);
@@ -253,6 +254,7 @@ public class StudentFormService {
         }
 
         if (form.getClassRoom() != null) {
+            dto.setClassId(form.getClassRoom().getId());            
             dto.setClassName(form.getClassRoom().getClassName());
             if (form.getClassRoom().getProgram() != null) {
                 dto.setProgramName(form.getClassRoom().getProgram().getName());

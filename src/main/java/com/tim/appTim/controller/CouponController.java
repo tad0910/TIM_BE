@@ -22,6 +22,10 @@ public class CouponController {
         if (couponRepository.existsByCode(coupon.getCode())) {
             throw new RuntimeException("Mã giảm giá này đã tồn tại!");
         }
+        if (coupon.getStartDate() != null && coupon.getEndDate() != null
+                && coupon.getEndDate().isBefore(coupon.getStartDate())) {
+            throw new RuntimeException("Ngày kết thúc không thể nhỏ hơn ngày bắt đầu");
+        }
         return ResponseEntity.ok(couponRepository.save(coupon));
     }
 

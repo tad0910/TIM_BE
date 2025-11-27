@@ -14,6 +14,7 @@ public class StudentFormResponseDTO {
     private String studentName;
     private String phoneNumber;  
     private String email;
+    private Long classId;
     private String className;
     private String programName; 
     private String reason;
@@ -56,13 +57,16 @@ public class StudentFormResponseDTO {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
     
-    public String getClassName() { return className; }
-    public void setClassName(String className) { this.className = className; }
+    public Long getClassId() { return classId; }
+    public void setClassId(Long classId) { this.classId = classId; }
+    
+    public String getClassName() { return className; }    
+    public void setClassName(String className) { this.className = className; }    
 
-    public String getProgramName() { return programName; }
-    public void setProgramName(String programName) { this.programName = programName; }
+    public String getProgramName() { return programName; }    
+    public void setProgramName(String programName) { this.programName = programName; }    
 
-    public String getReason() { return reason; }
+    public String getReason() { return reason; }    
     public void setReason(String reason) { this.reason = reason; }
 
     public LocalDate getStartDate() { return startDate; }
