@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Entity
-@Table(name = "student_tuitions")
+@Table(name = "student_tuitions", uniqueConstraints = {@UniqueConstraint(columnNames = {"student_id", "tuition_route_id"})})
 @Data
 public class StudentTuition {
 
