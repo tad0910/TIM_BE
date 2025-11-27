@@ -22,6 +22,8 @@ public class StudentFormResponseDTO {
     private LocalDate endDate;
     private BigDecimal feeAmount;
     private StudentForm.ApprovalStatus coachApproval;
+    private Long moduleId;
+    private Long moduleSessionId;
     private String coachNote;
     private String coachName; 
     private StudentForm.ApprovalStatus academicApproval;
@@ -81,12 +83,18 @@ public class StudentFormResponseDTO {
     public StudentForm.ApprovalStatus getCoachApproval() { return coachApproval; }
     public void setCoachApproval(StudentForm.ApprovalStatus coachApproval) { this.coachApproval = coachApproval; }
 
+    public Long getModuleId() {return moduleId;    }
+    public void setModuleId(Long moduleId) {this.moduleId = moduleId;    }
+    
+    public Long getModuleSessionId() {return moduleSessionId;    }
+    public void setModuleSessionId(Long moduleSessionId) {this.moduleSessionId = moduleSessionId;    }
+
     public String getCoachNote() { return coachNote; }
     public void setCoachNote(String coachNote) { this.coachNote = coachNote; }
-
+    
     public String getCoachName() { return coachName; }
     public void setCoachName(String coachName) { this.coachName = coachName; }
-
+    
     public StudentForm.ApprovalStatus getAcademicApproval() { return academicApproval; }
     public void setAcademicApproval(StudentForm.ApprovalStatus academicApproval) { this.academicApproval = academicApproval; }
 
@@ -119,4 +127,5 @@ public class StudentFormResponseDTO {
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
 }

@@ -8,6 +8,8 @@ public class ApprovalRequestDTO {
     private StudentForm.ApprovalStatus decision; 
     private String note;
     private String targetRole;
+    private Long moduleId;
+    private Long moduleSessionId;
     
     public Long getFormId() {return formId;    }
     public void setFormId(Long formId) {this.formId = formId;    }
@@ -21,4 +23,9 @@ public class ApprovalRequestDTO {
     public String getTargetRole() {return targetRole;    }
     public void setTargetRole(String targetRole) {this.targetRole = targetRole;    }
     
+    public Long getModuleId() {return moduleId;    }
+    public void setModuleId(Long moduleId) {this.moduleId = moduleId;    }
+
+    public Long getModuleSessionId() {return moduleSessionId;    }
+    public void setModuleSessionId(Long moduleSessionId) {this.moduleSessionId = moduleSessionId;    }
 }

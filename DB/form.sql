@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS `student_forms` (
   `created_by_user_id` BIGINT NOT NULL COMMENT 'Người lập đơn (Giáo vụ/Admin)',
 
   `reason` TEXT,
+  `module_id` BIGINT,
+  `module_session_id` BIGINT,
   `start_date` DATE,
   `end_date` DATE,
   `decision_date` DATE,
@@ -70,6 +72,7 @@ CREATE TABLE IF NOT EXISTS `student_forms` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
+
   FOREIGN KEY (`template_id`) REFERENCES `form_templates`(`id`),
   FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`),
@@ -78,3 +81,7 @@ CREATE TABLE IF NOT EXISTS `student_forms` (
   FOREIGN KEY (`accountant_user_id`) REFERENCES `users`(`id`),
   FOREIGN KEY (`admin_user_id`) REFERENCES `users`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=UTF8MB4;
+
+ALTER TABLE `student_forms`
+ADD COLUMN `module_id` BIGINT AFTER `reason`,
+ADD COLUMN `module_session_id` BIGINT AFTER `module_id`;
