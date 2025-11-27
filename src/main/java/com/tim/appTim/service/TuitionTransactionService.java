@@ -23,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class TuitionTransactionService {
@@ -43,34 +45,25 @@ public class TuitionTransactionService {
     @Transactional(readOnly = true)
     public TuitionOverviewDTO getStudentOverview(Long studentId) {
         java.util.List<StudentPaymentSchedule> schedules = scheduleRepository.findByStudentTuition_Student_Id(studentId);
-
-        if (schedules == null || schedules.isEmpty()) {
-            return TuitionOverviewDTO.builder()
-                    .totalPaid(BigDecimal.ZERO)
-                    .totalRefunded(BigDecimal.ZERO)
-                    .totalException(BigDecimal.ZERO)
-                    .totalUsed(BigDecimal.ZERO) 
-                    .currentBalance(BigDecimal.ZERO) 
-                    .totalWaived(BigDecimal.ZERO)
-                    .build();
-        }
-
+        
         BigDecimal totalExpected = BigDecimal.ZERO; 
         BigDecimal totalPaid = BigDecimal.ZERO;     
 
-        for (StudentPaymentSchedule sch : schedules) {
-            BigDecimal expected = sch.getExpectedAmount() != null ? sch.getExpectedAmount() : BigDecimal.ZERO;
-            totalExpected = totalExpected.add(expected);
+        if (schedules != null && !schedules.isEmpty()) {
+            for (StudentPaymentSchedule sch : schedules) {
+                BigDecimal expected = sch.getExpectedAmount() != null ? sch.getExpectedAmount() : BigDecimal.ZERO;
+                totalExpected = totalExpected.add(expected);
 
-            switch (sch.getStatus()) {
-                case PAID:
-                    totalPaid = totalPaid.add(expected);
-                    break;
-                case PARTIAL:
-                    totalPaid = totalPaid.add(sch.getPaidAmount() != null ? sch.getPaidAmount() : BigDecimal.ZERO);
-                    break;
-                default:
-                    break;
+                switch (sch.getStatus()) {
+                    case PAID:
+                        totalPaid = totalPaid.add(expected);
+                        break;
+                    case PARTIAL:
+                        totalPaid = totalPaid.add(sch.getPaidAmount() != null ? sch.getPaidAmount() : BigDecimal.ZERO);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -82,6 +75,7 @@ public class TuitionTransactionService {
             BigDecimal admissionSum = row != null && row.length > 1 && row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO;
             listedPlusAdmissionSum = listedSum.add(admissionSum);
         }
+        
         BigDecimal totalWaived = listedPlusAdmissionSum.subtract(totalExpected);
         if (totalWaived.compareTo(BigDecimal.ZERO) < 0) {
             totalWaived = BigDecimal.ZERO;
