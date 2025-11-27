@@ -13,6 +13,8 @@ public class TuitionTransactionDTO {
     private LocalDateTime transactionDate;
     private String description;
     private String performedBy;
+    private Long receiptId;
+    private String receiptCode;
 
     public TuitionTransactionDTO(TuitionTransaction entity) {
         this.id = entity.getId();

@@ -72,4 +72,11 @@ public class TuitionOverviewController {
 
         return ResponseEntity.ok(transactionService.getTransactionHistory(studentId, pageable));
     }
+
+    @GetMapping("/admin/transactions")
+    @PreAuthorize("hasAuthority('tuition:read_all') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<Page<TuitionTransactionDTO>> getAllTransactions(
+            @PageableDefault(size = 10, page = 0) Pageable pageable) {
+        return ResponseEntity.ok(transactionService.getAllTransactions(pageable));
+    }
 }

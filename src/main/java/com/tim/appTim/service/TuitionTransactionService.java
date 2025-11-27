@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -154,15 +155,45 @@ public class TuitionTransactionService {
         return receiptRepository.save(receipt);
     }
 
+    @Transactional(readOnly = true)
     public Page<TuitionTransactionDTO> getTransactionHistory(Long studentId, Pageable pageable) {
         Page<TuitionTransaction> transactions = transactionRepository
                 .findByStudentTuition_Student_IdOrderByTransactionDateDesc(studentId, pageable);
 
-        return transactions.map(TuitionTransactionDTO::new);
+        return transactions.map(tx -> {
+            TuitionTransactionDTO dto = new TuitionTransactionDTO(tx);
+            if (tx.getType() == TuitionTransaction.TransactionType.PAYMENT) {
+                Long stuTuitionId = tx.getStudentTuition() != null ? tx.getStudentTuition().getId() : null;
+                if (stuTuitionId != null && tx.getAmount() != null) {
+                    Optional<TuitionReceipt> r = receiptRepository
+                            .findTopByPaymentSchedule_StudentTuition_IdAndAmountOrderByPaymentDateDesc(stuTuitionId, tx.getAmount());
+                    r.ifPresent(rec -> {
+                        dto.setReceiptId(rec.getId());
+                        dto.setReceiptCode(rec.getReceiptCode());
+                    });
+                }
+            }
+            return dto;
+        });
     }
 
+    @Transactional(readOnly = true)
     public Page<TuitionTransactionDTO> getAllTransactions(Pageable pageable) {
-        return transactionRepository.findAll(pageable)
-                .map(TuitionTransactionDTO::new);
+        return transactionRepository.findAllByOrderByTransactionDateDesc(pageable)
+                .map(tx -> {
+                    TuitionTransactionDTO dto = new TuitionTransactionDTO(tx);
+                    if (tx.getType() == TuitionTransaction.TransactionType.PAYMENT) {
+                        Long stuTuitionId = tx.getStudentTuition() != null ? tx.getStudentTuition().getId() : null;
+                        if (stuTuitionId != null && tx.getAmount() != null) {
+                            Optional<TuitionReceipt> r = receiptRepository
+                                    .findTopByPaymentSchedule_StudentTuition_IdAndAmountOrderByPaymentDateDesc(stuTuitionId, tx.getAmount());
+                            r.ifPresent(rec -> {
+                                dto.setReceiptId(rec.getId());
+                                dto.setReceiptCode(rec.getReceiptCode());
+                            });
+                        }
+                    }
+                    return dto;
+                });
     }
 }
