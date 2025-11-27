@@ -112,6 +112,20 @@ public class CouponIntegrationTest {
     }
 
     @Test
+    @WithMockUser(authorities = "tuition:create")
+    void createCoupon_WhenEndDateBeforeStartDate_ShouldReturn500() throws Exception {
+        Coupon coupon = createValidCoupon();
+        coupon.setStartDate(LocalDate.now());
+        coupon.setEndDate(LocalDate.now().minusDays(1)); // Invalid date
+
+        mockMvc.perform(post(BASE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(coupon)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("Lỗi hệ thống: Ngày kết thúc không thể nhỏ hơn ngày bắt đầu"));
+    }
+
+    @Test
     @WithMockUser(authorities = "user:read")
     void createCoupon_WhenUnauthorized_ShouldReturn403() throws Exception {
         Coupon coupon = createValidCoupon();
