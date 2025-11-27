@@ -14,4 +14,6 @@ public interface StudentTuitionRepository extends JpaRepository<StudentTuition, 
     @Query("select coalesce(sum(tr.totalListedFee),0), coalesce(sum(tr.admissionFee),0) " +
            "from StudentTuition st join st.tuitionRoute tr where st.student.id = :studentId")
     java.util.List<Object[]> sumListedAndAdmissionByStudent(@Param("studentId") Long studentId);
+
+    boolean existsByStudentIdAndTuitionRouteId(Long studentId, Long tuitionRouteId);
 }

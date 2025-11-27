@@ -125,6 +125,17 @@ public class TuitionTransactionService {
             throw new BadRequestException("Đợt này đã hoàn thành đóng tiền rồi!");
         }
 
+        boolean hasUnpaidPrevious = scheduleRepository
+                .existsByStudentTuitionIdAndInstallmentNumberLessThanAndStatus(
+                        schedule.getStudentTuition().getId(),
+                        schedule.getInstallmentNumber(),
+                        StudentPaymentSchedule.PaymentStatus.PENDING
+                );
+
+        if (hasUnpaidPrevious) {
+            throw new BadRequestException("Vui lòng thanh toán các đợt trước (Đợt " + (schedule.getInstallmentNumber() - 1) + " trở về trước) trước khi đóng đợt này.");
+        }
+
         schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PAID);
         schedule.setPaidAmount(schedule.getExpectedAmount());
         scheduleRepository.save(schedule);

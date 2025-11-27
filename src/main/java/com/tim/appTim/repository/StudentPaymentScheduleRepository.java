@@ -15,4 +15,9 @@ public interface StudentPaymentScheduleRepository extends JpaRepository<StudentP
     List<StudentPaymentSchedule> findByStudentTuitionIdAndStatus(Long studentTuitionId, PaymentStatus status);
     List<StudentPaymentSchedule> findByStatusNotAndDueDateBefore(PaymentStatus status, LocalDate date);
     List<StudentPaymentSchedule> findByStudentTuition_Student_Id(Long studentId);
+    boolean existsByStudentTuitionIdAndInstallmentNumberLessThanAndStatus(
+            Long studentTuitionId,
+            Integer installmentNumber,
+            PaymentStatus status
+    );
 }
