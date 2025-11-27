@@ -2,6 +2,7 @@ package com.tim.appTim.controller;
 
 import com.tim.appTim.dto.TuitionOverviewDTO;
 import com.tim.appTim.dto.TuitionTransactionDTO;
+import com.tim.appTim.dto.StudentPaymentScheduleDTO;
 import com.tim.appTim.service.TuitionTransactionService;
 import com.tim.appTim.service.UserDetailsImpl;
 import org.springframework.data.domain.Page;
@@ -44,6 +45,12 @@ public class TuitionOverviewController {
     @PreAuthorize("hasAuthority('tuition:read_detail') or hasAnyAuthority('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
     public ResponseEntity<TuitionOverviewDTO> getStudentOverviewByTeacher(@PathVariable Long studentId) {
         return ResponseEntity.ok(transactionService.getStudentOverview(studentId));
+    }
+
+    @GetMapping("/student/{studentId}/schedules")
+    @PreAuthorize("hasAuthority('tuition:read_detail') or hasAnyAuthority('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
+    public ResponseEntity<List<StudentPaymentScheduleDTO>> getStudentSchedules(@PathVariable Long studentId) {
+        return ResponseEntity.ok(transactionService.getStudentSchedules(studentId));
     }
 
     @GetMapping("/my-history")

@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class StudentPaymentScheduleDTO {
     private Long id;
+    private Long studentTuitionId;
     private Integer installmentNumber;
     private BigDecimal expectedAmount;
     private BigDecimal paidAmount;
@@ -20,6 +21,7 @@ public class StudentPaymentScheduleDTO {
 
     public StudentPaymentScheduleDTO(StudentPaymentSchedule entity) {
         this.id = entity.getId();
+        this.studentTuitionId = entity.getStudentTuition() != null ? entity.getStudentTuition().getId() : null;
         this.installmentNumber = entity.getInstallmentNumber();
         this.expectedAmount = entity.getExpectedAmount();
         this.paidAmount = entity.getPaidAmount();

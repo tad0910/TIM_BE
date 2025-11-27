@@ -3,6 +3,7 @@ package com.tim.appTim.service;
 import com.tim.appTim.dto.PaymentRequestDTO;
 import com.tim.appTim.dto.TuitionOverviewDTO;
 import com.tim.appTim.dto.TuitionTransactionDTO;
+import com.tim.appTim.dto.StudentPaymentScheduleDTO;
 import com.tim.appTim.entity.StudentPaymentSchedule;
 import com.tim.appTim.entity.StudentTuition;
 import com.tim.appTim.entity.TuitionReceipt;
@@ -92,6 +93,22 @@ public class TuitionTransactionService {
                 .currentBalance(remaining)
                 .totalWaived(totalWaived)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<StudentPaymentScheduleDTO> getStudentSchedules(Long studentId) {
+        List<StudentPaymentSchedule> schedules = scheduleRepository.findByStudentTuition_Student_Id(studentId);
+        if (schedules == null || schedules.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return schedules.stream()
+                .sorted((a, b) -> {
+                    Integer ia = a.getInstallmentNumber() != null ? a.getInstallmentNumber() : Integer.MAX_VALUE;
+                    Integer ib = b.getInstallmentNumber() != null ? b.getInstallmentNumber() : Integer.MAX_VALUE;
+                    return Integer.compare(ia, ib);
+                })
+                .map(StudentPaymentScheduleDTO::new)
+                .collect(Collectors.toList());
     }
 
     public TuitionOverviewDTO getAdminOverview() {
