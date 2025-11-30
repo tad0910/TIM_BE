@@ -33,128 +33,138 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Sql("/test-data.sql")
 public class TuitionPaymentIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @MockBean
-    private TuitionTransactionService transactionService;
+        @MockBean
+        private TuitionTransactionService transactionService;
 
-    private final String BASE_URL = "/api/tuition-payment";
+        private final String BASE_URL = "/api/tuition-payment";
 
-    @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
-    void payTuition_WhenAdmin_ShouldReturn200() throws Exception {
-        PaymentRequestDTO request = new PaymentRequestDTO();
-        request.setScheduleId(1L);
-        request.setPaymentMethod("CASH");
-        request.setNote("Payment note");
+        @Test
+        @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+        void payTuition_WhenAdmin_ShouldReturn200() throws Exception {
+                PaymentRequestDTO request = new PaymentRequestDTO();
+                request.setStudentId(1L);
+                request.setAmount(BigDecimal.valueOf(1000000));
+                request.setPaymentMethod("CASH");
+                request.setNote("Payment note");
 
-        TuitionReceipt receipt = new TuitionReceipt();
-        receipt.setId(1L);
-        receipt.setReceiptCode("REC-001");
-        receipt.setAmount(BigDecimal.valueOf(1000000));
+                TuitionReceipt receipt = new TuitionReceipt();
+                receipt.setId(1L);
+                receipt.setReceiptCode("REC-001");
+                receipt.setAmount(BigDecimal.valueOf(1000000));
 
-        doReturn(receipt).when(transactionService).processPayment(any(PaymentRequestDTO.class), any(User.class));
+                doReturn(receipt).when(transactionService).processPayment(any(PaymentRequestDTO.class),
+                                any(User.class));
 
-        mockMvc.perform(post(BASE_URL + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Thanh toán thành công!"))
-                .andExpect(jsonPath("$.receiptId").value(1L))
-                .andExpect(jsonPath("$.receiptCode").value("REC-001"));
-    }
+                mockMvc.perform(post(BASE_URL + "/pay")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.message").value("Thanh toán thành công!"))
+                                .andExpect(jsonPath("$.receiptId").value(1L))
+                                .andExpect(jsonPath("$.receiptCode").value("REC-001"));
+        }
 
-    @Test
-    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
-    void payTuition_WhenTeacher_ShouldReturn200() throws Exception {
-        PaymentRequestDTO request = new PaymentRequestDTO();
-        request.setScheduleId(1L);
-        request.setPaymentMethod("BANK_TRANSFER");
+        @Test
+        @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
+        void payTuition_WhenTeacher_ShouldReturn200() throws Exception {
+                PaymentRequestDTO request = new PaymentRequestDTO();
+                request.setStudentId(1L);
+                request.setAmount(BigDecimal.valueOf(500000));
+                request.setPaymentMethod("BANK_TRANSFER");
 
-        TuitionReceipt receipt = new TuitionReceipt();
-        receipt.setId(2L);
-        receipt.setReceiptCode("REC-002");
-        receipt.setAmount(BigDecimal.valueOf(500000));
+                TuitionReceipt receipt = new TuitionReceipt();
+                receipt.setId(2L);
+                receipt.setReceiptCode("REC-002");
+                receipt.setAmount(BigDecimal.valueOf(500000));
 
-        doReturn(receipt).when(transactionService).processPayment(any(PaymentRequestDTO.class), any(User.class));
+                doReturn(receipt).when(transactionService).processPayment(any(PaymentRequestDTO.class),
+                                any(User.class));
 
-        mockMvc.perform(post(BASE_URL + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.receiptId").value(2L));
-    }
+                mockMvc.perform(post(BASE_URL + "/pay")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.receiptId").value(2L));
+        }
 
-    @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void payTuition_WhenUser_ShouldReturn403() throws Exception {
-        PaymentRequestDTO request = new PaymentRequestDTO();
-        request.setScheduleId(1L);
-        request.setPaymentMethod("CASH");
+        @Test
+        @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+        void payTuition_WhenUser_ShouldReturn403() throws Exception {
+                PaymentRequestDTO request = new PaymentRequestDTO();
+                request.setStudentId(1L);
+                request.setAmount(BigDecimal.valueOf(1000000));
+                request.setPaymentMethod("CASH");
 
-        mockMvc.perform(post(BASE_URL + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
-    }
+                mockMvc.perform(post(BASE_URL + "/pay")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isForbidden());
+        }
 
-    @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
-    void payTuition_WhenInvalidInput_ShouldReturn400() throws Exception {
-        // Missing scheduleId
-        PaymentRequestDTO request = new PaymentRequestDTO();
-        request.setPaymentMethod("CASH");
+        @Test
+        @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+        void payTuition_WhenInvalidInput_ShouldReturn400() throws Exception {
+                // Missing studentId
+                PaymentRequestDTO request = new PaymentRequestDTO();
+                request.setAmount(BigDecimal.valueOf(1000000));
+                request.setPaymentMethod("CASH");
 
-        mockMvc.perform(post(BASE_URL + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                mockMvc.perform(post(BASE_URL + "/pay")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest());
 
-        // Missing paymentMethod
-        PaymentRequestDTO request2 = new PaymentRequestDTO();
-        request2.setScheduleId(1L);
+                // Missing amount
+                PaymentRequestDTO request2 = new PaymentRequestDTO();
+                request2.setStudentId(1L);
+                request2.setPaymentMethod("CASH");
 
-        mockMvc.perform(post(BASE_URL + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request2)))
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(post(BASE_URL + "/pay")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request2)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
-    void payTuition_WhenScheduleNotFound_ShouldReturn404() throws Exception {
-        PaymentRequestDTO request = new PaymentRequestDTO();
-        request.setScheduleId(999L);
-        request.setPaymentMethod("CASH");
+        @Test
+        @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+        void payTuition_WhenStudentSchedulesNotFound_ShouldReturn404() throws Exception {
+                PaymentRequestDTO request = new PaymentRequestDTO();
+                request.setStudentId(999L);
+                request.setAmount(BigDecimal.valueOf(1000000));
+                request.setPaymentMethod("CASH");
 
-        doThrow(new ResourceNotFoundException("Đợt đóng tiền không tồn tại"))
-                .when(transactionService).processPayment(any(PaymentRequestDTO.class), any(User.class));
+                doThrow(new ResourceNotFoundException("Không tìm thấy lộ trình học phí cho học viên này"))
+                                .when(transactionService).processPayment(any(PaymentRequestDTO.class), any(User.class));
 
-        mockMvc.perform(post(BASE_URL + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Đợt đóng tiền không tồn tại"));
-    }
+                mockMvc.perform(post(BASE_URL + "/pay")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isNotFound())
+                                .andExpect(jsonPath("$.message")
+                                                .value("Không tìm thấy lộ trình học phí cho học viên này"));
+        }
 
-    @Test
-    @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
-    void payTuition_WhenAlreadyPaid_ShouldReturn400() throws Exception {
-        PaymentRequestDTO request = new PaymentRequestDTO();
-        request.setScheduleId(1L);
-        request.setPaymentMethod("CASH");
+        @Test
+        @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
+        void payTuition_WhenAmountZero_ShouldReturn400() throws Exception {
+                PaymentRequestDTO request = new PaymentRequestDTO();
+                request.setStudentId(1L);
+                request.setAmount(BigDecimal.ZERO);
+                request.setPaymentMethod("CASH");
 
-        doThrow(new BadRequestException("Đợt này đã hoàn thành đóng tiền rồi!"))
-                .when(transactionService).processPayment(any(PaymentRequestDTO.class), any(User.class));
+                doThrow(new BadRequestException("Số tiền đóng phải lớn hơn 0"))
+                                .when(transactionService).processPayment(any(PaymentRequestDTO.class), any(User.class));
 
-        mockMvc.perform(post(BASE_URL + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Đợt này đã hoàn thành đóng tiền rồi!"));
-    }
+                mockMvc.perform(post(BASE_URL + "/pay")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("Số tiền đóng phải lớn hơn 0"));
+        }
 }
