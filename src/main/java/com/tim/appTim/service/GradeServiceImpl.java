@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     private final GradeHistoryRepository gradeHistoryRepository;
     private final NotificationService notificationService;
     private final TransactionTemplate transactionTemplate;
+    private final GamificationService gamificationService;
 
     private ApplicationContext applicationContext;
 
@@ -48,7 +50,9 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                             ClassModuleTeacherRepository classModuleTeacherRepository,
                             UserRepository userRepository,
                             GradeHistoryRepository gradeHistoryRepository,
-                            NotificationService notificationService, TransactionTemplate transactionTemplate) {
+                            NotificationService notificationService, 
+                            TransactionTemplate transactionTemplate,
+                            GamificationService gamificationService) {
         this.gradeRepository = gradeRepository;
         this.classMemberRepository = classMemberRepository;
         this.classModuleRepository = classModuleRepository;
@@ -57,6 +61,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         this.gradeHistoryRepository = gradeHistoryRepository;
         this.notificationService = notificationService;
         this.transactionTemplate = transactionTemplate;
+        this.gamificationService = gamificationService;
     }
 
     @Override
@@ -143,6 +148,70 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
         gradeRepository.saveAll(gradesToSave);
         logger.info("Đã lưu batch {} grades thành công.", gradesToSave.size());
+
+        // Tích hợp Gamification: Trao điểm khi đạt điểm cao (cho học sinh)
+        for (Grade grade : gradesToSave) {
+            try {
+                BigDecimal theoryScore = grade.getTheoryScore();
+                BigDecimal practiceScore = grade.getPracticeScore();
+                
+                if (theoryScore != null && practiceScore != null) {
+                    // Tính điểm trung bình
+                    BigDecimal averageScore = theoryScore.add(practiceScore).divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP);
+                    double percentage = averageScore.doubleValue();
+                    
+                    Long studentId = grade.getStudent().getId();
+                    
+                    // Kiểm tra và trao điểm HIGH_POINT_2 (>= 95%)
+                    if (percentage >= 95.0) {
+                        try {
+                            gamificationService.awardPoints(studentId, "HIGH_POINT_2");
+                        } catch (Exception e) {
+                            logger.warn("Failed to award HIGH_POINT_2 for student {}: {}", studentId, e.getMessage());
+                        }
+                    }
+                    // Kiểm tra và trao điểm HIGH_POINT_1 (>= 80%)
+                    if (percentage >= 80.0) {
+                        try {
+                            gamificationService.awardPoints(studentId, "HIGH_POINT_1");
+                        } catch (Exception e) {
+                            logger.warn("Failed to award HIGH_POINT_1 for student {}: {}", studentId, e.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error checking high points for grade {}: {}", grade.getId(), e.getMessage());
+            }
+        }
+
+        // Tích hợp Gamification: Trao điểm GIVING_SCORES cho giáo viên khi cho điểm 10
+        Long teacherId = teacher.getId();
+        int perfectScoreCount = 0;
+        BigDecimal perfectScore = new BigDecimal("10");
+        
+        for (Grade grade : gradesToSave) {
+            BigDecimal theoryScore = grade.getTheoryScore();
+            BigDecimal practiceScore = grade.getPracticeScore();
+            
+            // Kiểm tra nếu có điểm nào = 10
+            boolean hasPerfectScore = (theoryScore != null && theoryScore.compareTo(perfectScore) == 0) ||
+                                     (practiceScore != null && practiceScore.compareTo(perfectScore) == 0);
+            
+            if (hasPerfectScore) {
+                perfectScoreCount++;
+            }
+        }
+        
+        // Trao điểm cho giáo viên mỗi lần cho điểm 10
+        if (perfectScoreCount > 0) {
+            for (int i = 0; i < perfectScoreCount; i++) {
+                try {
+                    gamificationService.awardPoints(teacherId, "GIVING_SCORES");
+                } catch (Exception e) {
+                    logger.warn("Failed to award GIVING_SCORES for teacher {}: {}", teacherId, e.getMessage());
+                }
+            }
+        }
     }
 
     private void checkAndNotify(Grade grade, boolean isNewGrade, BigDecimal oldVal, BigDecimal newVal,

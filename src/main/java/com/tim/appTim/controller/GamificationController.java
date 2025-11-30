@@ -1,0 +1,460 @@
+package com.tim.appTim.controller;
+
+import com.tim.appTim.dto.*;
+import com.tim.appTim.entity.GamificationAchievement;
+import com.tim.appTim.entity.User;
+import com.tim.appTim.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.List;
+
+@RestController
+@RequestMapping("/gamification")
+public class GamificationController {
+
+    private final GamificationService gamificationService;
+    private final GamificationPointTypeService pointTypeService;
+    private final GamificationBehaviorService behaviorService;
+    private final GamificationBehaviorGroupService behaviorGroupService;
+    private final GamificationAchievementService achievementService;
+    private final UserService userService;
+
+    @Autowired
+    private FileUploadService fileUploadService;
+
+    public GamificationController(
+            GamificationService gamificationService,
+            GamificationPointTypeService pointTypeService,
+            GamificationBehaviorService behaviorService,
+            GamificationBehaviorGroupService behaviorGroupService,
+            GamificationAchievementService achievementService,
+            UserService userService) {
+        this.gamificationService = gamificationService;
+        this.pointTypeService = pointTypeService;
+        this.behaviorService = behaviorService;
+        this.behaviorGroupService = behaviorGroupService;
+        this.achievementService = achievementService;
+        this.userService = userService;
+    }
+
+    // ========== POINT AWARDING (Core Logic) ==========
+    
+    /**
+     * Trao điểm thưởng cho user khi hoàn thành hành vi
+     * Endpoint này có thể được gọi từ các service khác khi user hoàn thành hành vi
+     */
+    @PostMapping("/award-points")
+    @PreAuthorize("hasAuthority('gamification:award_points') or hasAnyRole('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
+    public ResponseEntity<AwardPointsResponse> awardPoints(
+            @Valid @RequestBody AwardPointsRequest request) {
+        AwardPointsResponse response = gamificationService.awardPoints(
+                request.getUserId(), 
+                request.getBehaviorCode());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy thống kê điểm của user hiện tại
+     */
+    @GetMapping("/my-stats")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserGamificationStatsDTO> getMyStats(Authentication authentication) {
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        UserGamificationStatsDTO stats = gamificationService.getUserStats(currentUser.getId());
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Lấy thống kê điểm của user theo ID (admin/teacher)
+     */
+    @GetMapping("/users/{userId}/stats")
+    @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
+    public ResponseEntity<UserGamificationStatsDTO> getUserStats(@PathVariable Long userId) {
+        UserGamificationStatsDTO stats = gamificationService.getUserStats(userId);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Lấy lịch sử nhận điểm của user hiện tại
+     */
+    @GetMapping("/my-point-logs")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<UserPointLogDTO>> getMyPointLogs(Authentication authentication) {
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<UserPointLogDTO> logs = gamificationService.getUserPointLogs(currentUser.getId());
+        return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * Lấy lịch sử nhận điểm của user theo ID
+     */
+    @GetMapping("/users/{userId}/point-logs")
+    @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
+    public ResponseEntity<List<UserPointLogDTO>> getUserPointLogs(@PathVariable Long userId) {
+        List<UserPointLogDTO> logs = gamificationService.getUserPointLogs(userId);
+        return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * Lấy danh sách thành tích của user hiện tại
+     */
+    @GetMapping("/my-achievements")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<UserAchievementDTO>> getMyAchievements(Authentication authentication) {
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<UserAchievementDTO> achievements = gamificationService.getUserAchievements(currentUser.getId());
+        return ResponseEntity.ok(achievements);
+    }
+
+    /**
+     * Lấy danh sách thành tích của user theo ID
+     */
+    @GetMapping("/users/{userId}/achievements")
+    @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
+    public ResponseEntity<List<UserAchievementDTO>> getUserAchievements(@PathVariable Long userId) {
+        List<UserAchievementDTO> achievements = gamificationService.getUserAchievements(userId);
+        return ResponseEntity.ok(achievements);
+    }
+
+    // ========== POINT TYPES MANAGEMENT ==========
+
+    @GetMapping("/point-types")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GamificationPointTypeDTO>> getAllPointTypes() {
+        List<GamificationPointTypeDTO> pointTypes = pointTypeService.getAllActivePointTypes();
+        return ResponseEntity.ok(pointTypes);
+    }
+
+    @GetMapping("/point-types/dashboard")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GamificationPointTypeDTO>> getDashboardPointTypes() {
+        List<GamificationPointTypeDTO> pointTypes = pointTypeService.getDashboardPointTypes();
+        return ResponseEntity.ok(pointTypes);
+    }
+
+    @GetMapping("/point-types/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GamificationPointTypeDTO> getPointTypeById(@PathVariable Integer id) {
+        GamificationPointTypeDTO pointType = pointTypeService.getPointTypeById(id);
+        return ResponseEntity.ok(pointType);
+    }
+
+    @PostMapping("/point-types")
+    @PreAuthorize("hasAuthority('gamification:create')")
+    public ResponseEntity<GamificationPointTypeDTO> createPointType(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) Integer maxPoints,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) Boolean showOnDashboard,
+            @RequestParam(required = false) Integer createdBy) {
+        // Xử lý upload file nếu có
+        String finalImageUrl = imageUrl;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                finalImageUrl = fileUploadService.uploadFile(imageFile);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(null);
+            }
+        }
+        
+        GamificationPointTypeDTO dto = new GamificationPointTypeDTO();
+        dto.setName(name);
+        dto.setDescription(description);
+        dto.setMaxPoints(maxPoints);
+        dto.setImageUrl(finalImageUrl);
+        dto.setIsActive(isActive);
+        dto.setShowOnDashboard(showOnDashboard);
+        dto.setCreatedBy(createdBy);
+        GamificationPointTypeDTO created = pointTypeService.createPointType(dto);
+        return ResponseEntity.created(URI.create("/gamification/point-types/" + created.getId()))
+                .body(created);
+    }
+
+    @PutMapping("/point-types/{id}")
+    @PreAuthorize("hasAuthority('gamification:update')")
+    public ResponseEntity<GamificationPointTypeDTO> updatePointType(
+            @PathVariable Integer id,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) Integer maxPoints,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) Boolean showOnDashboard) {
+        // Xử lý upload file nếu có
+        String finalImageUrl = imageUrl;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                finalImageUrl = fileUploadService.uploadFile(imageFile);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(null);
+            }
+        }
+        
+        GamificationPointTypeDTO dto = new GamificationPointTypeDTO();
+        dto.setName(name);
+        dto.setDescription(description);
+        dto.setMaxPoints(maxPoints);
+        dto.setImageUrl(finalImageUrl);
+        dto.setIsActive(isActive);
+        dto.setShowOnDashboard(showOnDashboard);
+        GamificationPointTypeDTO updated = pointTypeService.updatePointType(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/point-types/{id}")
+    @PreAuthorize("hasAuthority('gamification:delete')")
+    public ResponseEntity<Void> deletePointType(@PathVariable Integer id) {
+        pointTypeService.deletePointType(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ========== BEHAVIORS MANAGEMENT ==========
+
+    @GetMapping("/behaviors")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GamificationBehaviorDTO>> getAllBehaviors() {
+        List<GamificationBehaviorDTO> behaviors = behaviorService.getAllBehaviors();
+        return ResponseEntity.ok(behaviors);
+    }
+
+    @GetMapping("/behaviors/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GamificationBehaviorDTO> getBehaviorById(@PathVariable Integer id) {
+        GamificationBehaviorDTO behavior = behaviorService.getBehaviorById(id);
+        return ResponseEntity.ok(behavior);
+    }
+
+    @GetMapping("/behaviors/code/{code}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GamificationBehaviorDTO> getBehaviorByCode(@PathVariable String code) {
+        GamificationBehaviorDTO behavior = behaviorService.getBehaviorByCode(code);
+        return ResponseEntity.ok(behavior);
+    }
+
+    @PostMapping(value = "/behaviors", consumes = "application/json")
+    @PreAuthorize("hasAuthority('gamification:create')")
+    public ResponseEntity<GamificationBehaviorDTO> createBehavior(
+            @Valid @RequestBody GamificationBehaviorDTO dto) {
+        GamificationBehaviorDTO created = behaviorService.createBehavior(dto);
+        return ResponseEntity.created(URI.create("/gamification/behaviors/" + created.getId()))
+                .body(created);
+    }
+
+    @PutMapping(value = "/behaviors/{id}", consumes = "application/json")
+    @PreAuthorize("hasAuthority('gamification:update')")
+    public ResponseEntity<GamificationBehaviorDTO> updateBehavior(
+            @PathVariable Integer id,
+            @Valid @RequestBody GamificationBehaviorDTO dto) {
+        GamificationBehaviorDTO updated = behaviorService.updateBehavior(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/behaviors/{id}")
+    @PreAuthorize("hasAuthority('gamification:delete')")
+    public ResponseEntity<Void> deleteBehavior(@PathVariable Integer id) {
+        behaviorService.deleteBehavior(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ========== BEHAVIOR GROUPS MANAGEMENT ==========
+
+    @GetMapping("/behavior-groups")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GamificationBehaviorGroupDTO>> getAllBehaviorGroups() {
+        List<GamificationBehaviorGroupDTO> groups = behaviorGroupService.getAllGroups();
+        return ResponseEntity.ok(groups);
+    }
+
+    @GetMapping("/behavior-groups/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GamificationBehaviorGroupDTO> getBehaviorGroupById(@PathVariable Integer id) {
+        GamificationBehaviorGroupDTO group = behaviorGroupService.getGroupById(id);
+        return ResponseEntity.ok(group);
+    }
+
+    @PostMapping(value = "/behavior-groups", consumes = "application/json")
+    @PreAuthorize("hasAuthority('gamification:create')")
+    public ResponseEntity<GamificationBehaviorGroupDTO> createBehaviorGroup(
+            @Valid @RequestBody GamificationBehaviorGroupDTO dto) {
+        GamificationBehaviorGroupDTO created = behaviorGroupService.createGroup(dto);
+        return ResponseEntity.created(URI.create("/gamification/behavior-groups/" + created.getId()))
+                .body(created);
+    }
+
+    @PutMapping(value = "/behavior-groups/{id}", consumes = "application/json")
+    @PreAuthorize("hasAuthority('gamification:update')")
+    public ResponseEntity<GamificationBehaviorGroupDTO> updateBehaviorGroup(
+            @PathVariable Integer id,
+            @Valid @RequestBody GamificationBehaviorGroupDTO dto) {
+        GamificationBehaviorGroupDTO updated = behaviorGroupService.updateGroup(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/behavior-groups/{id}")
+    @PreAuthorize("hasAuthority('gamification:delete')")
+    public ResponseEntity<Void> deleteBehaviorGroup(@PathVariable Integer id) {
+        behaviorGroupService.deleteGroup(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ========== ACHIEVEMENTS MANAGEMENT ==========
+
+    @GetMapping("/achievements")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GamificationAchievement>> getAllAchievements() {
+        List<GamificationAchievement> achievements = achievementService.getAllAchievements();
+        return ResponseEntity.ok(achievements);
+    }
+
+    @GetMapping("/achievements/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GamificationAchievement> getAchievementById(@PathVariable Integer id) {
+        GamificationAchievement achievement = achievementService.getAchievementById(id);
+        return ResponseEntity.ok(achievement);
+    }
+
+    @GetMapping("/achievements/{achievementId}/levels")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<AchievementLevelDTO>> getAchievementLevels(
+            @PathVariable Integer achievementId) {
+        List<AchievementLevelDTO> levels = achievementService.getAchievementLevels(achievementId);
+        return ResponseEntity.ok(levels);
+    }
+
+    @GetMapping("/achievement-levels/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AchievementLevelDTO> getAchievementLevelById(@PathVariable Integer id) {
+        AchievementLevelDTO level = achievementService.getAchievementLevelById(id);
+        return ResponseEntity.ok(level);
+    }
+
+    @PostMapping("/achievements")
+    @PreAuthorize("hasAuthority('gamification:create')")
+    public ResponseEntity<GamificationAchievement> createAchievement(
+            @RequestParam String name,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(required = false) Integer createdBy,
+            Authentication authentication) {
+        // Xử lý upload file nếu có
+        String finalImageUrl = imageUrl;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                finalImageUrl = fileUploadService.uploadFile(imageFile);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(null);
+            }
+        }
+        
+        if (createdBy == null) {
+            User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            createdBy = currentUser.getId().intValue();
+        }
+        GamificationAchievement achievement = achievementService.createAchievement(name, finalImageUrl, createdBy);
+        return ResponseEntity.created(URI.create("/gamification/achievements/" + achievement.getId()))
+                .body(achievement);
+    }
+
+    @PostMapping("/achievement-levels")
+    @PreAuthorize("hasAuthority('gamification:create')")
+    public ResponseEntity<AchievementLevelDTO> createAchievementLevel(
+            @RequestParam(required = false) Integer achievementId,
+            @RequestParam(required = false) String levelName,
+            @RequestParam(required = false) Integer requiredPointTypeId,
+            @RequestParam(required = false) String requiredPointTypeEnum,
+            @RequestParam(required = false) Integer minPointsRequired,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+        // Xử lý upload file nếu có
+        String finalImageUrl = imageUrl;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                finalImageUrl = fileUploadService.uploadFile(imageFile);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(null);
+            }
+        }
+        
+        AchievementLevelDTO dto = new AchievementLevelDTO();
+        dto.setAchievementId(achievementId);
+        dto.setLevelName(levelName);
+        dto.setRequiredPointTypeId(requiredPointTypeId);
+        dto.setRequiredPointTypeEnum(requiredPointTypeEnum);
+        dto.setMinPointsRequired(minPointsRequired);
+        dto.setImageUrl(finalImageUrl);
+        
+        AchievementLevelDTO created = achievementService.createAchievementLevel(dto);
+        return ResponseEntity.created(URI.create("/gamification/achievement-levels/" + created.getId()))
+                .body(created);
+    }
+
+    @PutMapping("/achievement-levels/{id}")
+    @PreAuthorize("hasAuthority('gamification:update')")
+    public ResponseEntity<AchievementLevelDTO> updateAchievementLevel(
+            @PathVariable Integer id,
+            @RequestParam(required = false) Integer achievementId,
+            @RequestParam(required = false) String levelName,
+            @RequestParam(required = false) Integer requiredPointTypeId,
+            @RequestParam(required = false) String requiredPointTypeEnum,
+            @RequestParam(required = false) Integer minPointsRequired,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+        // Xử lý upload file nếu có
+        String finalImageUrl = imageUrl;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                finalImageUrl = fileUploadService.uploadFile(imageFile);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(null);
+            }
+        }
+        
+        AchievementLevelDTO dto = new AchievementLevelDTO();
+        dto.setAchievementId(achievementId);
+        dto.setLevelName(levelName);
+        dto.setRequiredPointTypeId(requiredPointTypeId);
+        dto.setRequiredPointTypeEnum(requiredPointTypeEnum);
+        dto.setMinPointsRequired(minPointsRequired);
+        dto.setImageUrl(finalImageUrl);
+        
+        AchievementLevelDTO updated = achievementService.updateAchievementLevel(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/achievement-levels/{id}")
+    @PreAuthorize("hasAuthority('gamification:delete')")
+    public ResponseEntity<Void> deleteAchievementLevel(@PathVariable Integer id) {
+        achievementService.deleteAchievementLevel(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+
