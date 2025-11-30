@@ -39,7 +39,6 @@ public class GamificationPointType {
         createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 

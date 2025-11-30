@@ -11,7 +11,6 @@ public class UserGamificationStatsDTO {
 
     public UserGamificationStatsDTO() {}
 
-    // Getters and Setters
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 

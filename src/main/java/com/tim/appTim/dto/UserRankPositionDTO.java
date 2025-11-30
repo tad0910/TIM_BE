@@ -8,13 +8,12 @@ public class UserRankPositionDTO {
     private Integer totalExperienceScore;
     private Integer rankPosition;
     private Long totalUsers;
-    private String monthYear; // Chỉ có khi lấy ranking theo tháng
+    private String monthYear; 
     private Long classId;
     private String className;
 
     public UserRankPositionDTO() {}
 
-    // Getters and Setters
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 

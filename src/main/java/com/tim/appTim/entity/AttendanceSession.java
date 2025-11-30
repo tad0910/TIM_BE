@@ -29,7 +29,6 @@ public class AttendanceSession {
     @Column(name = "late_threshold_minutes")
     private Integer lateThresholdMinutes = 15;
 
-    // --- GETTER & SETTER ---
 
     public Long getId() {
         return id;
