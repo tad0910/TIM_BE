@@ -1,4 +1,4 @@
-package com.tim.appTim.entity; // Đảm bảo đúng package
+package com.tim.appTim.entity; 
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.SQLDelete;

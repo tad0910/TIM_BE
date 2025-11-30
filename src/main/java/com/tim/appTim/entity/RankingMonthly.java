@@ -14,7 +14,7 @@ public class RankingMonthly {
     private Long userId;
 
     @Column(name = "month_year", nullable = false, length = 7)
-    private String monthYear; // Format: 'YYYY-MM'
+    private String monthYear; 
 
     @Column(name = "total_diligence_score")
     private Integer totalDiligenceScore = 0;
@@ -56,7 +56,6 @@ public class RankingMonthly {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

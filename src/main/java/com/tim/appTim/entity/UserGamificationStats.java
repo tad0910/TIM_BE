@@ -28,7 +28,6 @@ public class UserGamificationStats {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 

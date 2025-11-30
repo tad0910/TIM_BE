@@ -213,13 +213,12 @@ public class AttendanceService {
             }
             savedRecords.add(savedRecord);
 
-            // Tích hợp Gamification: Trao điểm khi điểm danh đúng giờ
             if (savedRecord.getStatus() == AttendanceRecord.AttendanceStatus.present && 
                 !session.getIsLate()) {
                 try {
                     gamificationService.awardPoints(savedRecord.getStudentId().longValue(), "ATTEND_ON_TIME");
                 } catch (Exception e) {
-                    // Log error nhưng không làm gián đoạn flow chính
+
                     System.err.println("Failed to award points for attendance: " + e.getMessage());
                 }
             }

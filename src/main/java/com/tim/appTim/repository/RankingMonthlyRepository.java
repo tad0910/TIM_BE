@@ -16,29 +16,25 @@ public interface RankingMonthlyRepository extends JpaRepository<RankingMonthly, 
     List<RankingMonthly> findByMonthYearAndClassIdOrderByRankPositionAsc(String monthYear, Long classId);
     
     List<RankingMonthly> findByMonthYearOrderByRankPositionAsc(String monthYear);
-    
-    // Query để lấy ranking monthly sắp xếp theo experience (Option 1)
+
     @Query("SELECT rm FROM RankingMonthly rm " +
            "WHERE rm.monthYear = :monthYear " +
            "AND (:classId IS NULL OR rm.classId = :classId) " +
            "ORDER BY rm.totalExperienceScore DESC, rm.totalCompetenceScore DESC, rm.totalDiligenceScore DESC, rm.userId ASC")
     List<RankingMonthly> findByMonthYearOrderByExperience(@Param("monthYear") String monthYear, @Param("classId") Long classId);
-    
-    // Query để lấy ranking monthly sắp xếp theo competence
+
     @Query("SELECT rm FROM RankingMonthly rm " +
            "WHERE rm.monthYear = :monthYear " +
            "AND (:classId IS NULL OR rm.classId = :classId) " +
            "ORDER BY rm.totalCompetenceScore DESC, rm.totalExperienceScore DESC, rm.totalDiligenceScore DESC, rm.userId ASC")
     List<RankingMonthly> findByMonthYearOrderByCompetence(@Param("monthYear") String monthYear, @Param("classId") Long classId);
-    
-    // Query để lấy ranking monthly sắp xếp theo diligence
+
     @Query("SELECT rm FROM RankingMonthly rm " +
            "WHERE rm.monthYear = :monthYear " +
            "AND (:classId IS NULL OR rm.classId = :classId) " +
            "ORDER BY rm.totalDiligenceScore DESC, rm.totalExperienceScore DESC, rm.totalCompetenceScore DESC, rm.userId ASC")
     List<RankingMonthly> findByMonthYearOrderByDiligence(@Param("monthYear") String monthYear, @Param("classId") Long classId);
-    
-    // Query để lấy ranking monthly sắp xếp theo tổng điểm
+
     @Query("SELECT rm FROM RankingMonthly rm " +
            "WHERE rm.monthYear = :monthYear " +
            "AND (:classId IS NULL OR rm.classId = :classId) " +
