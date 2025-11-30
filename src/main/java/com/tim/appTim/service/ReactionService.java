@@ -28,6 +28,7 @@ public class ReactionService {
     private final CommentRepository commentRepository;
     private final ReplyCommentRepository replyCommentRepository;
     private final NotificationService notificationService;
+    private final GamificationService gamificationService;
 
     @Autowired
     public ReactionService(
@@ -36,7 +37,8 @@ public class ReactionService {
             UserRepository userRepository,
             CommentRepository commentRepository,
             ReplyCommentRepository replyCommentRepository,
-            @Lazy NotificationService notificationService
+            @Lazy NotificationService notificationService,
+            @Lazy GamificationService gamificationService
     ) {
         this.reactionRepository = reactionRepository;
         this.postRepository = postRepository;
@@ -44,6 +46,7 @@ public class ReactionService {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.notificationService = notificationService;
+        this.gamificationService = gamificationService;
     }
 
     @Transactional
@@ -66,6 +69,18 @@ public class ReactionService {
         reaction.setEmotionType(emotionType);
         reaction.setCreatedAt(LocalDateTime.now());
         Reaction savedReaction = reactionRepository.save(reaction);
+
+        long totalReactions = reactionRepository.countByPostAndCommentIsNullAndReplyCommentIsNull(post);
+        post.setTotalReactions((int) totalReactions);
+        postRepository.save(post);
+
+        if (totalReactions >= 10) {
+            try {
+                gamificationService.awardPoints(post.getUser().getId(), "POST'S_LIKE");
+            } catch (Exception e) {
+                System.err.println("Failed to award points for post likes: " + e.getMessage());
+            }
+        }
 
         try {
             if (!post.getUser().getId().equals(userId)) {

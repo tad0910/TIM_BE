@@ -66,7 +66,7 @@ public class PostSecurityIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Setup default mock for FileUploadService to return a URL for any file upload
+
         doReturn("url/uploaded-file.jpg").when(fileUploadService).uploadFile(any());
     }
 

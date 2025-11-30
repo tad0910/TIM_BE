@@ -116,7 +116,7 @@ public class CouponIntegrationTest {
     void createCoupon_WhenEndDateBeforeStartDate_ShouldReturn500() throws Exception {
         Coupon coupon = createValidCoupon();
         coupon.setStartDate(LocalDate.now());
-        coupon.setEndDate(LocalDate.now().minusDays(1)); // Invalid date
+        coupon.setEndDate(LocalDate.now().minusDays(1)); 
 
         mockMvc.perform(post(BASE_URL)
                 .contentType(MediaType.APPLICATION_JSON)

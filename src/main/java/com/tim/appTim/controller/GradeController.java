@@ -31,7 +31,7 @@ public class GradeController {
     @PostMapping("/batch")
     @PreAuthorize("hasAuthority('grade:create')")
     public ResponseEntity<Void> batchCreateOrUpdateGrades(
-            @RequestBody BatchGradeUpdateDTO batchDto, // DTO mới
+            @RequestBody BatchGradeUpdateDTO batchDto, 
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);

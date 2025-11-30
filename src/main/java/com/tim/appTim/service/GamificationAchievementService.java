@@ -1,0 +1,127 @@
+package com.tim.appTim.service;
+
+import com.tim.appTim.dto.AchievementLevelDTO;
+import com.tim.appTim.entity.GamificationAchievement;
+import com.tim.appTim.entity.GamificationAchievementLevel;
+import com.tim.appTim.repository.GamificationAchievementRepository;
+import com.tim.appTim.repository.GamificationAchievementLevelRepository;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class GamificationAchievementService {
+
+    private final GamificationAchievementRepository achievementRepository;
+    private final GamificationAchievementLevelRepository levelRepository;
+
+    public GamificationAchievementService(
+            GamificationAchievementRepository achievementRepository,
+            GamificationAchievementLevelRepository levelRepository) {
+        this.achievementRepository = achievementRepository;
+        this.levelRepository = levelRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<GamificationAchievement> getAllAchievements() {
+        return achievementRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public GamificationAchievement getAchievementById(Integer id) {
+        return achievementRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành tích với ID: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AchievementLevelDTO> getAchievementLevels(Integer achievementId) {
+        List<GamificationAchievementLevel> levels = levelRepository.findByAchievementIdOrderByMinPointsRequiredAsc(achievementId);
+        return levels.stream().map(this::mapToLevelDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public AchievementLevelDTO getAchievementLevelById(Integer id) {
+        GamificationAchievementLevel level = levelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cấp bậc thành tích với ID: " + id));
+        return mapToLevelDTO(level);
+    }
+
+    public GamificationAchievement createAchievement(String name, String imageUrl, Integer createdBy) {
+        GamificationAchievement achievement = new GamificationAchievement();
+        achievement.setName(name);
+        achievement.setImageUrl(imageUrl);
+        achievement.setCreatedBy(createdBy);
+        return achievementRepository.save(achievement);
+    }
+
+    public AchievementLevelDTO createAchievementLevel(AchievementLevelDTO dto) {
+        GamificationAchievement achievement = achievementRepository.findById(dto.getAchievementId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành tích với ID: " + dto.getAchievementId()));
+
+        GamificationAchievementLevel level = new GamificationAchievementLevel();
+        level.setAchievement(achievement);
+        level.setLevelName(dto.getLevelName());
+        level.setRequiredPointTypeId(dto.getRequiredPointTypeId());
+        if (dto.getRequiredPointTypeEnum() != null) {
+            level.setRequiredPointTypeEnum(
+                    GamificationAchievementLevel.PointTypeEnum.valueOf(dto.getRequiredPointTypeEnum()));
+        }
+        level.setMinPointsRequired(dto.getMinPointsRequired());
+        level.setImageUrl(dto.getImageUrl());
+
+        GamificationAchievementLevel saved = levelRepository.save(level);
+        return mapToLevelDTO(saved);
+    }
+
+    public AchievementLevelDTO updateAchievementLevel(Integer id, AchievementLevelDTO dto) {
+        GamificationAchievementLevel level = levelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cấp bậc thành tích với ID: " + id));
+
+        if (dto.getAchievementId() != null) {
+            GamificationAchievement achievement = achievementRepository.findById(dto.getAchievementId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành tích với ID: " + dto.getAchievementId()));
+            level.setAchievement(achievement);
+        }
+        if (dto.getLevelName() != null) level.setLevelName(dto.getLevelName());
+        if (dto.getRequiredPointTypeId() != null) level.setRequiredPointTypeId(dto.getRequiredPointTypeId());
+        if (dto.getRequiredPointTypeEnum() != null) {
+            level.setRequiredPointTypeEnum(
+                    GamificationAchievementLevel.PointTypeEnum.valueOf(dto.getRequiredPointTypeEnum()));
+        }
+        if (dto.getMinPointsRequired() != null) level.setMinPointsRequired(dto.getMinPointsRequired());
+        if (dto.getImageUrl() != null) level.setImageUrl(dto.getImageUrl());
+
+        GamificationAchievementLevel saved = levelRepository.save(level);
+        return mapToLevelDTO(saved);
+    }
+
+    public void deleteAchievementLevel(Integer id) {
+        if (!levelRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Không tìm thấy cấp bậc thành tích với ID: " + id);
+        }
+        levelRepository.deleteById(id);
+    }
+
+    private AchievementLevelDTO mapToLevelDTO(GamificationAchievementLevel level) {
+        AchievementLevelDTO dto = new AchievementLevelDTO();
+        dto.setId(level.getId());
+        if (level.getAchievement() != null) {
+            dto.setAchievementId(level.getAchievement().getId());
+            dto.setAchievementName(level.getAchievement().getName());
+        }
+        dto.setLevelName(level.getLevelName());
+        dto.setRequiredPointTypeId(level.getRequiredPointTypeId());
+        if (level.getRequiredPointTypeEnum() != null) {
+            dto.setRequiredPointTypeEnum(level.getRequiredPointTypeEnum().name());
+        }
+        dto.setMinPointsRequired(level.getMinPointsRequired());
+        dto.setImageUrl(level.getImageUrl());
+        dto.setCreatedAt(level.getCreatedAt());
+        return dto;
+    }
+}
+

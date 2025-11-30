@@ -164,7 +164,6 @@ public class CommentController {
         } catch (BadRequestException | ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
-            // Bắt lỗi chung, bao gồm cả lỗi upload
             throw new InternalServerErrorException("Lỗi tạo bình luận: " + e.getMessage());
         }
     }

@@ -1,6 +1,6 @@
 package com.tim.appTim.repository;
 
-import com.tim.appTim.entity.Grade; // (Entity MỚI của bạn)
+import com.tim.appTim.entity.Grade;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

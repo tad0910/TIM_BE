@@ -52,7 +52,7 @@ public class TuitionRouteController {
     public ResponseEntity<?> batchRegister(@RequestBody Map<String, Object> payload) {
         Long programId = Long.valueOf(payload.get("programId").toString());
         Long routeId = Long.valueOf(payload.get("routeId").toString());
-        LocalDate enrollmentDate = LocalDate.now(); // Hoặc lấy từ payload
+        LocalDate enrollmentDate = LocalDate.now(); 
 
         Map<String, Object> result = studentTuitionService.batchRegisterByProgram(programId, routeId, enrollmentDate);
 

@@ -136,7 +136,7 @@ public class ReactionIntegrationTest {
                 .andExpect(jsonPath("$.emotionType").value(emotion));
 
         mockMvc.perform(get("/reactions/comments/" + commentId + "/count/" + emotion)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("another_user").roles("USER"))) // Đổi user để test
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("another_user").roles("USER"))) 
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").value(1L));
 

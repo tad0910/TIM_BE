@@ -30,7 +30,6 @@ public class BlogUpdateCheckerService {
         this.userRepository = userRepository;
     }
 
-    // @Scheduled(fixedRate = 3600000)
     public void checkForNewBlogs() {
         logger.info("Đang chạy tác vụ kiểm tra blog mới...");
 

@@ -17,6 +17,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
 import com.tim.appTim.entity.User;
@@ -35,16 +36,20 @@ public class AttendanceService {
     private final AttendanceSessionRepository sessionRepository;
     private final AttendanceRecordRepository recordRepository;
     private final UserService userService;
+    private final GamificationService gamificationService;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired
     public AttendanceService(AttendanceSessionRepository sessionRepository,
-                             AttendanceRecordRepository recordRepository, UserService userService) {
+                             AttendanceRecordRepository recordRepository, 
+                             UserService userService,
+                             @Lazy GamificationService gamificationService) {
         this.sessionRepository = sessionRepository;
         this.recordRepository = recordRepository;
         this.userService = userService;
+        this.gamificationService = gamificationService;
     }
 
     public List<AttendanceHistoryDto> getAttendanceHistory(Integer classId) {
@@ -194,16 +199,28 @@ public class AttendanceService {
             record.setNotes(dto.getNotes());
 
             Optional<AttendanceRecord> existing = recordRepository.findByScheduleIdAndStudentId(scheduleId, dto.getStudentId());
+            AttendanceRecord savedRecord;
             if (existing.isPresent()) {
                 AttendanceRecord e = existing.get();
                 e.setStatus(record.getStatus());
                 e.setMarkedBy(record.getMarkedBy());
                 e.setNotes(record.getNotes());
                 e.setMarkedAt(LocalDateTime.now());
-                savedRecords.add(recordRepository.save(e));
+                savedRecord = recordRepository.save(e);
             } else {
                 record.setMarkedAt(LocalDateTime.now());
-                savedRecords.add(recordRepository.save(record));
+                savedRecord = recordRepository.save(record);
+            }
+            savedRecords.add(savedRecord);
+
+            if (savedRecord.getStatus() == AttendanceRecord.AttendanceStatus.present && 
+                !session.getIsLate()) {
+                try {
+                    gamificationService.awardPoints(savedRecord.getStudentId().longValue(), "ATTEND_ON_TIME");
+                } catch (Exception e) {
+
+                    System.err.println("Failed to award points for attendance: " + e.getMessage());
+                }
             }
         }
 
