@@ -8,11 +8,10 @@ public class RankingResponseDTO {
     private Integer page;
     private Integer size;
     private String sortBy;
-    private String monthYear; // Chỉ có khi lấy ranking theo tháng
+    private String monthYear; 
 
     public RankingResponseDTO() {}
 
-    // Getters and Setters
     public List<RankingDTO> getRankings() { return rankings; }
     public void setRankings(List<RankingDTO> rankings) { this.rankings = rankings; }
 

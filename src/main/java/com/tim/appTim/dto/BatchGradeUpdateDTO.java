@@ -18,7 +18,6 @@ public class BatchGradeUpdateDTO {
     public void setEntryDate(LocalDate entryDate) {
         this.entryDate = entryDate;
     }
-    // -------------------------
 
     public List<StudentScoreEntryDTO> getScores() { return scores; }
     public void setScores(List<StudentScoreEntryDTO> scores) { this.scores = scores; }

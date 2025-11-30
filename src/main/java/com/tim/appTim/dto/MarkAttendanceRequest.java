@@ -12,8 +12,6 @@ public class MarkAttendanceRequest {
     @NotEmpty
     private List<AttendanceMarkDto> records;
 
-    // --- Getter & Setter ---
-
     public Integer getTeacherId() {
         return teacherId;
     }
