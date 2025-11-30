@@ -6,6 +6,7 @@ import com.tim.appTim.service.NewsService;
 import com.tim.appTim.service.GamificationService;
 import com.tim.appTim.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -27,7 +28,7 @@ public class NewsController {
     private UserRepository userRepository;
 
     public NewsController(NewsService newsService, 
-                         GamificationService gamificationService,
+                         @Lazy GamificationService gamificationService,
                          UserService userService) {
         this.newsService = newsService;
         this.gamificationService = gamificationService;

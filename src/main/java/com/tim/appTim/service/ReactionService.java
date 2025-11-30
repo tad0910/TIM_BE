@@ -38,7 +38,7 @@ public class ReactionService {
             CommentRepository commentRepository,
             ReplyCommentRepository replyCommentRepository,
             @Lazy NotificationService notificationService,
-            GamificationService gamificationService
+            @Lazy GamificationService gamificationService
     ) {
         this.reactionRepository = reactionRepository;
         this.postRepository = postRepository;

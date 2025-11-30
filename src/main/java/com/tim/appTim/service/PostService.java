@@ -20,6 +20,7 @@ import com.tim.appTim.repository.CommentRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -52,7 +53,7 @@ public class PostService {
     public PostService(PostRepository postRepository, UserRepository userRepository,
             CommentService commentService, ReactionService reactionService, CommentRepository commentRepository,
             LinkPreviewService linkPreviewService, FileRepository fileRepository,
-            GamificationService gamificationService) {
+            @Lazy GamificationService gamificationService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentService = commentService;
