@@ -10,6 +10,8 @@ DELETE FROM program_modules;
 DELETE FROM class_members;
 DELETE FROM student_forms;
 
+DELETE FROM ranking_monthly;
+DELETE FROM ranking;
 DELETE FROM class_module;
 DELETE FROM classes;
 DELETE FROM modules;
