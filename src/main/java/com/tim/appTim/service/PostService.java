@@ -152,9 +152,6 @@ public class PostService {
         if (savedPost.getLinkUrl() != null && !hasMedia) {
             generateLinkPreviewAsync(savedPost.getId(), savedPost.getLinkUrl());
         }
-
-        // Tích hợp Gamification: Kiểm tra bài viết đầu tiên
-        // Lưu ý: Trao điểm cho mọi user (học sinh, giáo viên, admin, v.v.), không phân biệt role
         try {
             long postCount = postRepository.countByUserId(userId);
             if (postCount == 1) {
@@ -164,8 +161,6 @@ public class PostService {
             System.err.println("Failed to award points for first post: " + e.getMessage());
         }
 
-        // Tích hợp Gamification: Kiểm tra bài viết chia sẻ (có link)
-        // Lưu ý: Trao điểm cho mọi user (học sinh, giáo viên, admin, v.v.), không phân biệt role
         if (savedPost.getLinkUrl() != null) {
             try {
                 gamificationService.awardPoints(userId, "POST_SHARE");

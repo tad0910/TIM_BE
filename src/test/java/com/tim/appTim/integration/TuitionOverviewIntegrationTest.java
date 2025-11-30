@@ -73,7 +73,7 @@ public class TuitionOverviewIntegrationTest {
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getMyOverview_WhenAuthenticated_ShouldReturn200() throws Exception {
         TuitionOverviewDTO overview = createMockOverview();
-        // Assuming post_owner has ID 1
+
         doReturn(overview).when(transactionService).getStudentOverview(1L);
 
         mockMvc.perform(get(BASE_URL + "/my-overview"))

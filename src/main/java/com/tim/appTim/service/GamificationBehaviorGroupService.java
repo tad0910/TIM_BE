@@ -65,8 +65,7 @@ public class GamificationBehaviorGroupService {
         if (!groupRepository.existsById(id)) {
             throw new ResourceNotFoundException("Không tìm thấy nhóm hành vi với ID: " + id);
         }
-        // Kiểm tra xem có hành vi nào đang sử dụng nhóm này không
-        // Nếu có, có thể throw exception hoặc xóa cascade (tùy business logic)
+
         groupRepository.deleteById(id);
     }
 
@@ -75,8 +74,7 @@ public class GamificationBehaviorGroupService {
         dto.setId(group.getId());
         dto.setName(group.getName());
         dto.setCreatedAt(group.getCreatedAt());
-        
-        // Load danh sách behaviors thuộc nhóm này
+
         List<GamificationBehavior> behaviors = behaviorRepository.findByGroupId(group.getId());
         List<GamificationBehaviorDTO> behaviorDTOs = behaviors.stream()
                 .map(this::mapBehaviorToDTO)

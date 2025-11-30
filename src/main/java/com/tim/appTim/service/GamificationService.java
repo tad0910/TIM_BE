@@ -44,27 +44,14 @@ public class GamificationService {
         this.rankingService = rankingService;
     }
 
-    /**
-     * Phương thức chính: Trao điểm thưởng cho user khi hoàn thành hành vi
-     * Logic:
-     * 1. Kiểm tra hành vi có tồn tại không
-     * 2. Kiểm tra tần suất (frequency) - có được phép nhận điểm không
-     * 3. Tạo log điểm
-     * 4. Cập nhật tổng điểm user
-     * 5. Kiểm tra và mở khóa thành tích mới
-     * 6. Gửi thông báo
-     */
     public AwardPointsResponse awardPoints(Long userId, String behaviorCode) {
-        // 1. Tìm hành vi
         GamificationBehavior behavior = behaviorRepository.findByCode(behaviorCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hành vi với mã: " + behaviorCode));
 
-        // 2. Kiểm tra tần suất
         if (!canAwardPoints(userId, behavior)) {
             throw new BadRequestException("Bạn đã đạt giới hạn điểm thưởng cho hành vi này trong khoảng thời gian hiện tại");
         }
 
-        // 3. Tạo log điểm
         UserPointLog pointLog = new UserPointLog();
         pointLog.setUserId(userId);
         pointLog.setBehavior(behavior);
@@ -73,31 +60,26 @@ public class GamificationService {
         pointLog.setPointsExperienceEarned(behavior.getPointExperience());
         pointLogRepository.save(pointLog);
 
-        // 4. Cập nhật tổng điểm user
         UserGamificationStats stats = getOrCreateUserStats(userId);
         stats.setTotalDiligence(stats.getTotalDiligence() + behavior.getPointDiligence());
         stats.setTotalCompetence(stats.getTotalCompetence() + behavior.getPointCompetence());
         stats.setTotalExperience(stats.getTotalExperience() + behavior.getPointExperience());
         statsRepository.save(stats);
 
-        // 4.5. Cập nhật ranking cho user
         try {
             rankingService.updateRanking(userId);
         } catch (Exception e) {
-            // Log error nhưng không làm gián đoạn flow chính
+
             System.err.println("Failed to update ranking for user " + userId + ": " + e.getMessage());
         }
 
-        // 5. Kiểm tra và mở khóa thành tích mới
         List<UserAchievementDTO> newlyUnlocked = checkAndUnlockAchievements(userId, stats);
 
-        // 6. Gửi thông báo nhận điểm
         sendPointEarnedNotification(userId, behavior, 
                 behavior.getPointDiligence(), 
                 behavior.getPointCompetence(), 
                 behavior.getPointExperience());
 
-        // 7. Tạo response
         AwardPointsResponse response = new AwardPointsResponse();
         response.setUserId(userId);
         response.setPointsDiligenceEarned(behavior.getPointDiligence());
@@ -112,9 +94,6 @@ public class GamificationService {
         return response;
     }
 
-    /**
-     * Kiểm tra xem user có thể nhận điểm cho hành vi này không (dựa trên frequency)
-     */
     private boolean canAwardPoints(Long userId, GamificationBehavior behavior) {
         GamificationBehavior.FrequencyType frequencyType = behavior.getFrequencyType();
         
@@ -137,7 +116,7 @@ public class GamificationService {
                 startDate = now.withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS);
                 break;
             case ONCE:
-                // Kiểm tra xem đã từng nhận điểm cho hành vi này chưa
+
                 return pointLogRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                         .noneMatch(log -> log.getBehavior() != null && 
                                 log.getBehavior().getId().equals(behavior.getId()));
@@ -154,9 +133,6 @@ public class GamificationService {
         return true;
     }
 
-    /**
-     * Lấy hoặc tạo mới user stats
-     */
     private UserGamificationStats getOrCreateUserStats(Long userId) {
         return statsRepository.findByUserId(userId)
                 .orElseGet(() -> {
@@ -169,24 +145,19 @@ public class GamificationService {
                 });
     }
 
-    /**
-     * Kiểm tra và mở khóa thành tích mới dựa trên điểm hiện tại
-     */
     private List<UserAchievementDTO> checkAndUnlockAchievements(Long userId, UserGamificationStats stats) {
         List<UserAchievementDTO> newlyUnlocked = new ArrayList<>();
 
-        // Lấy tất cả các achievement levels
         List<GamificationAchievementLevel> allLevels = achievementLevelRepository.findAll();
 
         for (GamificationAchievementLevel level : allLevels) {
-            // Kiểm tra xem user đã có thành tích này chưa
+
             List<UserAchievement> existing = achievementRepository.findByUserIdAndAchievementLevelId(
                     userId, level.getId());
             if (!existing.isEmpty()) {
-                continue; // Đã có rồi, bỏ qua
+                continue; 
             }
 
-            // Kiểm tra điều kiện đạt được
             boolean canUnlock = false;
             Integer currentPoints = 0;
 
@@ -203,7 +174,7 @@ public class GamificationService {
                         break;
                 }
             } else if (level.getRequiredPointTypeId() != null) {
-                // Có thể mở rộng logic này nếu cần
+
                 continue;
             }
 
@@ -212,14 +183,13 @@ public class GamificationService {
             }
 
             if (canUnlock) {
-                // Mở khóa thành tích
+
                 UserAchievement userAchievement = new UserAchievement();
                 userAchievement.setUserId(userId);
                 userAchievement.setAchievementLevel(level);
                 userAchievement.setIsDisplayed(false);
                 achievementRepository.save(userAchievement);
 
-                // Tạo DTO
                 UserAchievementDTO dto = new UserAchievementDTO();
                 dto.setId(userAchievement.getId());
                 dto.setUserId(userId);
@@ -232,7 +202,6 @@ public class GamificationService {
                 dto.setIsDisplayed(userAchievement.getIsDisplayed());
                 newlyUnlocked.add(dto);
 
-                // Gửi thông báo đạt thành tích
                 sendAchievementUnlockedNotification(userId, level);
             }
         }
@@ -240,9 +209,6 @@ public class GamificationService {
         return newlyUnlocked;
     }
 
-    /**
-     * Gửi thông báo nhận điểm
-     */
     private void sendPointEarnedNotification(Long userId, GamificationBehavior behavior,
                                             Integer diligence, Integer competence, Integer experience) {
         StringBuilder content = new StringBuilder("Bạn đã nhận được ");
@@ -272,9 +238,6 @@ public class GamificationService {
         );
     }
 
-    /**
-     * Gửi thông báo đạt thành tích
-     */
     private void sendAchievementUnlockedNotification(Long userId, GamificationAchievementLevel level) {
         String achievementName = level.getAchievement() != null ? 
                 level.getAchievement().getName() : "Thành tích";
@@ -292,9 +255,6 @@ public class GamificationService {
         );
     }
 
-    /**
-     * Lấy thống kê điểm của user
-     */
     @Transactional(readOnly = true)
     public UserGamificationStatsDTO getUserStats(Long userId) {
         UserGamificationStats stats = getOrCreateUserStats(userId);
@@ -307,25 +267,18 @@ public class GamificationService {
         return dto;
     }
 
-    /**
-     * Lấy lịch sử nhận điểm của user
-     */
     @Transactional(readOnly = true)
     public List<UserPointLogDTO> getUserPointLogs(Long userId) {
         List<UserPointLog> logs = pointLogRepository.findByUserIdOrderByCreatedAtDesc(userId);
         return logs.stream().map(this::mapToPointLogDTO).collect(Collectors.toList());
     }
 
-    /**
-     * Lấy danh sách thành tích của user
-     */
     @Transactional(readOnly = true)
     public List<UserAchievementDTO> getUserAchievements(Long userId) {
         List<UserAchievement> achievements = achievementRepository.findByUserIdOrderByUnlockedAtDesc(userId);
         return achievements.stream().map(this::mapToAchievementDTO).collect(Collectors.toList());
     }
 
-    // Mapper methods
     private UserPointLogDTO mapToPointLogDTO(UserPointLog log) {
         UserPointLogDTO dto = new UserPointLogDTO();
         dto.setId(log.getId());

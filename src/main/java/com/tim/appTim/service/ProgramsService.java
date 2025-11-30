@@ -106,14 +106,13 @@ public class ProgramsService {
                 : new java.util.LinkedHashSet<>(moduleIds);
 
         if (moduleIds == null || moduleIds.isEmpty()) {
-            // remove all mappings if request is empty
+
             for (ProgramModule pm : currentList) {
                 programModuleRepository.delete(pm);
             }
             return toDTO(program);
         }
 
-        // Remove modules that are no longer desired
         for (ProgramModule pm : currentList) {
             Integer moduleId = pm.getModule() != null ? pm.getModule().getId() : null;
             if (moduleId != null && !desiredModuleIds.contains(moduleId)) {

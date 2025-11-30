@@ -150,22 +150,18 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         gradeRepository.saveAll(gradesToSave);
         logger.info("Đã lưu batch {} grades thành công.", gradesToSave.size());
 
-        // Tích hợp Gamification: Trao điểm khi đạt điểm cao (cho học sinh)
         for (Grade grade : gradesToSave) {
             try {
                 BigDecimal theoryScore = grade.getTheoryScore();
                 BigDecimal practiceScore = grade.getPracticeScore();
                 
                 if (theoryScore != null && practiceScore != null) {
-                    // Tính điểm trung bình
+
                     BigDecimal averageScore = theoryScore.add(practiceScore).divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP);
                     double percentage = averageScore.doubleValue();
                     
                     Long studentId = grade.getStudent().getId();
-                    
-                    // Kiểm tra và trao điểm theo mức độ
-                    // Nếu >= 95%: Chỉ trao HIGH_POINT_2 (không trao HIGH_POINT_1)
-                    // Nếu >= 80% và < 95%: Trao HIGH_POINT_1
+ 
                     if (percentage >= 95.0) {
                         try {
                             gamificationService.awardPoints(studentId, "HIGH_POINT_2");
@@ -173,7 +169,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                             logger.warn("Failed to award HIGH_POINT_2 for student {}: {}", studentId, e.getMessage());
                         }
                     } else if (percentage >= 80.0) {
-                        // Chỉ trao HIGH_POINT_1 nếu chưa đạt 95%
+
                         try {
                             gamificationService.awardPoints(studentId, "HIGH_POINT_1");
                         } catch (Exception e) {
@@ -186,7 +182,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             }
         }
 
-        // Tích hợp Gamification: Trao điểm GIVING_SCORES cho giáo viên khi cho điểm 10
         Long teacherId = teacher.getId();
         int perfectScoreCount = 0;
         BigDecimal perfectScore = new BigDecimal("10");
@@ -194,8 +189,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         for (Grade grade : gradesToSave) {
             BigDecimal theoryScore = grade.getTheoryScore();
             BigDecimal practiceScore = grade.getPracticeScore();
-            
-            // Kiểm tra nếu có điểm nào = 10
+
             boolean hasPerfectScore = (theoryScore != null && theoryScore.compareTo(perfectScore) == 0) ||
                                      (practiceScore != null && practiceScore.compareTo(perfectScore) == 0);
             
@@ -203,8 +197,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                 perfectScoreCount++;
             }
         }
-        
-        // Trao điểm cho giáo viên mỗi lần cho điểm 10
+
         if (perfectScoreCount > 0) {
             for (int i = 0; i < perfectScoreCount; i++) {
                 try {

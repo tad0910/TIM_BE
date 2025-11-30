@@ -105,7 +105,7 @@ public class TuitionPaymentIntegrationTest {
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void payTuition_WhenInvalidInput_ShouldReturn400() throws Exception {
-        // Missing scheduleId
+
         PaymentRequestDTO request = new PaymentRequestDTO();
         request.setPaymentMethod("CASH");
 
@@ -114,7 +114,6 @@ public class TuitionPaymentIntegrationTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
 
-        // Missing paymentMethod
         PaymentRequestDTO request2 = new PaymentRequestDTO();
         request2.setScheduleId(1L);
 

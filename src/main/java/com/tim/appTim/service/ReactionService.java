@@ -70,13 +70,10 @@ public class ReactionService {
         reaction.setCreatedAt(LocalDateTime.now());
         Reaction savedReaction = reactionRepository.save(reaction);
 
-        // Cập nhật totalReactions của post
         long totalReactions = reactionRepository.countByPostAndCommentIsNullAndReplyCommentIsNull(post);
         post.setTotalReactions((int) totalReactions);
         postRepository.save(post);
 
-        // Tích hợp Gamification: Kiểm tra khi bài viết đạt >= 10 likes
-        // Lưu ý: Trao điểm cho người sở hữu bài viết (học sinh, giáo viên, admin, v.v.), không phân biệt role
         if (totalReactions >= 10) {
             try {
                 gamificationService.awardPoints(post.getUser().getId(), "POST'S_LIKE");
