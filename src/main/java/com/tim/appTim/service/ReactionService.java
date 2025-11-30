@@ -28,6 +28,7 @@ public class ReactionService {
     private final CommentRepository commentRepository;
     private final ReplyCommentRepository replyCommentRepository;
     private final NotificationService notificationService;
+    private final GamificationService gamificationService;
 
     @Autowired
     public ReactionService(
@@ -36,7 +37,8 @@ public class ReactionService {
             UserRepository userRepository,
             CommentRepository commentRepository,
             ReplyCommentRepository replyCommentRepository,
-            @Lazy NotificationService notificationService
+            @Lazy NotificationService notificationService,
+            GamificationService gamificationService
     ) {
         this.reactionRepository = reactionRepository;
         this.postRepository = postRepository;
@@ -44,6 +46,7 @@ public class ReactionService {
         this.commentRepository = commentRepository;
         this.replyCommentRepository = replyCommentRepository;
         this.notificationService = notificationService;
+        this.gamificationService = gamificationService;
     }
 
     @Transactional
@@ -66,6 +69,21 @@ public class ReactionService {
         reaction.setEmotionType(emotionType);
         reaction.setCreatedAt(LocalDateTime.now());
         Reaction savedReaction = reactionRepository.save(reaction);
+
+        // Cập nhật totalReactions của post
+        long totalReactions = reactionRepository.countByPostAndCommentIsNullAndReplyCommentIsNull(post);
+        post.setTotalReactions((int) totalReactions);
+        postRepository.save(post);
+
+        // Tích hợp Gamification: Kiểm tra khi bài viết đạt >= 10 likes
+        // Lưu ý: Trao điểm cho người sở hữu bài viết (học sinh, giáo viên, admin, v.v.), không phân biệt role
+        if (totalReactions >= 10) {
+            try {
+                gamificationService.awardPoints(post.getUser().getId(), "POST'S_LIKE");
+            } catch (Exception e) {
+                System.err.println("Failed to award points for post likes: " + e.getMessage());
+            }
+        }
 
         try {
             if (!post.getUser().getId().equals(userId)) {

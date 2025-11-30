@@ -43,6 +43,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final LinkPreviewService linkPreviewService;
     private final FileRepository fileRepository;
+    private final GamificationService gamificationService;
 
     private static final Pattern URL_PATTERN = Pattern.compile(
             "\\b(https?://[\\w.-]+(?:\\:[0-9]+)?(?:/[^\\s]*)?)\\b",
@@ -50,7 +51,8 @@ public class PostService {
 
     public PostService(PostRepository postRepository, UserRepository userRepository,
             CommentService commentService, ReactionService reactionService, CommentRepository commentRepository,
-            LinkPreviewService linkPreviewService, FileRepository fileRepository) {
+            LinkPreviewService linkPreviewService, FileRepository fileRepository,
+            GamificationService gamificationService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentService = commentService;
@@ -58,6 +60,7 @@ public class PostService {
         this.commentRepository = commentRepository;
         this.linkPreviewService = linkPreviewService;
         this.fileRepository = fileRepository;
+        this.gamificationService = gamificationService;
     }
 
     private String extractFirstUrl(String content) {
@@ -147,6 +150,27 @@ public class PostService {
 
         if (savedPost.getLinkUrl() != null && !hasMedia) {
             generateLinkPreviewAsync(savedPost.getId(), savedPost.getLinkUrl());
+        }
+
+        // Tích hợp Gamification: Kiểm tra bài viết đầu tiên
+        // Lưu ý: Trao điểm cho mọi user (học sinh, giáo viên, admin, v.v.), không phân biệt role
+        try {
+            long postCount = postRepository.countByUserId(userId);
+            if (postCount == 1) {
+                gamificationService.awardPoints(userId, "FIRST_POST");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to award points for first post: " + e.getMessage());
+        }
+
+        // Tích hợp Gamification: Kiểm tra bài viết chia sẻ (có link)
+        // Lưu ý: Trao điểm cho mọi user (học sinh, giáo viên, admin, v.v.), không phân biệt role
+        if (savedPost.getLinkUrl() != null) {
+            try {
+                gamificationService.awardPoints(userId, "POST_SHARE");
+            } catch (Exception e) {
+                System.err.println("Failed to award points for post share: " + e.getMessage());
+            }
         }
 
         List<com.tim.appTim.dto.FileDTO> fileDTOs = savedPost.getFiles().stream()

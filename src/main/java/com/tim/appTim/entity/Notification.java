@@ -66,7 +66,11 @@ public class Notification {
         GRADE_UPDATED,
         BLOG_NEW,
         TUITION_OVERDUE,
-        TUITION_REMINDER
+        TUITION_REMINDER,
+        GAMIFICATION_POINT_EARNED,
+        GAMIFICATION_ACHIEVEMENT_UNLOCKED,
+        GAMIFICATION_LEVEL_UP,
+        GAMIFICATION_RANKING_CHANGE
     }
 
     public Notification() {}
