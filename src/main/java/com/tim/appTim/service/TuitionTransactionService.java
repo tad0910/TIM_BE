@@ -122,43 +122,79 @@ public class TuitionTransactionService {
 
     @Transactional
     public TuitionReceipt processPayment(PaymentRequestDTO request, User collector) {
-
-        StudentPaymentSchedule schedule = scheduleRepository.findById(request.getScheduleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Đợt đóng tiền không tồn tại"));
-
-        if (schedule.getStatus() == StudentPaymentSchedule.PaymentStatus.PAID) {
-            throw new BadRequestException("Đợt này đã hoàn thành đóng tiền rồi!");
+        if (request.getStudentId() == null || request.getAmount() == null) {
+            throw new BadRequestException("Thông tin thanh toán không hợp lệ (thiếu studentId hoặc amount)");
         }
 
-        boolean hasUnpaidPrevious = scheduleRepository
-                .existsByStudentTuitionIdAndInstallmentNumberLessThanAndStatus(
-                        schedule.getStudentTuition().getId(),
-                        schedule.getInstallmentNumber(),
-                        StudentPaymentSchedule.PaymentStatus.PENDING);
-
-        if (hasUnpaidPrevious) {
-            throw new BadRequestException("Vui lòng thanh toán các đợt trước (Đợt "
-                    + (schedule.getInstallmentNumber() - 1) + " trở về trước) trước khi đóng đợt này.");
+        BigDecimal remainingPayment = request.getAmount();
+        if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Số tiền đóng phải lớn hơn 0");
         }
 
-        schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PAID);
-        schedule.setPaidAmount(schedule.getExpectedAmount());
-        scheduleRepository.save(schedule);
+        // 1. Get all schedules for the student, sorted by installment number
+        List<StudentPaymentSchedule> schedules = scheduleRepository
+                .findByStudentTuition_Student_Id(request.getStudentId());
+        if (schedules == null || schedules.isEmpty()) {
+            throw new ResourceNotFoundException("Không tìm thấy lộ trình học phí cho học viên này");
+        }
 
+        // Sort by installment number
+        schedules.sort((a, b) -> Integer.compare(a.getInstallmentNumber(), b.getInstallmentNumber()));
+
+        StudentTuition studentTuition = schedules.get(0).getStudentTuition();
+
+        // 2. Distribute money (Water Pouring)
+        for (StudentPaymentSchedule schedule : schedules) {
+            if (remainingPayment.compareTo(BigDecimal.ZERO) <= 0) {
+                break;
+            }
+
+            if (schedule.getStatus() == StudentPaymentSchedule.PaymentStatus.PAID) {
+                continue;
+            }
+
+            BigDecimal expected = schedule.getExpectedAmount();
+            BigDecimal alreadyPaid = schedule.getPaidAmount() != null ? schedule.getPaidAmount() : BigDecimal.ZERO;
+            BigDecimal needed = expected.subtract(alreadyPaid);
+
+            if (needed.compareTo(BigDecimal.ZERO) <= 0) {
+                // Should be PAID, but just in case
+                schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PAID);
+                scheduleRepository.save(schedule);
+                continue;
+            }
+
+            if (remainingPayment.compareTo(needed) >= 0) {
+                // Pay off this installment completely
+                schedule.setPaidAmount(expected);
+                schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PAID);
+                remainingPayment = remainingPayment.subtract(needed);
+            } else {
+                // Partial payment
+                schedule.setPaidAmount(alreadyPaid.add(remainingPayment));
+                schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PARTIAL);
+                remainingPayment = BigDecimal.ZERO;
+            }
+            scheduleRepository.save(schedule);
+        }
+
+        // 3. Create Transaction
         TuitionTransaction transaction = new TuitionTransaction();
-        transaction.setStudentTuition(schedule.getStudentTuition());
+        transaction.setStudentTuition(studentTuition);
         transaction.setType(TuitionTransaction.TransactionType.PAYMENT);
-        transaction.setAmount(schedule.getExpectedAmount());
+        transaction.setAmount(request.getAmount());
         transaction.setTransactionDate(LocalDateTime.now());
         transaction.setPerformedBy(collector);
         transaction.setDescription(
-                "Thanh toán đợt " + schedule.getInstallmentNumber() + " - " + request.getPaymentMethod());
+                request.getNote() != null ? request.getNote() : ("Thanh toán học phí - " + request.getPaymentMethod()));
 
         transactionRepository.save(transaction);
 
+        // 4. Create Receipt
         TuitionReceipt receipt = new TuitionReceipt();
-        receipt.setPaymentSchedule(schedule);
-        receipt.setAmount(schedule.getExpectedAmount());
+        // receipt.setPaymentSchedule(null); // No specific schedule anymore
+        receipt.setTransaction(transaction); // Link to transaction
+        receipt.setAmount(request.getAmount());
         receipt.setPaymentDate(LocalDateTime.now());
         receipt.setPaymentMethod(request.getPaymentMethod());
         receipt.setNote(request.getNote());
@@ -179,10 +215,8 @@ public class TuitionTransactionService {
         return transactions.map(tx -> {
             TuitionTransactionDTO dto = new TuitionTransactionDTO(tx);
             if (tx.getType() == TuitionTransaction.TransactionType.PAYMENT) {
-                Long stuTuitionId = tx.getStudentTuition() != null ? tx.getStudentTuition().getId() : null;
-                if (stuTuitionId != null && tx.getAmount() != null) {
-                    Optional<TuitionReceipt> r = receiptRepository
-                            .findTopByPaymentSchedule_StudentTuition_IdAndAmountOrderByPaymentDateDesc(stuTuitionId, tx.getAmount());
+                if (tx.getId() != null) {
+                    Optional<TuitionReceipt> r = receiptRepository.findByTransaction_Id(tx.getId());
                     r.ifPresent(rec -> {
                         dto.setReceiptId(rec.getId());
                         dto.setReceiptCode(rec.getReceiptCode());
@@ -199,10 +233,8 @@ public class TuitionTransactionService {
                 .map(tx -> {
                     TuitionTransactionDTO dto = new TuitionTransactionDTO(tx);
                     if (tx.getType() == TuitionTransaction.TransactionType.PAYMENT) {
-                        Long stuTuitionId = tx.getStudentTuition() != null ? tx.getStudentTuition().getId() : null;
-                        if (stuTuitionId != null && tx.getAmount() != null) {
-                            Optional<TuitionReceipt> r = receiptRepository
-                                    .findTopByPaymentSchedule_StudentTuition_IdAndAmountOrderByPaymentDateDesc(stuTuitionId, tx.getAmount());
+                        if (tx.getId() != null) {
+                            Optional<TuitionReceipt> r = receiptRepository.findByTransaction_Id(tx.getId());
                             r.ifPresent(rec -> {
                                 dto.setReceiptId(rec.getId());
                                 dto.setReceiptCode(rec.getReceiptCode());

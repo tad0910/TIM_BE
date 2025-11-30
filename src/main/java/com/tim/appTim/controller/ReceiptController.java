@@ -21,6 +21,9 @@ public class ReceiptController {
         @Autowired
         private com.tim.appTim.service.TuitionTransactionService tuitionTransactionService;
 
+        @Autowired
+        private com.tim.appTim.repository.TuitionReceiptRepository receiptRepository;
+
         @GetMapping("/{id}/download")
         @Transactional(readOnly = true)
         public ResponseEntity<byte[]> downloadReceipt(
@@ -28,7 +31,16 @@ public class ReceiptController {
                         @RequestParam(required = false) String name,
                         @RequestParam(required = false) String reason) {
 
-                com.tim.appTim.entity.TuitionTransaction transaction = tuitionTransactionService.getTransactionById(id);
+                com.tim.appTim.entity.TuitionReceipt receipt = receiptRepository.findById(id)
+                                .orElseThrow(() -> new com.tim.appTim.exception.ResourceNotFoundException(
+                                                "Biên lai không tồn tại"));
+
+                com.tim.appTim.entity.TuitionTransaction transaction = receipt.getTransaction();
+                if (transaction == null) {
+                        throw new com.tim.appTim.exception.ResourceNotFoundException(
+                                        "Giao dịch không tồn tại cho biên lai này");
+                }
+
                 com.tim.appTim.entity.User student = transaction.getStudentTuition().getStudent();
 
                 BigDecimal amount = transaction.getAmount();
@@ -44,14 +56,13 @@ public class ReceiptController {
                                 .companyName("CodeGym Hà Nội")
                                 .companyAddress(
                                                 "Nhà số 23, Lô TT01, Đường Hàm Nghi, Khu đô thị Mon City, Mỹ Đình 2, Nam Từ Liêm, Hà Nội")
-                                .receiptId("PT-" + transaction.getId())
+                                .receiptId("PT-" + receipt.getId())
                                 .paymentDate(transaction.getTransactionDate().toLocalDate())
                                 .payerName(finalPayerName)
                                 .payerAddress("HN-C1025G1-JV101")
                                 .paymentReason(finalReason)
                                 .amountNumber(moneyFormatted)
                                 .amountInWords(moneyText)
-                                // -----------------
                                 .attachment("................")
                                 .build();
 

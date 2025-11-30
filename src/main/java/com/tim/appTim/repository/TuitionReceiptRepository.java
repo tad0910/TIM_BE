@@ -14,6 +14,7 @@ public interface TuitionReceiptRepository extends JpaRepository<TuitionReceipt, 
 
     Optional<TuitionReceipt> findTopByPaymentSchedule_StudentTuition_IdAndAmountOrderByPaymentDateDesc(
             Long studentTuitionId,
-            BigDecimal amount
-    );
+            BigDecimal amount);
+
+    Optional<TuitionReceipt> findByTransaction_Id(Long transactionId);
 }
