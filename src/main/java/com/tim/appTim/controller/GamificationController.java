@@ -5,6 +5,8 @@ import com.tim.appTim.entity.GamificationAchievement;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/gamification")
@@ -26,6 +29,7 @@ public class GamificationController {
     private final GamificationBehaviorGroupService behaviorGroupService;
     private final GamificationAchievementService achievementService;
     private final UserService userService;
+    private final RankingService rankingService;
 
     @Autowired
     private FileUploadService fileUploadService;
@@ -36,13 +40,15 @@ public class GamificationController {
             GamificationBehaviorService behaviorService,
             GamificationBehaviorGroupService behaviorGroupService,
             GamificationAchievementService achievementService,
-            UserService userService) {
+            UserService userService,
+            RankingService rankingService) {
         this.gamificationService = gamificationService;
         this.pointTypeService = pointTypeService;
         this.behaviorService = behaviorService;
         this.behaviorGroupService = behaviorGroupService;
         this.achievementService = achievementService;
         this.userService = userService;
+        this.rankingService = rankingService;
     }
 
     // ========== POINT AWARDING (Core Logic) ==========
@@ -455,6 +461,90 @@ public class GamificationController {
     public ResponseEntity<Void> deleteAchievementLevel(@PathVariable Integer id) {
         achievementService.deleteAchievementLevel(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========== RANKING SYSTEM ==========
+
+    /**
+     * Lấy bảng xếp hạng hiện tại (real-time)
+     * GET /gamification/ranking/current
+     */
+    @GetMapping("/ranking/current")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<RankingResponseDTO> getCurrentRanking(
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false, defaultValue = "experience") String sortBy,
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "100") Integer size) {
+        
+        Pageable pageable = PageRequest.of(page, size);
+        RankingResponseDTO response = rankingService.getCurrentRanking(classId, sortBy, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy bảng xếp hạng theo tháng
+     * GET /gamification/ranking/monthly
+     */
+    @GetMapping("/ranking/monthly")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getMonthlyRanking(
+            @RequestParam(required = false) String monthYear, // Format: 'YYYY-MM'
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false, defaultValue = "experience") String sortBy,
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "100") Integer size) {
+        
+        // Kiểm tra monthYear là bắt buộc
+        if (monthYear == null || monthYear.trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Bad Request", 
+                                 "message", "Parameter 'monthYear' is required (format: 'YYYY-MM')"));
+        }
+        
+        Pageable pageable = PageRequest.of(page, size);
+        RankingResponseDTO response = rankingService.getMonthlyRanking(monthYear, classId, sortBy, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy vị trí xếp hạng của user hiện tại
+     * GET /gamification/ranking/my-position
+     */
+    @GetMapping("/ranking/my-position")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserRankPositionDTO> getMyRankPosition(
+            Authentication authentication,
+            @RequestParam(required = false) String monthYear,
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false, defaultValue = "experience") String sortBy) {
+        
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        UserRankPositionDTO position = rankingService.getUserRankPosition(
+                currentUser.getId(), monthYear, classId, sortBy);
+        
+        if (position == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        return ResponseEntity.ok(position);
+    }
+
+    /**
+     * Tạo snapshot cho tháng hiện tại hoặc tháng chỉ định (Admin only)
+     * POST /gamification/ranking/snapshot
+     */
+    @PostMapping("/ranking/snapshot")
+    @PreAuthorize("hasAuthority('gamification:create')")
+    public ResponseEntity<Void> createMonthlySnapshot(
+            @RequestParam(required = false) String monthYear) {
+        
+        rankingService.createMonthlySnapshot(monthYear);
+        return ResponseEntity.ok().build();
     }
 }
 

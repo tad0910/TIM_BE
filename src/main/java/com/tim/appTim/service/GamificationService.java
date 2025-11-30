@@ -5,6 +5,7 @@ import com.tim.appTim.entity.*;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class GamificationService {
     private final UserAchievementRepository achievementRepository;
     private final GamificationAchievementLevelRepository achievementLevelRepository;
     private final NotificationService notificationService;
+    private final RankingService rankingService;
 
     public GamificationService(
             GamificationBehaviorRepository behaviorRepository,
@@ -31,13 +33,15 @@ public class GamificationService {
             UserGamificationStatsRepository statsRepository,
             UserAchievementRepository achievementRepository,
             GamificationAchievementLevelRepository achievementLevelRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            @Lazy RankingService rankingService) {
         this.behaviorRepository = behaviorRepository;
         this.pointLogRepository = pointLogRepository;
         this.statsRepository = statsRepository;
         this.achievementRepository = achievementRepository;
         this.achievementLevelRepository = achievementLevelRepository;
         this.notificationService = notificationService;
+        this.rankingService = rankingService;
     }
 
     /**
@@ -75,6 +79,14 @@ public class GamificationService {
         stats.setTotalCompetence(stats.getTotalCompetence() + behavior.getPointCompetence());
         stats.setTotalExperience(stats.getTotalExperience() + behavior.getPointExperience());
         statsRepository.save(stats);
+
+        // 4.5. Cập nhật ranking cho user
+        try {
+            rankingService.updateRanking(userId);
+        } catch (Exception e) {
+            // Log error nhưng không làm gián đoạn flow chính
+            System.err.println("Failed to update ranking for user " + userId + ": " + e.getMessage());
+        }
 
         // 5. Kiểm tra và mở khóa thành tích mới
         List<UserAchievementDTO> newlyUnlocked = checkAndUnlockAchievements(userId, stats);

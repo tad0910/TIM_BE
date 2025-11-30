@@ -163,16 +163,17 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                     
                     Long studentId = grade.getStudent().getId();
                     
-                    // Kiểm tra và trao điểm HIGH_POINT_2 (>= 95%)
+                    // Kiểm tra và trao điểm theo mức độ
+                    // Nếu >= 95%: Chỉ trao HIGH_POINT_2 (không trao HIGH_POINT_1)
+                    // Nếu >= 80% và < 95%: Trao HIGH_POINT_1
                     if (percentage >= 95.0) {
                         try {
                             gamificationService.awardPoints(studentId, "HIGH_POINT_2");
                         } catch (Exception e) {
                             logger.warn("Failed to award HIGH_POINT_2 for student {}: {}", studentId, e.getMessage());
                         }
-                    }
-                    // Kiểm tra và trao điểm HIGH_POINT_1 (>= 80%)
-                    if (percentage >= 80.0) {
+                    } else if (percentage >= 80.0) {
+                        // Chỉ trao HIGH_POINT_1 nếu chưa đạt 95%
                         try {
                             gamificationService.awardPoints(studentId, "HIGH_POINT_1");
                         } catch (Exception e) {
