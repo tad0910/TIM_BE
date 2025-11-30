@@ -6,8 +6,13 @@ import lombok.Data;
 @Data
 public class PaymentRequestDTO {
 
-    @NotNull(message = "ID đợt đóng tiền không được để trống")
     private Long scheduleId;
+
+    @NotNull(message = "ID học viên không được để trống")
+    private Long studentId;
+
+    @NotNull(message = "Số tiền đóng không được để trống")
+    private java.math.BigDecimal amount;
 
     @NotNull(message = "Phương thức thanh toán không được để trống")
     private String paymentMethod;

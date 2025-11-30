@@ -18,8 +18,12 @@ public class TuitionReceipt {
     private String receiptCode;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_schedule_id", nullable = false)
+    @JoinColumn(name = "payment_schedule_id", nullable = true)
     private StudentPaymentSchedule paymentSchedule;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transaction_id")
+    private TuitionTransaction transaction;
 
     private BigDecimal amount;
     private LocalDateTime paymentDate;
