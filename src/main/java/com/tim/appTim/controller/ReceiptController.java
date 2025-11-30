@@ -51,7 +51,6 @@ public class ReceiptController {
                                 .paymentReason(finalReason)
                                 .amountNumber(moneyFormatted)
                                 .amountInWords(moneyText)
-                                // -----------------
                                 .attachment("................")
                                 .build();
 

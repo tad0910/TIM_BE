@@ -53,10 +53,6 @@ public class GamificationController {
 
     // ========== POINT AWARDING (Core Logic) ==========
     
-    /**
-     * Trao điểm thưởng cho user khi hoàn thành hành vi
-     * Endpoint này có thể được gọi từ các service khác khi user hoàn thành hành vi
-     */
     @PostMapping("/award-points")
     @PreAuthorize("hasAuthority('gamification:award_points') or hasAnyRole('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
     public ResponseEntity<AwardPointsResponse> awardPoints(
@@ -173,7 +169,6 @@ public class GamificationController {
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(required = false) Boolean showOnDashboard,
             @RequestParam(required = false) Integer createdBy) {
-        // Xử lý upload file nếu có
         String finalImageUrl = imageUrl;
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
@@ -208,7 +203,6 @@ public class GamificationController {
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(required = false) Boolean showOnDashboard) {
-        // Xử lý upload file nếu có
         String finalImageUrl = imageUrl;
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
@@ -365,7 +359,6 @@ public class GamificationController {
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(required = false) Integer createdBy,
             Authentication authentication) {
-        // Xử lý upload file nếu có
         String finalImageUrl = imageUrl;
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
@@ -398,7 +391,6 @@ public class GamificationController {
             @RequestParam(required = false) Integer minPointsRequired,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
-        // Xử lý upload file nếu có
         String finalImageUrl = imageUrl;
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
@@ -433,7 +425,6 @@ public class GamificationController {
             @RequestParam(required = false) Integer minPointsRequired,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
-        // Xử lý upload file nếu có
         String finalImageUrl = imageUrl;
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
@@ -482,20 +473,16 @@ public class GamificationController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy bảng xếp hạng theo tháng
-     * GET /gamification/ranking/monthly
-     */
+
     @GetMapping("/ranking/monthly")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getMonthlyRanking(
-            @RequestParam(required = false) String monthYear, // Format: 'YYYY-MM'
+            @RequestParam(required = false) String monthYear, 
             @RequestParam(required = false) Long classId,
             @RequestParam(required = false, defaultValue = "experience") String sortBy,
             @RequestParam(required = false, defaultValue = "0") Integer page,
             @RequestParam(required = false, defaultValue = "100") Integer size) {
-        
-        // Kiểm tra monthYear là bắt buộc
+
         if (monthYear == null || monthYear.trim().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Bad Request", 
@@ -507,10 +494,7 @@ public class GamificationController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy vị trí xếp hạng của user hiện tại
-     * GET /gamification/ranking/my-position
-     */
+
     @GetMapping("/ranking/my-position")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserRankPositionDTO> getMyRankPosition(

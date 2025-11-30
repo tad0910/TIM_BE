@@ -11,7 +11,6 @@ public class AwardPointsRequest {
         this.behaviorCode = behaviorCode;
     }
 
-    // Getters and Setters
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
