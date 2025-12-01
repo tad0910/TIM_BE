@@ -1,6 +1,7 @@
 package com.tim.appTim.controller;
 
 import com.tim.appTim.dto.*;
+import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.GamificationAchievement;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.*;
@@ -30,6 +31,7 @@ public class GamificationController {
     private final GamificationAchievementService achievementService;
     private final UserService userService;
     private final RankingService rankingService;
+    private final com.tim.appTim.service.GamificationGuideService guideService;
 
     @Autowired
     private FileUploadService fileUploadService;
@@ -41,7 +43,8 @@ public class GamificationController {
             GamificationBehaviorGroupService behaviorGroupService,
             GamificationAchievementService achievementService,
             UserService userService,
-            RankingService rankingService) {
+            RankingService rankingService,
+            com.tim.appTim.service.GamificationGuideService guideService) {
         this.gamificationService = gamificationService;
         this.pointTypeService = pointTypeService;
         this.behaviorService = behaviorService;
@@ -49,6 +52,7 @@ public class GamificationController {
         this.achievementService = achievementService;
         this.userService = userService;
         this.rankingService = rankingService;
+        this.guideService = guideService;
     }
 
     // ========== POINT AWARDING (Core Logic) ==========
@@ -529,6 +533,220 @@ public class GamificationController {
         
         rankingService.createMonthlySnapshot(monthYear);
         return ResponseEntity.ok().build();
+    }
+
+    // ========== GAMIFICATION GUIDE ==========
+
+    /**
+     * Upload file hướng dẫn Gamification (PDF, DOC, DOCX)
+     * POST /gamification/guide/upload
+     * Content-Type: multipart/form-data
+     */
+    @PostMapping("/guide/upload")
+    @PreAuthorize("hasAuthority('gamification:create') or hasAnyRole('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
+    public ResponseEntity<GamificationGuideDTO> uploadGuide(
+            @RequestParam(value = "guideFile", required = false) MultipartFile guideFile,
+            @RequestParam(value = "file", required = false) MultipartFile file, // Backward compatibility
+            Authentication authentication) {
+        
+        // Hỗ trợ cả "guideFile" và "file" để tương thích
+        MultipartFile uploadFile = guideFile != null && !guideFile.isEmpty() ? guideFile : file;
+        
+        try {
+            User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            if (uploadFile == null || uploadFile.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(null);
+            }
+
+            File guideFileEntity = guideService.uploadGuide(uploadFile, currentUser.getId());
+            String originalFileName = guideService.getOriginalFileName(guideFileEntity.getFileName());
+            
+            GamificationGuideDTO dto = new GamificationGuideDTO(
+                guideFileEntity.getId(),
+                guideFileEntity.getFileUrl(),
+                originalFileName,
+                guideFileEntity.getFileSize(),
+                guideFileEntity.getFileType() != null ? guideFileEntity.getFileType().name() : "DOCUMENT"
+            );
+
+            return ResponseEntity.ok(dto);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
+    }
+
+    /**
+     * Lấy thông tin file hướng dẫn đang active
+     * GET /gamification/guide
+     */
+    @GetMapping("/guide")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GamificationGuideDTO> getGuide() {
+        return guideService.getActiveGuide()
+                .map(guideFile -> {
+                    String originalFileName = guideService.getOriginalFileName(guideFile.getFileName());
+                    GamificationGuideDTO dto = new GamificationGuideDTO(
+                        guideFile.getId(),
+                        guideFile.getFileUrl(),
+                        originalFileName,
+                        guideFile.getFileSize(),
+                        guideFile.getFileType() != null ? guideFile.getFileType().name() : "DOCUMENT"
+                    );
+                    return ResponseEntity.ok(dto);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Redirect đến file hướng dẫn để hiển thị
+     * GET /gamification-guide
+     */
+    @GetMapping("/guide/view")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> viewGuide() {
+        return guideService.getActiveGuide()
+                .map(guideFile -> {
+                    // Redirect đến URL của file
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .header("Location", guideFile.getFileUrl())
+                            .build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Lấy file hướng dẫn theo ID
+     * GET /gamification/guide/{id}
+     */
+    @GetMapping("/guide/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<GamificationGuideDTO> getGuideById(@PathVariable Integer id) {
+        return guideService.getGuideById(id)
+                .map(guideFile -> {
+                    String originalFileName = guideService.getOriginalFileName(guideFile.getFileName());
+                    GamificationGuideDTO dto = new GamificationGuideDTO(
+                        guideFile.getId(),
+                        guideFile.getFileUrl(),
+                        originalFileName,
+                        guideFile.getFileSize(),
+                        guideFile.getFileType() != null ? guideFile.getFileType().name() : "DOCUMENT"
+                    );
+                    return ResponseEntity.ok(dto);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Lấy tất cả file hướng dẫn - Admin only
+     * GET /gamification/guide/all
+     */
+    @GetMapping("/guide/all")
+    @PreAuthorize("hasAuthority('gamification:read_all') or hasAnyRole('ROLE_ADMIN')")
+    public ResponseEntity<List<GamificationGuideDTO>> getAllGuides() {
+        List<GamificationGuideDTO> guides = guideService.getAllGuides().stream()
+                .map(guideFile -> {
+                    String originalFileName = guideService.getOriginalFileName(guideFile.getFileName());
+                    return new GamificationGuideDTO(
+                        guideFile.getId(),
+                        guideFile.getFileUrl(),
+                        originalFileName,
+                        guideFile.getFileSize(),
+                        guideFile.getFileType() != null ? guideFile.getFileType().name() : "DOCUMENT"
+                    );
+                })
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(guides);
+    }
+
+    /**
+     * Cập nhật file hướng dẫn
+     * PUT /gamification/guide/{id}
+     * Content-Type: multipart/form-data
+     * Có thể upload file mới hoặc chỉ cập nhật metadata (nếu không gửi file)
+     */
+    @PutMapping("/guide/{id}")
+    @PreAuthorize("hasAuthority('gamification:update') or hasAnyRole('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
+    public ResponseEntity<GamificationGuideDTO> updateGuide(
+            @PathVariable Integer id,
+            @RequestParam(value = "guideFile", required = false) MultipartFile guideFile,
+            @RequestParam(value = "file", required = false) MultipartFile file, // Backward compatibility
+            Authentication authentication) {
+        
+        // Hỗ trợ cả "guideFile" và "file" để tương thích
+        MultipartFile uploadFile = guideFile != null && !guideFile.isEmpty() ? guideFile : file;
+        
+        try {
+            User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            File guideFileEntity = guideService.updateGuide(id, uploadFile, currentUser.getId());
+            String originalFileName = guideService.getOriginalFileName(guideFileEntity.getFileName());
+            
+            GamificationGuideDTO dto = new GamificationGuideDTO(
+                guideFileEntity.getId(),
+                guideFileEntity.getFileUrl(),
+                originalFileName,
+                guideFileEntity.getFileSize(),
+                guideFileEntity.getFileType() != null ? guideFileEntity.getFileType().name() : "DOCUMENT"
+            );
+
+            return ResponseEntity.ok(dto);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
+    }
+
+    /**
+     * Xóa file hướng dẫn
+     * DELETE /gamification/guide/{id}
+     */
+    @DeleteMapping("/guide/{id}")
+    @PreAuthorize("hasAuthority('gamification:delete') or hasAnyRole('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
+    public ResponseEntity<Map<String, String>> deleteGuide(@PathVariable Integer id) {
+        try {
+            guideService.deleteGuide(id);
+            return ResponseEntity.ok(Map.of("message", "Đã xóa file hướng dẫn thành công"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Lỗi khi xóa file hướng dẫn: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Xóa hoàn toàn file hướng dẫn (hard delete) - Admin only
+     * DELETE /gamification/guide/{id}/permanent
+     */
+    @DeleteMapping("/guide/{id}/permanent")
+    @PreAuthorize("hasAuthority('gamification:delete') and hasAnyRole('ROLE_ADMIN')")
+    public ResponseEntity<Map<String, String>> deleteGuidePermanently(@PathVariable Integer id) {
+        try {
+            guideService.deleteGuidePermanently(id);
+            return ResponseEntity.ok(Map.of("message", "Đã xóa vĩnh viễn file hướng dẫn thành công"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Lỗi khi xóa file hướng dẫn: " + e.getMessage()));
+        }
     }
 }
 
