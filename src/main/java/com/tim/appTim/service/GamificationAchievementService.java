@@ -58,6 +58,27 @@ public class GamificationAchievementService {
         return achievementRepository.save(achievement);
     }
 
+    public GamificationAchievement updateAchievement(Integer id, String name, String imageUrl) {
+        GamificationAchievement achievement = achievementRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành tích với ID: " + id));
+        
+        if (name != null) {
+            achievement.setName(name);
+        }
+        if (imageUrl != null) {
+            achievement.setImageUrl(imageUrl);
+        }
+        
+        return achievementRepository.save(achievement);
+    }
+
+    public void deleteAchievement(Integer id) {
+        if (!achievementRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Không tìm thấy thành tích với ID: " + id);
+        }
+        achievementRepository.deleteById(id);
+    }
+
     public AchievementLevelDTO createAchievementLevel(AchievementLevelDTO dto) {
         GamificationAchievement achievement = achievementRepository.findById(dto.getAchievementId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành tích với ID: " + dto.getAchievementId()));

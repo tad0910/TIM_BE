@@ -385,6 +385,34 @@ public class GamificationController {
                 .body(achievement);
     }
 
+    @PutMapping("/achievements/{id}")
+    @PreAuthorize("hasAuthority('gamification:update')")
+    public ResponseEntity<GamificationAchievement> updateAchievement(
+            @PathVariable Integer id,
+            @RequestParam(required = false) String name,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+        String finalImageUrl = imageUrl;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                finalImageUrl = fileUploadService.uploadFile(imageFile);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(null);
+            }
+        }
+        
+        GamificationAchievement updated = achievementService.updateAchievement(id, name, finalImageUrl);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/achievements/{id}")
+    @PreAuthorize("hasAuthority('gamification:delete')")
+    public ResponseEntity<Void> deleteAchievement(@PathVariable Integer id) {
+        achievementService.deleteAchievement(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/achievement-levels")
     @PreAuthorize("hasAuthority('gamification:create')")
     public ResponseEntity<AchievementLevelDTO> createAchievementLevel(
@@ -522,10 +550,6 @@ public class GamificationController {
         return ResponseEntity.ok(position);
     }
 
-    /**
-     * Tạo snapshot cho tháng hiện tại hoặc tháng chỉ định (Admin only)
-     * POST /gamification/ranking/snapshot
-     */
     @PostMapping("/ranking/snapshot")
     @PreAuthorize("hasAuthority('gamification:create')")
     public ResponseEntity<Void> createMonthlySnapshot(
@@ -537,19 +561,14 @@ public class GamificationController {
 
     // ========== GAMIFICATION GUIDE ==========
 
-    /**
-     * Upload file hướng dẫn Gamification (PDF, DOC, DOCX)
-     * POST /gamification/guide/upload
-     * Content-Type: multipart/form-data
-     */
+
     @PostMapping("/guide/upload")
     @PreAuthorize("hasAuthority('gamification:create') or hasAnyRole('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
     public ResponseEntity<GamificationGuideDTO> uploadGuide(
             @RequestParam(value = "guideFile", required = false) MultipartFile guideFile,
-            @RequestParam(value = "file", required = false) MultipartFile file, // Backward compatibility
+            @RequestParam(value = "file", required = false) MultipartFile file, 
             Authentication authentication) {
-        
-        // Hỗ trợ cả "guideFile" và "file" để tương thích
+
         MultipartFile uploadFile = guideFile != null && !guideFile.isEmpty() ? guideFile : file;
         
         try {
@@ -584,10 +603,7 @@ public class GamificationController {
         }
     }
 
-    /**
-     * Lấy thông tin file hướng dẫn đang active
-     * GET /gamification/guide
-     */
+
     @GetMapping("/guide")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GamificationGuideDTO> getGuide() {
@@ -606,10 +622,6 @@ public class GamificationController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Redirect đến file hướng dẫn để hiển thị
-     * GET /gamification-guide
-     */
     @GetMapping("/guide/view")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> viewGuide() {
@@ -623,10 +635,7 @@ public class GamificationController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Lấy file hướng dẫn theo ID
-     * GET /gamification/guide/{id}
-     */
+ 
     @GetMapping("/guide/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GamificationGuideDTO> getGuideById(@PathVariable Integer id) {
@@ -645,10 +654,7 @@ public class GamificationController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Lấy tất cả file hướng dẫn - Admin only
-     * GET /gamification/guide/all
-     */
+
     @GetMapping("/guide/all")
     @PreAuthorize("hasAuthority('gamification:read_all') or hasAnyRole('ROLE_ADMIN')")
     public ResponseEntity<List<GamificationGuideDTO>> getAllGuides() {
@@ -667,12 +673,6 @@ public class GamificationController {
         return ResponseEntity.ok(guides);
     }
 
-    /**
-     * Cập nhật file hướng dẫn
-     * PUT /gamification/guide/{id}
-     * Content-Type: multipart/form-data
-     * Có thể upload file mới hoặc chỉ cập nhật metadata (nếu không gửi file)
-     */
     @PutMapping("/guide/{id}")
     @PreAuthorize("hasAuthority('gamification:update') or hasAnyRole('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
     public ResponseEntity<GamificationGuideDTO> updateGuide(
@@ -680,8 +680,7 @@ public class GamificationController {
             @RequestParam(value = "guideFile", required = false) MultipartFile guideFile,
             @RequestParam(value = "file", required = false) MultipartFile file, // Backward compatibility
             Authentication authentication) {
-        
-        // Hỗ trợ cả "guideFile" và "file" để tương thích
+
         MultipartFile uploadFile = guideFile != null && !guideFile.isEmpty() ? guideFile : file;
         
         try {
@@ -711,10 +710,6 @@ public class GamificationController {
         }
     }
 
-    /**
-     * Xóa file hướng dẫn
-     * DELETE /gamification/guide/{id}
-     */
     @DeleteMapping("/guide/{id}")
     @PreAuthorize("hasAuthority('gamification:delete') or hasAnyRole('ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
     public ResponseEntity<Map<String, String>> deleteGuide(@PathVariable Integer id) {
@@ -730,10 +725,6 @@ public class GamificationController {
         }
     }
 
-    /**
-     * Xóa hoàn toàn file hướng dẫn (hard delete) - Admin only
-     * DELETE /gamification/guide/{id}/permanent
-     */
     @DeleteMapping("/guide/{id}/permanent")
     @PreAuthorize("hasAuthority('gamification:delete') and hasAnyRole('ROLE_ADMIN')")
     public ResponseEntity<Map<String, String>> deleteGuidePermanently(@PathVariable Integer id) {
