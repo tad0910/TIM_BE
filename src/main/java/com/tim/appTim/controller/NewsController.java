@@ -1,10 +1,15 @@
-package com.tim.appTim.controller; // Đảm bảo đúng package
+package com.tim.appTim.controller; 
 
 import com.tim.appTim.dto.BlogDTO;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.NewsService;
+import com.tim.appTim.service.GamificationService;
+import com.tim.appTim.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,43 +17,69 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("news") // URL gốc cho tin tức
+@RequestMapping("news") 
 public class NewsController {
 
     private final NewsService newsService;
+    private final GamificationService gamificationService;
+    private final UserService userService;
+    
     @Autowired
     private UserRepository userRepository;
 
-    public NewsController(NewsService newsService) {
+    public NewsController(NewsService newsService, 
+                         @Lazy GamificationService gamificationService,
+                         UserService userService) {
         this.newsService = newsService;
+        this.gamificationService = gamificationService;
+        this.userService = userService;
     }
 
-    /**
-     * API cho "Blog Mới" (Task 58)
-     * Lấy từ: blog.codegym.vn/feed/
-     */
     @GetMapping("/latest")
-    public ResponseEntity<List<BlogDTO>> getLatestBlogs() {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<BlogDTO>> getLatestBlogs(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            try {
+                Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
+                gamificationService.awardPoints(userId, "READ_BLOG");
+            } catch (Exception e) {
+                System.err.println("Failed to award points for reading blog: " + e.getMessage());
+            }
+        }
+        
         List<BlogDTO> blogs = newsService.getLatestBlogs();
         return ResponseEntity.ok(blogs);
     }
 
-    /**
-     * API cho "Blog Hay" (Task 60)
-     * Lấy từ: blog.codegym.vn/category/blog-hay/feed/
-     */
     @GetMapping("/featured")
-    public ResponseEntity<List<BlogDTO>> getFeaturedBlogs() {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<BlogDTO>> getFeaturedBlogs(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            try {
+                Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
+                gamificationService.awardPoints(userId, "READ_BLOG");
+            } catch (Exception e) {
+                System.err.println("Failed to award points for reading blog: " + e.getMessage());
+            }
+        }
+        
         List<BlogDTO> blogs = newsService.getFeaturedBlogs();
         return ResponseEntity.ok(blogs);
     }
 
-    /**
-     * API MỚI CHO "Tin Tức" (Task 55)
-     * Lấy từ: dev.to/api/articles?tag=java
-     */
     @GetMapping("/tech")
-    public ResponseEntity<List<BlogDTO>> getTechNews() {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<BlogDTO>> getTechNews(Authentication authentication) {
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            try {
+                Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
+                gamificationService.awardPoints(userId, "READ_BLOG");
+            } catch (Exception e) {
+                System.err.println("Failed to award points for reading blog: " + e.getMessage());
+            }
+        }
+        
         List<BlogDTO> blogs = newsService.getTechNews();
         return ResponseEntity.ok(blogs);
     }

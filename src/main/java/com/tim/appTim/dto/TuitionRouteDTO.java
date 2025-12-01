@@ -34,7 +34,6 @@ public class TuitionRouteDTO {
     @Min(value = 1, message = "Số đợt phải ít nhất là 1")
     private Integer numberOfInstallments;
 
-    // frequency is optional when installmentConfigs is provided
     @Min(value = 1, message = "Tần suất phải ít nhất là 1 tháng")
     private Integer frequency;
 

@@ -27,7 +27,7 @@ public class TuitionReminderService {
     private NotificationService notificationService;
 
     @Scheduled(cron = "0 0 8 * * ?")
-    //@Scheduled(fixedRate = 10000) // Dùng dòng này nếu muốn test nhanh (1 phút chạy 1 lần)
+
     @Transactional
     public void sendOverdueReminders() {
         logger.info("Bắt đầu quét các khoản học phí quá hạn...");

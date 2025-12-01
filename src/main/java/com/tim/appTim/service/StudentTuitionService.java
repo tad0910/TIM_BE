@@ -110,7 +110,6 @@ public class StudentTuitionService {
         int totalInstallments = route.getNumberOfInstallments();
         List<TuitionInstallmentConfig> configs = route.getInstallmentConfigs();
 
-        // Fallback to old frequency-based logic if no configs defined
         if (configs == null || configs.isEmpty()) {
             configs = generateConfigsFromFrequency(route);
         }
@@ -124,20 +123,17 @@ public class StudentTuitionService {
             schedule.setPaidAmount(BigDecimal.ZERO);
             schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PENDING);
 
-            // Find matching config
             final int installmentNum = i;
             TuitionInstallmentConfig config = configs.stream()
                     .filter(c -> c.getInstallmentNumber().equals(installmentNum))
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy cấu hình cho kỳ " + installmentNum));
 
-            // Timeline: daysFromPrevious calculated from previous dueDate
             schedule.setFromDate(currentDueDate);
             LocalDate dueDate = currentDueDate.plusDays(config.getDaysFromPrevious());
             schedule.setDueDate(dueDate);
             currentDueDate = dueDate;
 
-            // Discount calculation
             BigDecimal discountForThisInstallment = BigDecimal.ZERO;
             if (coupon != null) {
                 discountForThisInstallment = calculateDiscountForInstallment(
@@ -270,7 +266,6 @@ public class StudentTuitionService {
 
         switch (scenario) {
             case SPREAD_EVENLY:
-                // Proportional to baseAmount
                 return totalDiscount.multiply(baseAmount)
                         .divide(totalListedFee, 2, RoundingMode.HALF_UP);
 

@@ -13,8 +13,14 @@ public class Ranking {
     @Column(name = "nguoi_dung_id", nullable = false)
     private Long userId;
 
-    @Column(name = "diem_tong_hop")
-    private Integer totalScore;
+    @Column(name = "total_diligence_score")
+    private Integer totalDiligenceScore = 0;
+
+    @Column(name = "total_competence_score")
+    private Integer totalCompetenceScore = 0;
+
+    @Column(name = "total_experience_score")
+    private Integer totalExperienceScore = 0;
 
     @Column(name = "classes_id")
     private Long classId;
@@ -33,26 +39,32 @@ public class Ranking {
     @JoinColumn(name = "classes_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Class classEntity;
 
-    @ManyToOne
-    @JoinColumn(name = "program_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private Programs programs;
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
-    public Integer getTotalScore() { return totalScore; }
-    public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
+    
+    public Integer getTotalDiligenceScore() { return totalDiligenceScore; }
+    public void setTotalDiligenceScore(Integer totalDiligenceScore) { this.totalDiligenceScore = totalDiligenceScore; }
+    
+    public Integer getTotalCompetenceScore() { return totalCompetenceScore; }
+    public void setTotalCompetenceScore(Integer totalCompetenceScore) { this.totalCompetenceScore = totalCompetenceScore; }
+    
+    public Integer getTotalExperienceScore() { return totalExperienceScore; }
+    public void setTotalExperienceScore(Integer totalExperienceScore) { this.totalExperienceScore = totalExperienceScore; }
+    
     public Long getClassId() { return classId; }
     public void setClassId(Long classId) { this.classId = classId; }
+    
     public Long getCourseId() { return courseId; }
     public void setCourseId(Long courseId) { this.courseId = courseId; }
+    
     public LocalDateTime getUpdateTime() { return updateTime; }
     public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
+    
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+    
     public Class getClassEntity() { return classEntity; }
     public void setClassEntity(Class classEntity) { this.classEntity = classEntity; }
-    public Programs getPrograms() { return programs; }
-    public void setPrograms(Programs programs) { this.programs = programs; }    
 }

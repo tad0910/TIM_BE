@@ -9,4 +9,5 @@ import org.springframework.data.domain.Pageable;
 public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByUserId(Long userId, Pageable pageable);
     List<Post> findByUserIdOrderByCreatedAtDesc(Long userId);
+    long countByUserId(Long userId);
 }

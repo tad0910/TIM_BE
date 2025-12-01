@@ -55,7 +55,6 @@ public class TuitionRouteService {
             throw new RuntimeException("Chương trình đã có lộ trình học phí, không thể tạo thêm");
         }
 
-        // Validate and save installment configs if provided
         if (dto.getInstallmentConfigs() != null && !dto.getInstallmentConfigs().isEmpty()) {
             validateInstallmentConfigs(dto.getInstallmentConfigs(), dto.getTotalListedFee(),
                     dto.getNumberOfInstallments());
@@ -82,7 +81,6 @@ public class TuitionRouteService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lộ trình để cập nhật"));
         BeanUtils.copyProperties(dto, existingRoute, "id", "installmentConfigs", "program");
 
-        // Update installment configs if provided
         if (dto.getInstallmentConfigs() != null) {
             validateInstallmentConfigs(dto.getInstallmentConfigs(), dto.getTotalListedFee(),
                     dto.getNumberOfInstallments());
@@ -141,13 +139,12 @@ public class TuitionRouteService {
 
     private void validateInstallmentConfigs(List<InstallmentConfigDTO> configs, BigDecimal totalFee,
             Integer expectedCount) {
-        // 1. Check count matches
+
         if (configs.size() != expectedCount) {
             throw new BadRequestException(
                     "Số lượng cấu hình (" + configs.size() + ") không khớp với số kỳ (" + expectedCount + ")");
         }
 
-        // 2. Check sum equals totalListedFee
         BigDecimal sum = configs.stream()
                 .map(InstallmentConfigDTO::getBaseAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -156,7 +153,6 @@ public class TuitionRouteService {
             throw new BadRequestException("Tổng tiền các kỳ (" + sum + ") phải bằng tổng học phí (" + totalFee + ")");
         }
 
-        // 3. Check installmentNumber sequence (1, 2, 3...)
         for (int i = 0; i < configs.size(); i++) {
             if (configs.get(i).getInstallmentNumber() != i + 1) {
                 throw new BadRequestException("Số kỳ phải liên tục từ 1 đến " + expectedCount);

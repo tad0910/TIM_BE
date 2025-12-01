@@ -17,7 +17,7 @@ public class StudentPaymentScheduleDTO {
     private BigDecimal paidAmount;
     private LocalDate fromDate;
     private LocalDate dueDate;
-    private String status; // ENUM as String
+    private String status; 
 
     public StudentPaymentScheduleDTO(StudentPaymentSchedule entity) {
         this.id = entity.getId();

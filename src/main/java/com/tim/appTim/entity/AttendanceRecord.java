@@ -30,12 +30,10 @@ public class AttendanceRecord {
     @Column(name = "notes")
     private String notes;
 
-    // --- ENUM ---
     public enum AttendanceStatus {
         present ,absent ,late ,excused
     }
 
-    // --- GETTER & SETTER ---
 
     public Long getId() {
         return id;

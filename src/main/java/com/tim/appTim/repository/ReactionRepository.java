@@ -11,6 +11,7 @@ public interface ReactionRepository extends JpaRepository<Reaction, Long> {
 
     Optional<Reaction> findByPostAndUserAndCommentIsNullAndReplyCommentIsNull(Post post, User user);
     Page<Reaction> findByPostAndCommentIsNullAndReplyCommentIsNull(Post post, Pageable pageable);
+    long countByPostAndCommentIsNullAndReplyCommentIsNull(Post post);
     long countByPostAndEmotionType(Post post, Reaction.EmotionType emotionType);
 
     Optional<Reaction> findByCommentAndUserAndReplyCommentIsNull(Comment comment, User user);
