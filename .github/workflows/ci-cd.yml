@@ -3,17 +3,18 @@ name: CI/CD Pipeline (Test -> Backup -> Deploy -> Log)
 # 1. KÍCH HOẠT (TRIGGER)
 on:
   push:
-    branches: [ "main", "develop", "feature/*" ]
+    branches: [ "main", "develop", "feature/*" ] # Chạy khi có code mới từ bất kỳ nhánh nào
   pull_request:
     branches: [ "main", "develop" ]
 
 jobs:
   # -----------------------------------------------------------------
   # GIAI ĐOẠN 1: CHẠY TEST CASE (CI)
+  # Áp dụng cho mọi nhánh code mới
   # -----------------------------------------------------------------
   run-tests:
     name: 🧪 Run Unit Tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,34 +26,36 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # Chạy lệnh test (Không build jar, chỉ test để tiết kiệm thời gian)
       - name: Execute Tests
-        shell: cmd
         run: mvn -B test --file pom.xml
 
   # -----------------------------------------------------------------
   # GIAI ĐOẠN 2: BACKUP DỮ LIỆU
+  # Chỉ chạy khi ở nhánh quan trọng (dev, main) và Test đã qua
   # -----------------------------------------------------------------
   backup-data:
     name: 💾 Backup Database & Code
-    needs: run-tests
+    needs: run-tests # Phải test xong mới làm
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Backup Placeholder
-        # Chạy mặc định (PowerShell) là tốt nhất cho lệnh echo đơn giản
         run: |
-          echo "--- BAT DAU QUY TRINH BACKUP ---"
-          echo "Run on Self-hosted runner"
-          echo "--- KET THUC BACKUP ---"
+          echo "--- BẮT ĐẦU QUY TRÌNH BACKUP ---"
+          echo "Hiện tại chưa cần thực hiện backup theo yêu cầu."
+          echo "Sau này có thể thêm lệnh dump database hoặc nén code tại đây."
+          echo "--- KẾT THÚC BACKUP ---"
 
   # -----------------------------------------------------------------
   # GIAI ĐOẠN 3: BUILD & DEPLOY (CD)
+  # Chỉ chạy khi ở nhánh quan trọng (dev, main) và Test đã qua
   # -----------------------------------------------------------------
   deploy:
     name: 🚀 Build & Deploy
     needs: run-tests
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -65,8 +68,7 @@ jobs:
           cache: 'maven'
 
       - name: Build JAR
-        # Đã xóa tham số gây lỗi "-Dproject.build...", chỉ giữ lại các tham số cần thiết
-        run: mvn -B clean package -DskipTests --file pom.xml
+        run: mvn -B clean package -DskipTests -Dproject.build.sourceEncoding=UTF-8 --file pom.xml
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -74,6 +76,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Đóng gói và Đẩy Docker
+      # Logic: Nếu là main -> tag 'latest'. Nếu là develop -> tag 'dev'
       - name: Build & Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -86,16 +90,16 @@ jobs:
       # KÍCH HOẠT SERVER (DEPLOY)
       # -----------------------------------------------------------
 
+      # Trường hợp 1: Nếu là Main -> Gọi Server Production
       - name: Trigger Render Production
         if: github.ref == 'refs/heads/main'
-        shell: cmd  # Bắt buộc dùng cmd để chạy curl trên Windows ổn định
         run: |
-          echo Dang deploy len Production...
+          echo "Đang deploy lên Production..."
           curl -X POST ${{ secrets.RENDER_PROD_HOOK }}
 
+      # Trường hợp 2: Nếu là Develop -> Gọi Server Dev
       - name: Trigger Render Dev
         if: github.ref == 'refs/heads/develop'
-        shell: cmd  # Bắt buộc dùng cmd để chạy curl trên Windows ổn định
         run: |
-          echo Dang deploy len Dev Environment...
+          echo "Đang deploy lên Dev Environment..."
           curl -X POST ${{ secrets.RENDER_DEV_HOOK }}
