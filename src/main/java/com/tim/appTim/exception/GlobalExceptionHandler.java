@@ -2,6 +2,8 @@ package com.tim.appTim.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,8 +12,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.validation.FieldError;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
@@ -57,6 +61,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // 400 - JSON parse errors (ví dụ: định dạng ngày sai)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        Throwable cause = Optional.ofNullable(ex.getRootCause()).orElse(ex);
+
+        if (cause instanceof InvalidFormatException invalidFormatException) {
+            return buildErrorResponse(HttpStatus.BAD_REQUEST,
+                    normalizeInvalidFormatMessage(invalidFormatException));
+        }
+
+        if (cause instanceof DateTimeParseException dateTimeParseException) {
+            return buildErrorResponse(HttpStatus.BAD_REQUEST,
+                    "Định dạng ngày không hợp lệ: " + dateTimeParseException.getParsedString());
+        }
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Dữ liệu gửi lên không hợp lệ");
     }
 
     // 400 - Sai kiểu dữ liệu đầu vào (ví dụ: /api/users/abc → userId phải là Long)
@@ -125,5 +147,16 @@ public class GlobalExceptionHandler {
         errorResponse.put("error", status.getReasonPhrase());
         errorResponse.put("message", message);
         return new ResponseEntity<>(errorResponse, status);
+    }
+
+    private String normalizeInvalidFormatMessage(InvalidFormatException ex) {
+        String targetType = ex.getTargetType() != null ? ex.getTargetType().getSimpleName() : "";
+        String value = String.valueOf(ex.getValue());
+
+        if ("LocalDate".equals(targetType)) {
+            return "Định dạng ngày không hợp lệ: " + value;
+        }
+
+        return "Giá trị không hợp lệ: " + value;
     }
 }

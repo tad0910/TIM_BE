@@ -1,6 +1,8 @@
 package com.tim.appTim.controller;
 
 import com.tim.appTim.dto.FeeAdjustmentDTO;
+import com.tim.appTim.dto.ScheduleDueDateUpdateDTO;
+
 import com.tim.appTim.entity.StudentTuition;
 import com.tim.appTim.service.StudentTuitionService;
 import jakarta.validation.Valid;
@@ -54,6 +56,21 @@ public class StudentTuitionController {
         return ResponseEntity.ok(Map.of(
                 "message", "Cập nhật học phí thành công!",
                 "studentTuitionId", dto.getStudentTuitionId()
+        ));
+    }
+
+    @PutMapping("/schedules/{scheduleId}/due-date")
+    @PreAuthorize("hasAnyAuthority('tuition:update', 'ROLE_ADMIN')")
+    public ResponseEntity<?> updateScheduleDueDate(
+            @PathVariable Long scheduleId,
+            @RequestBody @Valid ScheduleDueDateUpdateDTO dto
+    ) {
+        studentTuitionService.updateScheduleDueDate(scheduleId, dto.getDueDate(), dto.getReason());
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Cập nhật hạn đóng thành công!",
+                "scheduleId", scheduleId,
+                "newDueDate", dto.getDueDate()
         ));
     }
 }
