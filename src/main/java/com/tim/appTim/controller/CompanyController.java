@@ -57,4 +57,11 @@ public class CompanyController {
             @RequestPart(value = "logo", required = false) MultipartFile logo) {
         return ResponseEntity.ok(companyService.update(id, request, logo));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('company:delete')")
+    public ResponseEntity<Void> deleteCompany(@PathVariable Long id) {
+        companyService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }
