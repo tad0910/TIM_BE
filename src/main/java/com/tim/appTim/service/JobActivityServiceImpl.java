@@ -1,13 +1,14 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.dto.JobActivityRequest;
+import com.tim.appTim.dto.NotificationDTO;
 import com.tim.appTim.entity.JobActivity;
 import com.tim.appTim.entity.JobLead;
 import com.tim.appTim.repository.JobActivityRepository;
 import com.tim.appTim.repository.JobLeadRepository;
-import com.tim.appTim.service.FileUploadService;
-import com.tim.appTim.service.JobActivityService;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.repository.*;
+import com.tim.appTim.entity.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -23,29 +26,28 @@ public class JobActivityServiceImpl implements JobActivityService {
     private final JobActivityRepository jobActivityRepository;
     private final JobLeadRepository jobLeadRepository;
     private final FileUploadService fileUploadService;
+    private final ClassMemberRepository classMemberRepository;
+    private final ClassModuleRepository classModuleRepository;
+    private final ClassModuleTeacherRepository classModuleTeacherRepository;
+    private final NotificationRepository notificationRepository;
+    private final SseService sseService;
 
     @Override
     @Transactional
     public JobActivity addActivity(JobActivityRequest request, MultipartFile file) {
-        // 1. Tìm đầu mối cha
         JobLead jobLead = jobLeadRepository.findById(request.getJobLeadId())
                 .orElseThrow(() -> new ResourceNotFoundException("Đầu mối không tồn tại"));
 
-        // 2. Tạo Activity mới
         JobActivity activity = new JobActivity();
         activity.setJobLead(jobLead);
         activity.setContent(request.getContent());
         activity.setHappenedAt(request.getHappenedAt());
-        activity.setSalaryAmount(request.getSalaryAmount()); // Lưu mức lương/offer
+        activity.setSalaryAmount(request.getSalaryAmount());
         activity.setCreatedAt(LocalDateTime.now());
 
-        // Convert String status sang Enum
         try {
             JobLead.LeadStatus status = JobLead.LeadStatus.valueOf(request.getActivityType());
             activity.setActivityType(status);
-
-            // [QUAN TRỌNG] Cập nhật trạng thái mới nhất cho JobLead cha
-            // Ví dụ: Đang là "Gửi CV", thêm hoạt động "Nhận Offer" -> JobLead chuyển sang "Nhận Offer"
             jobLead.setStatus(status);
             jobLeadRepository.save(jobLead);
 
@@ -53,7 +55,6 @@ public class JobActivityServiceImpl implements JobActivityService {
             throw new RuntimeException("Trạng thái hoạt động không hợp lệ: " + request.getActivityType());
         }
 
-        // 3. Upload file đính kèm (nếu có)
         if (file != null && !file.isEmpty()) {
             try {
                 String fileUrl = fileUploadService.uploadFile(file);
@@ -63,12 +64,19 @@ public class JobActivityServiceImpl implements JobActivityService {
             }
         }
 
-        return jobActivityRepository.save(activity);
+        JobActivity savedActivity = jobActivityRepository.save(activity);
+
+        String title = "Cập nhật thực tập: " + jobLead.getStudent().getUsername();
+        String content = "Sinh viên " + jobLead.getStudent().getUsername() + " vừa cập nhật trạng thái: "
+                + activity.getActivityType().getDisplayName();
+        notifyTeachers(jobLead.getStudent(), title, content, Notification.NotificationType.INTERNSHIP_STATUS_UPDATE,
+                savedActivity.getId());
+
+        return savedActivity;
     }
 
     @Override
     public List<JobActivity> getActivitiesByLead(Long jobLeadId) {
-        // Sắp xếp giảm dần theo ngày diễn ra (Mới nhất lên đầu)
         return jobActivityRepository.findByJobLeadIdOrderByHappenedAtDesc(jobLeadId);
     }
 
@@ -78,7 +86,64 @@ public class JobActivityServiceImpl implements JobActivityService {
                 .orElseThrow(() -> new ResourceNotFoundException("Hoạt động không tồn tại"));
 
         activity.setNote(note);
-        return jobActivityRepository.save(activity);
+        JobActivity savedActivity = jobActivityRepository.save(activity);
+
+        String title = "Cập nhật nhật ký thực tập";
+        String content = "Sinh viên " + activity.getJobLead().getStudent().getUsername()
+                + " đã cập nhật ghi chú cho hoạt động thực tập.";
+        notifyTeachers(activity.getJobLead().getStudent(), title, content,
+                Notification.NotificationType.INTERNSHIP_LOG_UPDATE, savedActivity.getId());
+
+        return savedActivity;
+    }
+
+    private void notifyTeachers(User student, String title, String content, Notification.NotificationType type,
+            Long targetId) {
+        List<ClassMember> classMembers = classMemberRepository.findByUserId(student.getId());
+        Set<Long> notifiedTeacherIds = new HashSet<>();
+
+        for (ClassMember member : classMembers) {
+            Long classId = member.getClassId();
+            List<ClassModule> modules = classModuleRepository.findByClassId(classId);
+
+            for (ClassModule module : modules) {
+                List<ClassModuleTeacher> teachers = classModuleTeacherRepository.findByClassModuleId(module.getId());
+                for (ClassModuleTeacher teacher : teachers) {
+                    if (!notifiedTeacherIds.contains(teacher.getUserId())) {
+                        Notification notification = new Notification();
+                        notification.setReceiverId(teacher.getUserId());
+                        notification.setSenderId(student.getId());
+                        notification.setNotificationType(type);
+                        notification.setTargetType("JOB_ACTIVITY");
+                        notification.setTargetId(targetId);
+                        notification.setTitle(title);
+                        notification.setContent(content);
+                        notification.setCreatedAt(LocalDateTime.now());
+                        notification.setIsRead(false);
+
+                        Notification savedNotification = notificationRepository.save(notification);
+                        notifiedTeacherIds.add(teacher.getUserId());
+
+                        NotificationDTO dto = new NotificationDTO(
+                                savedNotification.getId(),
+                                savedNotification.getReceiverId(),
+                                savedNotification.getSenderId(),
+                                student.getUsername(),
+                                student.getProfileImage(),
+                                savedNotification.getNotificationType().name(),
+                                savedNotification.getTargetType(),
+                                savedNotification.getTargetId(),
+                                savedNotification.getTitle(),
+                                savedNotification.getContent(),
+                                savedNotification.getIsRead(),
+                                savedNotification.getCreatedAt(),
+                                savedNotification.getReadAt(),
+                                null);
+                        sseService.sendNotification(teacher.getUserId(), dto);
+                    }
+                }
+            }
+        }
     }
 
 }

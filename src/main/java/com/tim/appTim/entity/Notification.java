@@ -11,20 +11,20 @@ public class Notification {
     private Long id;
 
     @Column(name = "receiver_id", nullable = false)
-    private Long receiverId; 
+    private Long receiverId;
 
     @Column(name = "sender_id")
-    private Long senderId; 
+    private Long senderId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "notification_type", nullable = false)
     private NotificationType notificationType;
 
     @Column(name = "target_type", length = 50)
-    private String targetType; 
+    private String targetType;
 
     @Column(name = "target_id")
-    private Long targetId; 
+    private Long targetId;
 
     @Column(name = "title", nullable = false)
     private String title;
@@ -50,15 +50,15 @@ public class Notification {
     private User sender;
 
     public enum NotificationType {
-        POST_REACTION,           
-        POST_COMMENT,        
-        COMMENT_REACTION,        
-        COMMENT_REPLY,       
-        REPLY_REACTION,          
-        USER_FOLLOW,         
-        POST_MENTION,        
-        COMMENT_MENTION,     
-        SYSTEM_ANNOUNCEMENT,  
+        POST_REACTION,
+        POST_COMMENT,
+        COMMENT_REACTION,
+        COMMENT_REPLY,
+        REPLY_REACTION,
+        USER_FOLLOW,
+        POST_MENTION,
+        COMMENT_MENTION,
+        SYSTEM_ANNOUNCEMENT,
         LATE_ATTENDANCE_OPENED,
         ATTENDANCE_REMINDER_LATE,
         ATTENDANCE_REMINDER_ENDING,
@@ -70,13 +70,16 @@ public class Notification {
         GAMIFICATION_POINT_EARNED,
         GAMIFICATION_ACHIEVEMENT_UNLOCKED,
         GAMIFICATION_LEVEL_UP,
-        GAMIFICATION_RANKING_CHANGE
+        GAMIFICATION_RANKING_CHANGE,
+        INTERNSHIP_STATUS_UPDATE,
+        INTERNSHIP_LOG_UPDATE
     }
 
-    public Notification() {}
+    public Notification() {
+    }
 
     public Notification(Long receiverId, Long senderId, NotificationType notificationType,
-                        String targetType, Long targetId, String title, String content) {
+            String targetType, Long targetId, String title, String content) {
         this.receiverId = receiverId;
         this.senderId = senderId;
         this.notificationType = notificationType;
@@ -88,42 +91,107 @@ public class Notification {
         this.createdAt = LocalDateTime.now();
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Long getReceiverId() { return receiverId; }
-    public void setReceiverId(Long receiverId) { this.receiverId = receiverId; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
+    public Long getReceiverId() {
+        return receiverId;
+    }
 
-    public NotificationType getNotificationType() { return notificationType; }
-    public void setNotificationType(NotificationType notificationType) { this.notificationType = notificationType; }
+    public void setReceiverId(Long receiverId) {
+        this.receiverId = receiverId;
+    }
 
-    public String getTargetType() { return targetType; }
-    public void setTargetType(String targetType) { this.targetType = targetType; }
+    public Long getSenderId() {
+        return senderId;
+    }
 
-    public Long getTargetId() { return targetId; }
-    public void setTargetId(Long targetId) { this.targetId = targetId; }
+    public void setSenderId(Long senderId) {
+        this.senderId = senderId;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public NotificationType getNotificationType() {
+        return notificationType;
+    }
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public void setNotificationType(NotificationType notificationType) {
+        this.notificationType = notificationType;
+    }
 
-    public Boolean getIsRead() { return isRead; }
-    public void setIsRead(Boolean isRead) { this.isRead = isRead; }
+    public String getTargetType() {
+        return targetType;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setTargetType(String targetType) {
+        this.targetType = targetType;
+    }
 
-    public LocalDateTime getReadAt() { return readAt; }
-    public void setReadAt(LocalDateTime readAt) { this.readAt = readAt; }
+    public Long getTargetId() {
+        return targetId;
+    }
 
-    public User getReceiver() { return receiver; }
-    public void setReceiver(User receiver) { this.receiver = receiver; }
+    public void setTargetId(Long targetId) {
+        this.targetId = targetId;
+    }
 
-    public User getSender() { return sender; }
-    public void setSender(User sender) { this.sender = sender; }
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public Boolean getIsRead() {
+        return isRead;
+    }
+
+    public void setIsRead(Boolean isRead) {
+        this.isRead = isRead;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getReadAt() {
+        return readAt;
+    }
+
+    public void setReadAt(LocalDateTime readAt) {
+        this.readAt = readAt;
+    }
+
+    public User getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
+    }
+
+    public User getSender() {
+        return sender;
+    }
+
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
 }
