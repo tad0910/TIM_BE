@@ -4,9 +4,13 @@ import com.tim.appTim.dto.FeeAdjustmentDTO;
 import com.tim.appTim.entity.*;
 import com.tim.appTim.entity.TuitionInstallmentConfig;
 import com.tim.appTim.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -17,6 +21,8 @@ import java.util.Map;
 
 @Service
 public class StudentTuitionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(StudentTuitionService.class);
 
     @Autowired
     private StudentTuitionRepository studentTuitionRepository;
@@ -200,6 +206,48 @@ public class StudentTuitionService {
 
         profile.setTotalActualFee(newTotal);
         studentTuitionRepository.save(profile);
+    }
+
+    @Transactional
+    public void updateScheduleDueDate(Long scheduleId, LocalDate newDueDate, String reason) {
+
+        if (newDueDate == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày hạn mới không hợp lệ");
+        }
+
+        StudentPaymentSchedule schedule = paymentScheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Không tìm thấy lịch thanh toán với ID: " + scheduleId));
+
+        StudentPaymentSchedule.PaymentStatus currentStatus = schedule.getStatus();
+        if (currentStatus == StudentPaymentSchedule.PaymentStatus.PAID
+                || currentStatus == StudentPaymentSchedule.PaymentStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Không thể cập nhật hạn đóng cho đợt đã hoàn tất hoặc đã hủy.");
+        }
+
+        LocalDate fromDate = schedule.getFromDate();
+        if (fromDate != null && newDueDate.isBefore(fromDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Ngày hạn mới không được trước ngày bắt đầu kỳ thanh toán.");
+        }
+
+        schedule.setDueDate(newDueDate);
+
+        LocalDate today = LocalDate.now();
+        if (schedule.getStatus() == StudentPaymentSchedule.PaymentStatus.OVERDUE
+                && (newDueDate.isAfter(today) || newDueDate.isEqual(today))) {
+            schedule.setStatus(StudentPaymentSchedule.PaymentStatus.PENDING);
+        } else if (schedule.getStatus() == StudentPaymentSchedule.PaymentStatus.PENDING
+                && newDueDate.isBefore(today)) {
+            schedule.setStatus(StudentPaymentSchedule.PaymentStatus.OVERDUE);
+        }
+
+        paymentScheduleRepository.save(schedule);
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Đã cập nhật hạn đóng cho schedule {} -> {}. Reason: {}", scheduleId, newDueDate, reason);
+        }
     }
 
     @Transactional
