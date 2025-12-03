@@ -1,5 +1,6 @@
 package com.tim.appTim.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +19,7 @@ public class JobActivity {
     // Liên kết với đầu mối việc làm (Cha)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_lead_id")
+    @JsonIgnoreProperties({"student", "hibernateLazyInitializer", "handler"})
     private JobLead jobLead;
 
     // Loại hoạt động (Trùng với Status của JobLead)

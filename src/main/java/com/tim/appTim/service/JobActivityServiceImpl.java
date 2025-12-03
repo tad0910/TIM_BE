@@ -1,14 +1,19 @@
 package com.tim.appTim.service;
 
+import com.tim.appTim.dto.JobActivityDTO;
 import com.tim.appTim.dto.JobActivityRequest;
 import com.tim.appTim.dto.NotificationDTO;
 import com.tim.appTim.entity.JobActivity;
 import com.tim.appTim.entity.JobLead;
+import com.tim.appTim.entity.Notification;
+import com.tim.appTim.entity.User;
+import com.tim.appTim.exception.ResourceNotFoundException;
+import com.tim.appTim.repository.ClassMemberRepository;
+import com.tim.appTim.repository.ClassModuleRepository;
+import com.tim.appTim.repository.ClassModuleTeacherRepository;
 import com.tim.appTim.repository.JobActivityRepository;
 import com.tim.appTim.repository.JobLeadRepository;
-import com.tim.appTim.exception.ResourceNotFoundException;
-import com.tim.appTim.repository.*;
-import com.tim.appTim.entity.*;
+import com.tim.appTim.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +40,7 @@ public class JobActivityServiceImpl implements JobActivityService {
 
     @Override
     @Transactional
-    public JobActivity addActivity(JobActivityRequest request, MultipartFile file) {
+    public JobActivityDTO addActivity(JobActivityRequest request, MultipartFile file) {
         JobLead jobLead = jobLeadRepository.findById(request.getJobLeadId())
                 .orElseThrow(() -> new ResourceNotFoundException("Đầu mối không tồn tại"));
 
@@ -72,16 +78,19 @@ public class JobActivityServiceImpl implements JobActivityService {
         notifyTeachers(jobLead.getStudent(), title, content, Notification.NotificationType.INTERNSHIP_STATUS_UPDATE,
                 savedActivity.getId());
 
-        return savedActivity;
+        return toDto(savedActivity);
     }
 
     @Override
-    public List<JobActivity> getActivitiesByLead(Long jobLeadId) {
-        return jobActivityRepository.findByJobLeadIdOrderByHappenedAtDesc(jobLeadId);
+    public List<JobActivityDTO> getActivitiesByLead(Long jobLeadId) {
+        return jobActivityRepository.findByJobLeadIdOrderByHappenedAtDesc(jobLeadId)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public JobActivity updateNote(Long activityId, String note) {
+    public JobActivityDTO updateNote(Long activityId, String note) {
         JobActivity activity = jobActivityRepository.findById(activityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hoạt động không tồn tại"));
 
@@ -94,7 +103,21 @@ public class JobActivityServiceImpl implements JobActivityService {
         notifyTeachers(activity.getJobLead().getStudent(), title, content,
                 Notification.NotificationType.INTERNSHIP_LOG_UPDATE, savedActivity.getId());
 
-        return savedActivity;
+        return toDto(savedActivity);
+    }
+
+    private JobActivityDTO toDto(JobActivity activity) {
+        return new JobActivityDTO(
+                activity.getId(),
+                activity.getJobLead() != null ? activity.getJobLead().getId() : null,
+                activity.getActivityType() != null ? activity.getActivityType().name() : null,
+                activity.getContent(),
+                activity.getHappenedAt(),
+                activity.getCreatedAt(),
+                activity.getSalaryAmount(),
+                activity.getNote(),
+                activity.getFileUrl()
+        );
     }
 
     private void notifyTeachers(User student, String title, String content, Notification.NotificationType type,
