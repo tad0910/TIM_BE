@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -67,7 +68,7 @@ public class TuitionRouteIntegrationTest {
     void getAllRoutes_WhenAuthorized_ShouldReturn200() throws Exception {
         TuitionRouteDTO route = createValidDTO();
         route.setId(1L);
-        Page<TuitionRouteDTO> page = new PageImpl<>(List.of(route));
+        Page<TuitionRouteDTO> page = new PageImpl<>(List.of(route), PageRequest.of(0, 10), 1);
 
         doReturn(page).when(tuitionRouteService).getAllRoutes(any(Pageable.class));
 

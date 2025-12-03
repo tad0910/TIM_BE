@@ -10,6 +10,8 @@ public class ReactionDTO {
     private LocalDateTime createdAt;
     private String userAvatar ;
 
+    public ReactionDTO() {
+    }
 
     public ReactionDTO(Long id, Long userId, String username,String userAvatar, String emotionType, LocalDateTime createdAt) {
         this.id = id;
