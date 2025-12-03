@@ -24,7 +24,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import static org.mockito.Mockito.doNothing;
@@ -72,6 +74,7 @@ public class ImageControllerIntegrationTest {
         testImage.setId(100L);
         testImage.setUserId(1L);
         testImage.setImageUrl("/uploads/image-cua-user-1.jpg");
+        testImage.setCreatedAt(LocalDateTime.now());
 
         when(fileUploadService.uploadFile(any())).thenReturn("https://test.local/uploaded-file.jpg");
     }
@@ -79,7 +82,7 @@ public class ImageControllerIntegrationTest {
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getAllImages_WhenImagesExist_ShouldReturn200() throws Exception {
-        Page<UserImage> imagePage = new PageImpl<>(List.of(testImage));
+        Page<UserImage> imagePage = new PageImpl<>(List.of(testImage), PageRequest.of(0, 10), 1);
         when(userImageService.findAllByUserId(eq(1L), any(Pageable.class))).thenReturn(imagePage);
 
         mockMvc.perform(get(BASE_URL + "/1/image"))
@@ -138,7 +141,7 @@ public class ImageControllerIntegrationTest {
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getAllImages_WhenNoImagesExist_ShouldReturn200AndEmptyPage() throws Exception {
-        Page<UserImage> emptyPage = new PageImpl<>(Collections.emptyList());
+        Page<UserImage> emptyPage = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
         when(userImageService.findAllByUserId(eq(2L), any(Pageable.class))).thenReturn(emptyPage);
 
         mockMvc.perform(get(BASE_URL + "/2/image"))
@@ -149,7 +152,7 @@ public class ImageControllerIntegrationTest {
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getAllImages_WhenUserDoesNotExist_ShouldReturn200AndEmptyPage() throws Exception {
-        Page<UserImage> emptyPage = new PageImpl<>(Collections.emptyList());
+        Page<UserImage> emptyPage = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
         when(userImageService.findAllByUserId(eq(999L), any(Pageable.class))).thenReturn(emptyPage);
 
         mockMvc.perform(get(BASE_URL + "/999/image"))

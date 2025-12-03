@@ -5,6 +5,9 @@ public class AddMemberDTO {
     private Long userId;
     private String role;
 
+    public AddMemberDTO() {
+    }
+
     public AddMemberDTO(Long userId, String role) {
         this.userId = userId;
         this.role = role;

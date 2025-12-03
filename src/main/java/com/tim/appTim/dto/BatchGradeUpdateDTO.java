@@ -9,6 +9,9 @@ public class BatchGradeUpdateDTO {
     private LocalDate entryDate;
     private List<StudentScoreEntryDTO> scores;
 
+    public BatchGradeUpdateDTO() {
+    }
+
     public Long getClassModuleId() { return classModuleId; }
     public void setClassModuleId(Long classModuleId) { this.classModuleId = classModuleId; }
 

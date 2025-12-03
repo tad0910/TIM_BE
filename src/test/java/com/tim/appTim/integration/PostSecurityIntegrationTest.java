@@ -332,7 +332,7 @@ public class PostSecurityIntegrationTest {
     void testGetPostsByUserId_WhenUserExists_ShouldReturn200AndListOfPosts() throws Exception {
         Long userId = 1L;
         PostDTO mockPost = createMockPostDTO(10L, userId, "Bài viết của owner", "open", new ArrayList<>());
-        Page<PostDTO> mockPage = new PageImpl<>(List.of(mockPost));
+        Page<PostDTO> mockPage = new PageImpl<>(List.of(mockPost), PageRequest.of(0, 10), 1);
 
         doReturn(mockPage).when(postService).getPostsByUserId(eq(userId), any(Pageable.class));
 
