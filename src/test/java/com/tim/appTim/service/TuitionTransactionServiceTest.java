@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -254,5 +255,634 @@ class TuitionTransactionServiceTest {
         // Schedule 2 should remain untouched
         assertThat(schedule2.getStatus()).isEqualTo(StudentPaymentSchedule.PaymentStatus.PENDING);
         assertThat(schedule2.getPaidAmount()).isEqualByComparingTo("0");
+    }
+
+    // --- getStudentOverview tests ---
+
+    @Test
+    void getStudentOverview_WithSchedules() {
+        // Arrange
+        schedule1.setStatus(StudentPaymentSchedule.PaymentStatus.PAID);
+        schedule1.setPaidAmount(new BigDecimal("1000000"));
+        schedule2.setStatus(StudentPaymentSchedule.PaymentStatus.PARTIAL);
+        schedule2.setPaidAmount(new BigDecimal("500000"));
+
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(schedules);
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalPaid()).isEqualByComparingTo("1500000"); // 1M + 0.5M
+        assertThat(result.getCurrentBalance()).isEqualByComparingTo("1500000"); // 3M - 1.5M
+    }
+
+    @Test
+    void getStudentOverview_EmptySchedules() {
+        // Arrange
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.emptyList());
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalPaid()).isEqualByComparingTo("0");
+        assertThat(result.getCurrentBalance()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void getStudentOverview_WithNullExpectedAmount() {
+        // Arrange
+        schedule1.setExpectedAmount(null);
+        schedule1.setStatus(StudentPaymentSchedule.PaymentStatus.PENDING);
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalPaid()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void getStudentOverview_WithNullPaidAmount() {
+        // Arrange
+        schedule1.setStatus(StudentPaymentSchedule.PaymentStatus.PARTIAL);
+        schedule1.setPaidAmount(null);
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalPaid()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void getStudentOverview_WithWaivedAmount() {
+        // Arrange
+        schedule1.setExpectedAmount(new BigDecimal("1000000"));
+        schedule1.setStatus(StudentPaymentSchedule.PaymentStatus.PENDING);
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        
+        // Listed + Admission = 2M, Expected = 1M, Waived = 1M
+        Object[] sumRow = new Object[]{new BigDecimal("1500000"), new BigDecimal("500000")};
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.singletonList(sumRow));
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalWaived()).isEqualByComparingTo("1000000"); // 2M - 1M
+    }
+
+    @Test
+    void getStudentOverview_NegativeWaived() {
+        // Arrange
+        schedule1.setExpectedAmount(new BigDecimal("3000000")); // More than listed+admission
+        schedule1.setStatus(StudentPaymentSchedule.PaymentStatus.PENDING);
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        
+        Object[] sumRow = new Object[]{new BigDecimal("1500000"), new BigDecimal("500000")};
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.singletonList(sumRow));
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalWaived()).isEqualByComparingTo("0"); // Should be 0, not negative
+    }
+
+    @Test
+    void getStudentOverview_NegativeRemaining() {
+        // Arrange
+        schedule1.setExpectedAmount(new BigDecimal("1000000"));
+        schedule1.setStatus(StudentPaymentSchedule.PaymentStatus.PAID);
+        schedule1.setPaidAmount(new BigDecimal("2000000")); // Paid more than expected
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getCurrentBalance()).isEqualByComparingTo("0"); // Should be 0, not negative
+    }
+
+    @Test
+    void getStudentOverview_WithNullSums() {
+        // Arrange
+        schedule1.setExpectedAmount(new BigDecimal("1000000"));
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(null);
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalWaived()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void getStudentOverview_WithEmptySums() {
+        // Arrange
+        schedule1.setExpectedAmount(new BigDecimal("1000000"));
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalWaived()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void getStudentOverview_WithNullSumRow() {
+        // Arrange
+        schedule1.setExpectedAmount(new BigDecimal("1000000"));
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.singletonList(null));
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalWaived()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void getStudentOverview_WithNullSumValues() {
+        // Arrange
+        schedule1.setExpectedAmount(new BigDecimal("1000000"));
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        Object[] sumRow = new Object[]{null, null};
+        when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.singletonList(sumRow));
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalWaived()).isEqualByComparingTo("0");
+    }
+
+    // --- getStudentSchedules tests ---
+
+    @Test
+    void getStudentSchedules_WithData() {
+        // Arrange
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(schedules);
+
+        // Act
+        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getInstallmentNumber()).isEqualTo(1);
+        assertThat(result.get(1).getInstallmentNumber()).isEqualTo(2);
+    }
+
+    @Test
+    void getStudentSchedules_Empty() {
+        // Arrange
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.emptyList());
+
+        // Act
+        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getStudentSchedules_Null() {
+        // Arrange
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(null);
+
+        // Act
+        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getStudentSchedules_SortedByInstallmentNumber() {
+        // Arrange
+        StudentPaymentSchedule schedule3 = new StudentPaymentSchedule();
+        schedule3.setInstallmentNumber(3);
+        schedule3.setExpectedAmount(new BigDecimal("3000000"));
+        schedules.add(schedule3);
+        
+        // Reverse order
+        Collections.reverse(schedules);
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(schedules);
+
+        // Act
+        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+
+        // Assert
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0).getInstallmentNumber()).isEqualTo(1);
+        assertThat(result.get(1).getInstallmentNumber()).isEqualTo(2);
+        assertThat(result.get(2).getInstallmentNumber()).isEqualTo(3);
+    }
+
+    @Test
+    void getStudentSchedules_WithNullInstallmentNumber() {
+        // Arrange
+        schedule1.setInstallmentNumber(null);
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+
+        // Act
+        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+
+        // Assert
+        assertThat(result).hasSize(1);
+    }
+
+    // --- getAdminOverview tests ---
+
+    @Test
+    void getAdminOverview_Success() {
+        // Arrange
+        com.tim.appTim.dto.TuitionOverviewDTO overview = com.tim.appTim.dto.TuitionOverviewDTO.builder()
+                .totalPaid(new BigDecimal("10000000"))
+                .totalRefunded(new BigDecimal("500000"))
+                .totalException(new BigDecimal("200000"))
+                .totalUsed(new BigDecimal("9500000"))
+                .currentBalance(new BigDecimal("500000"))
+                .totalWaived(new BigDecimal("1000000"))
+                .build();
+        when(transactionRepository.getSystemOverview()).thenReturn(overview);
+
+        // Act
+        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getAdminOverview();
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalPaid()).isEqualByComparingTo("10000000");
+    }
+
+    // --- getTransactionHistory tests ---
+
+    @Test
+    void getTransactionHistory_WithReceipt() {
+        // Arrange
+        TuitionTransaction transaction = new TuitionTransaction();
+        transaction.setId(1L);
+        transaction.setType(TuitionTransaction.TransactionType.PAYMENT);
+        transaction.setAmount(new BigDecimal("1000000"));
+        transaction.setStudentTuition(studentTuition);
+
+        TuitionReceipt receipt = new TuitionReceipt();
+        receipt.setId(10L);
+        receipt.setReceiptCode("REC-20240101-ABC123");
+        receipt.setTransaction(transaction);
+
+        org.springframework.data.domain.Page<TuitionTransaction> page = new org.springframework.data.domain.PageImpl<>(
+                Collections.singletonList(transaction));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+
+        when(transactionRepository.findByStudentTuition_Student_IdOrderByTransactionDateDesc(1L, pageable))
+                .thenReturn(page);
+        when(receiptRepository.findByTransaction_Id(1L)).thenReturn(Optional.of(receipt));
+
+        // Act
+        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+                transactionService.getTransactionHistory(1L, pageable);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getReceiptId()).isEqualTo(10L);
+        assertThat(result.getContent().get(0).getReceiptCode()).isEqualTo("REC-20240101-ABC123");
+    }
+
+    @Test
+    void getTransactionHistory_WithoutReceipt() {
+        // Arrange
+        TuitionTransaction transaction = new TuitionTransaction();
+        transaction.setId(1L);
+        transaction.setType(TuitionTransaction.TransactionType.PAYMENT);
+        transaction.setAmount(new BigDecimal("1000000"));
+        transaction.setStudentTuition(studentTuition);
+
+        org.springframework.data.domain.Page<TuitionTransaction> page = new org.springframework.data.domain.PageImpl<>(
+                Collections.singletonList(transaction));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+
+        when(transactionRepository.findByStudentTuition_Student_IdOrderByTransactionDateDesc(1L, pageable))
+                .thenReturn(page);
+        when(receiptRepository.findByTransaction_Id(1L)).thenReturn(Optional.empty());
+
+        // Act
+        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+                transactionService.getTransactionHistory(1L, pageable);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getReceiptId()).isNull();
+    }
+
+    @Test
+    void getTransactionHistory_NonPaymentType() {
+        // Arrange
+        TuitionTransaction transaction = new TuitionTransaction();
+        transaction.setId(1L);
+        transaction.setType(TuitionTransaction.TransactionType.REFUND);
+        transaction.setAmount(new BigDecimal("1000000"));
+        transaction.setStudentTuition(studentTuition);
+
+        org.springframework.data.domain.Page<TuitionTransaction> page = new org.springframework.data.domain.PageImpl<>(
+                Collections.singletonList(transaction));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+
+        when(transactionRepository.findByStudentTuition_Student_IdOrderByTransactionDateDesc(1L, pageable))
+                .thenReturn(page);
+
+        // Act
+        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+                transactionService.getTransactionHistory(1L, pageable);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+        verify(receiptRepository, never()).findByTransaction_Id(anyLong());
+    }
+
+    @Test
+    void getTransactionHistory_NullTransactionId() {
+        // Arrange
+        TuitionTransaction transaction = new TuitionTransaction();
+        transaction.setId(null);
+        transaction.setType(TuitionTransaction.TransactionType.PAYMENT);
+        transaction.setStudentTuition(studentTuition);
+
+        org.springframework.data.domain.Page<TuitionTransaction> page = new org.springframework.data.domain.PageImpl<>(
+                Collections.singletonList(transaction));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+
+        when(transactionRepository.findByStudentTuition_Student_IdOrderByTransactionDateDesc(1L, pageable))
+                .thenReturn(page);
+
+        // Act
+        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+                transactionService.getTransactionHistory(1L, pageable);
+
+        // Assert
+        assertThat(result).isNotNull();
+        verify(receiptRepository, never()).findByTransaction_Id(anyLong());
+    }
+
+    // --- getAllTransactions tests ---
+
+    @Test
+    void getAllTransactions_WithReceipt() {
+        // Arrange
+        TuitionTransaction transaction = new TuitionTransaction();
+        transaction.setId(1L);
+        transaction.setType(TuitionTransaction.TransactionType.PAYMENT);
+        transaction.setAmount(new BigDecimal("1000000"));
+        transaction.setStudentTuition(studentTuition);
+
+        TuitionReceipt receipt = new TuitionReceipt();
+        receipt.setId(10L);
+        receipt.setReceiptCode("REC-20240101-ABC123");
+
+        org.springframework.data.domain.Page<TuitionTransaction> page = new org.springframework.data.domain.PageImpl<>(
+                Collections.singletonList(transaction));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+
+        when(transactionRepository.findAllByOrderByTransactionDateDesc(pageable)).thenReturn(page);
+        when(receiptRepository.findByTransaction_Id(1L)).thenReturn(Optional.of(receipt));
+
+        // Act
+        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+                transactionService.getAllTransactions(pageable);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getReceiptId()).isEqualTo(10L);
+    }
+
+    @Test
+    void getAllTransactions_WithoutReceipt() {
+        // Arrange
+        TuitionTransaction transaction = new TuitionTransaction();
+        transaction.setId(1L);
+        transaction.setType(TuitionTransaction.TransactionType.PAYMENT);
+
+        org.springframework.data.domain.Page<TuitionTransaction> page = new org.springframework.data.domain.PageImpl<>(
+                Collections.singletonList(transaction));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+
+        when(transactionRepository.findAllByOrderByTransactionDateDesc(pageable)).thenReturn(page);
+        when(receiptRepository.findByTransaction_Id(1L)).thenReturn(Optional.empty());
+
+        // Act
+        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+                transactionService.getAllTransactions(pageable);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    // --- getTransactionById tests ---
+
+    @Test
+    void getTransactionById_Success() {
+        // Arrange
+        TuitionTransaction transaction = new TuitionTransaction();
+        transaction.setId(1L);
+        transaction.setAmount(new BigDecimal("1000000"));
+        when(transactionRepository.findById(1L)).thenReturn(Optional.of(transaction));
+
+        // Act
+        TuitionTransaction result = transactionService.getTransactionById(1L);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void getTransactionById_NotFound() {
+        // Arrange
+        when(transactionRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> transactionService.getTransactionById(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Giao dịch không tồn tại");
+    }
+
+    // --- processPayment additional tests ---
+
+    @Test
+    void processPayment_NullStudentId() {
+        // Arrange
+        PaymentRequestDTO request = new PaymentRequestDTO();
+        request.setStudentId(null);
+        request.setAmount(new BigDecimal("1000000"));
+
+        // Act & Assert
+        assertThatThrownBy(() -> transactionService.processPayment(request, collector))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Thông tin thanh toán không hợp lệ");
+    }
+
+    @Test
+    void processPayment_NullAmount() {
+        // Arrange
+        PaymentRequestDTO request = new PaymentRequestDTO();
+        request.setStudentId(1L);
+        request.setAmount(null);
+
+        // Act & Assert
+        assertThatThrownBy(() -> transactionService.processPayment(request, collector))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Thông tin thanh toán không hợp lệ");
+    }
+
+    @Test
+    void processPayment_AlreadyPaidWithNeededZero() {
+        // Arrange
+        // Schedule is PENDING but paidAmount >= expectedAmount (should be PAID but status not updated)
+        schedule1.setStatus(StudentPaymentSchedule.PaymentStatus.PENDING);
+        schedule1.setPaidAmount(new BigDecimal("1000000"));
+        schedule1.setExpectedAmount(new BigDecimal("1000000")); // needed = 0
+
+        PaymentRequestDTO request = new PaymentRequestDTO();
+        request.setStudentId(1L);
+        request.setAmount(new BigDecimal("500000"));
+        request.setPaymentMethod("CASH");
+
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(transactionRepository.save(any(TuitionTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(receiptRepository.save(any(TuitionReceipt.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act
+        transactionService.processPayment(request, collector);
+
+        // Assert
+        // Schedule should be set to PAID and saved
+        assertThat(schedule1.getStatus()).isEqualTo(StudentPaymentSchedule.PaymentStatus.PAID);
+        verify(scheduleRepository, times(1)).save(schedule1);
+    }
+
+    @Test
+    void processPayment_AlreadyPaidStatus_ShouldSkip() {
+        // Arrange
+        // Schedule is already PAID - should be skipped
+        schedule1.setStatus(StudentPaymentSchedule.PaymentStatus.PAID);
+        schedule1.setPaidAmount(new BigDecimal("1000000"));
+        schedule1.setExpectedAmount(new BigDecimal("1000000"));
+
+        PaymentRequestDTO request = new PaymentRequestDTO();
+        request.setStudentId(1L);
+        request.setAmount(new BigDecimal("500000"));
+        request.setPaymentMethod("CASH");
+
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(transactionRepository.save(any(TuitionTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(receiptRepository.save(any(TuitionReceipt.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act
+        transactionService.processPayment(request, collector);
+
+        // Assert
+        // Schedule should remain PAID and not be saved (skipped)
+        assertThat(schedule1.getStatus()).isEqualTo(StudentPaymentSchedule.PaymentStatus.PAID);
+        verify(scheduleRepository, never()).save(schedule1);
+    }
+
+    @Test
+    void processPayment_WithNote() {
+        // Arrange
+        PaymentRequestDTO request = new PaymentRequestDTO();
+        request.setStudentId(1L);
+        request.setAmount(new BigDecimal("1000000"));
+        request.setPaymentMethod("CASH");
+        request.setNote("Test note");
+
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(transactionRepository.save(any(TuitionTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(receiptRepository.save(any(TuitionReceipt.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act
+        TuitionReceipt receipt = transactionService.processPayment(request, collector);
+
+        // Assert
+        assertThat(receipt).isNotNull();
+        assertThat(receipt.getNote()).isEqualTo("Test note");
+        
+        ArgumentCaptor<TuitionTransaction> txCaptor = ArgumentCaptor.forClass(TuitionTransaction.class);
+        verify(transactionRepository).save(txCaptor.capture());
+        assertThat(txCaptor.getValue().getDescription()).isEqualTo("Test note");
+    }
+
+    @Test
+    void processPayment_WithoutNote() {
+        // Arrange
+        PaymentRequestDTO request = new PaymentRequestDTO();
+        request.setStudentId(1L);
+        request.setAmount(new BigDecimal("1000000"));
+        request.setPaymentMethod("BANK_TRANSFER");
+        request.setNote(null);
+
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(transactionRepository.save(any(TuitionTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(receiptRepository.save(any(TuitionReceipt.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act
+        transactionService.processPayment(request, collector);
+
+        // Assert
+        ArgumentCaptor<TuitionTransaction> txCaptor = ArgumentCaptor.forClass(TuitionTransaction.class);
+        verify(transactionRepository).save(txCaptor.capture());
+        assertThat(txCaptor.getValue().getDescription()).contains("Thanh toán học phí - BANK_TRANSFER");
+    }
+
+    @Test
+    void processPayment_ReceiptCodeGenerated() {
+        // Arrange
+        PaymentRequestDTO request = new PaymentRequestDTO();
+        request.setStudentId(1L);
+        request.setAmount(new BigDecimal("1000000"));
+        request.setPaymentMethod("CASH");
+
+        when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
+        when(transactionRepository.save(any(TuitionTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(receiptRepository.save(any(TuitionReceipt.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act
+        TuitionReceipt receipt = transactionService.processPayment(request, collector);
+
+        // Assert
+        assertThat(receipt).isNotNull();
+        assertThat(receipt.getReceiptCode()).isNotNull();
+        assertThat(receipt.getReceiptCode()).startsWith("REC-");
     }
 }
