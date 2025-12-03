@@ -60,6 +60,10 @@ public class CompanyServiceImpl implements CompanyService {
     public Company update(Long id, CompanyRequestDTO request, MultipartFile logo) {
         Company existingCompany = findById(id);
 
+        System.out.println("--- UPDATE COMPANY DEBUG ---");
+        System.out.println("Request Address: " + request.getAddress());
+
+
         mapDtoToEntity(existingCompany, request);
 
         if (logo != null && !logo.isEmpty()) {
@@ -79,12 +83,12 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     private String uploadLogo(MultipartFile file) {
-        if (file == null || file.isEmpty()) return null;
+        if (file == null || file.isEmpty())
+            return null;
         try {
             Map res = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                     "folder", "partner_logos",
-                    "resource_type", "auto"
-            ));
+                    "resource_type", "auto"));
             return (String) res.get("secure_url");
         } catch (IOException e) {
             throw new RuntimeException("Lỗi upload ảnh: " + e.getMessage());
@@ -95,7 +99,7 @@ public class CompanyServiceImpl implements CompanyService {
         company.setName(request.getName());
         company.setShortName(request.getShortName());
 
-        if(request.getType() != null) {
+        if (request.getType() != null) {
             company.setType(CompanyType.valueOf(request.getType()));
         }
 
@@ -106,5 +110,7 @@ public class CompanyServiceImpl implements CompanyService {
         company.setWebsite(request.getWebsite());
         company.setPhone(request.getPhone());
         company.setSize(request.getSize());
+        company.setAddress(request.getAddress());
+        company.setProducts(request.getProducts());
     }
 }
