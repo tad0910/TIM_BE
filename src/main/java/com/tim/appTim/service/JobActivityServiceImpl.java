@@ -7,6 +7,7 @@ import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.ClassModule;
 import com.tim.appTim.entity.ClassModuleTeacher;
 import com.tim.appTim.entity.JobActivity;
+import com.tim.appTim.entity.JobActivityType;
 import com.tim.appTim.entity.JobLead;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
@@ -56,11 +57,11 @@ public class JobActivityServiceImpl implements JobActivityService {
         activity.setCreatedAt(LocalDateTime.now());
 
         try {
-            JobLead.LeadStatus status = JobLead.LeadStatus.valueOf(request.getActivityType());
-            activity.setActivityType(status);
-            jobLead.setStatus(status);
-            jobLeadRepository.save(jobLead);
+            JobActivityType activityType = JobActivityType.valueOf(request.getActivityType());
+            activity.setActivityType(activityType);
 
+            mapActivityToLeadStatus(activityType, jobLead);
+            jobLeadRepository.save(jobLead);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Trạng thái hoạt động không hợp lệ: " + request.getActivityType());
         }
@@ -87,7 +88,7 @@ public class JobActivityServiceImpl implements JobActivityService {
 
     @Override
     public List<JobActivityDTO> getActivitiesByLead(Long jobLeadId) {
-        return jobActivityRepository.findByJobLeadIdOrderByHappenedAtDesc(jobLeadId)
+        return jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(jobLeadId)
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -114,7 +115,7 @@ public class JobActivityServiceImpl implements JobActivityService {
     private JobActivityDTO toDto(JobActivity activity) {
         return new JobActivityDTO(
                 activity.getId(),
-                activity.getJobLead() != null ? activity.getJobLead().getId() : null,
+                activity.getJobLeadId(),
                 activity.getActivityType() != null ? activity.getActivityType().name() : null,
                 activity.getContent(),
                 activity.getHappenedAt(),
@@ -123,6 +124,36 @@ public class JobActivityServiceImpl implements JobActivityService {
                 activity.getNote(),
                 activity.getFileUrl()
         );
+    }
+
+    private void mapActivityToLeadStatus(JobActivityType activityType, JobLead jobLead) {
+        JobLead.LeadStatus targetStatus = switch (activityType) {
+            case SEND_CV -> JobLead.LeadStatus.APPLIED;
+            case INTERVIEW_SCHEDULED, INTERVIEW -> JobLead.LeadStatus.INTERVIEWING;
+            case OFFER_RECEIVED -> JobLead.LeadStatus.OFFER;
+            case PROBATION_CONTRACT -> JobLead.LeadStatus.PROBATION;
+            case OFFICIAL_CONTRACT -> JobLead.LeadStatus.OFFICIAL;
+        };
+
+        if (shouldUpdateStatus(jobLead.getStatus(), targetStatus)) {
+            jobLead.setStatus(targetStatus);
+        }
+    }
+
+    private boolean shouldUpdateStatus(JobLead.LeadStatus currentStatus, JobLead.LeadStatus targetStatus) {
+        if (targetStatus == null) {
+            return false;
+        }
+        if (currentStatus == null) {
+            return true;
+        }
+
+        // Preserve terminal states FAILED/IGNORED when logging additional notes
+        if (currentStatus == JobLead.LeadStatus.FAILED || currentStatus == JobLead.LeadStatus.IGNORED) {
+            return false;
+        }
+
+        return currentStatus.ordinal() <= targetStatus.ordinal();
     }
 
     private void notifyTeachers(User student, String title, String content, Notification.NotificationType type,

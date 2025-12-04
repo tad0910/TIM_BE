@@ -12,7 +12,7 @@ import java.util.Optional;
  */
 @Repository
 public interface JobActivityRepository extends JpaRepository<JobActivity, Long> {
-    List<JobActivity> findByJobLeadIdOrderByHappenedAtDesc(Long jobLeadId);
+    List<JobActivity> findByJobLeadIdOrderByCreatedAtDesc(Long jobLeadId);
 
     Optional<JobActivity> findTopByJobLeadIdOrderByCreatedAtDesc(Long jobLeadId);
 }

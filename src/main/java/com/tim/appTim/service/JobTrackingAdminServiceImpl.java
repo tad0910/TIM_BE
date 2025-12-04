@@ -17,6 +17,7 @@ import com.tim.appTim.dto.JobTrackingUpdateRequest;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.JobActivity;
 import com.tim.appTim.entity.JobApplication;
+import com.tim.appTim.entity.JobActivityType;
 import com.tim.appTim.entity.JobLead;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -131,9 +132,10 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
         User student = Optional.ofNullable(member.getUser())
                 .orElseGet(() -> userRepository.findById(member.getUserId()).orElse(null));
 
-        JobActivity latestActivity = lead == null ? null : jobActivityRepository
-                .findTopByJobLeadIdOrderByCreatedAtDesc(lead.getId())
-                .orElse(null);
+        List<JobActivity> activities = lead == null ? Collections.emptyList()
+                : jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(lead.getId());
+
+        JobActivity latestActivity = null;
 
         String studentName = student != null ?
                 List.of(student.getFirstName(), student.getLastName()).stream()
@@ -161,19 +163,48 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
             lastUpdated = lead.getCreatedAt();
         }
 
-        if (latestActivity != null) {
-            statusCode = latestActivity.getActivityType().name();
-            statusLabel = latestActivity.getActivityType().getDisplayName();
-            lastUpdated = latestActivity.getCreatedAt();
+        for (JobActivity activity : activities) {
+            if (activity == null || activity.getActivityType() == null) {
+                continue;
+            }
 
-            String salaryAmount = defaultString(latestActivity.getSalaryAmount(), "-");
-            switch (latestActivity.getActivityType()) {
-                case OFFER -> offerAmount = salaryAmount;
-                case FAILED -> probationSalary = salaryAmount;
-                case IGNORED -> officialSalary = salaryAmount;
-                default -> {
+            if (latestActivity == null || isAfter(activity.getCreatedAt(), latestActivity.getCreatedAt())) {
+                latestActivity = activity;
+            }
+
+            String salaryAmount = activity.getSalaryAmount();
+            if (salaryAmount != null && !salaryAmount.isBlank()) {
+                salaryAmount = salaryAmount.trim();
+                JobActivityType activityType = activity.getActivityType();
+                switch (activityType) {
+                    case OFFER_RECEIVED -> {
+                        if ("-".equals(offerAmount)) {
+                            offerAmount = salaryAmount;
+                        }
+                    }
+                    case PROBATION_CONTRACT -> {
+                        if ("-".equals(probationSalary)) {
+                            probationSalary = salaryAmount;
+                        }
+                    }
+                    case OFFICIAL_CONTRACT -> {
+                        if ("-".equals(officialSalary)) {
+                            officialSalary = salaryAmount;
+                        }
+                    }
+                    default -> {
+                    }
                 }
             }
+        }
+
+        if (latestActivity != null) {
+            lastUpdated = latestActivity.getCreatedAt();
+        }
+
+        if (lead == null && latestActivity != null) {
+            statusCode = latestActivity.getActivityType().name();
+            statusLabel = latestActivity.getActivityType().getDisplayName();
         }
 
         if (lead == null && fallbackApplication != null) {

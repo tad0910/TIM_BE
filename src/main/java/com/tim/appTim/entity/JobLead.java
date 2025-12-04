@@ -46,6 +46,8 @@ public class JobLead {
         APPLIED("Đã ứng tuyển"),
         INTERVIEWING("Đang phỏng vấn"),
         OFFER("Nhận Offer"),
+        PROBATION("Thử việc"),
+        OFFICIAL("Chính thức"),
         FAILED("Trượt"),
         IGNORED("Bỏ qua");
 
