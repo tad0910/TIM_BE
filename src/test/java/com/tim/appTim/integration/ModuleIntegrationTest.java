@@ -23,7 +23,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -86,7 +85,7 @@ public class ModuleIntegrationTest {
     @Test
     @WithMockUser
     void getAllModules_ShouldReturn200() throws Exception {
-        Page<ModuleDTO> modulePage = new PageImpl<>(List.of(testModule), PageRequest.of(0, 10), 1);
+        Page<ModuleDTO> modulePage = new PageImpl<>(List.of(testModule));
         when(moduleService.getAllModules(any(Pageable.class))).thenReturn(modulePage);
 
         mockMvc.perform(get(BASE_URL)

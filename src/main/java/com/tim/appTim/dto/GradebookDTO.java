@@ -1,8 +1,6 @@
 package com.tim.appTim.dto;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 
 public class GradebookDTO {
@@ -91,13 +89,6 @@ public class GradebookDTO {
         private BigDecimal theoryScore;
         private BigDecimal practiceScore;
 
-        private LocalDate entryDate;
-        private Instant lastUpdatedAt;
-        private LocalDate theoryScoreEntryDate;
-        private LocalDate practiceScoreEntryDate;
-        private Instant theoryScoreLastUpdatedAt;
-        private Instant practiceScoreLastUpdatedAt;
-
         public Long getStudentId() {
             return studentId;
         }
@@ -137,23 +128,5 @@ public class GradebookDTO {
         public void setPracticeScore(BigDecimal practiceScore) {
             this.practiceScore = practiceScore;
         }
-
-        public LocalDate getEntryDate() { return entryDate; }
-        public void setEntryDate(LocalDate entryDate) { this.entryDate = entryDate; }
-
-        public Instant getLastUpdatedAt() { return lastUpdatedAt; }
-        public void setLastUpdatedAt(Instant lastUpdatedAt) { this.lastUpdatedAt = lastUpdatedAt; }
-
-        public LocalDate getTheoryScoreEntryDate() { return theoryScoreEntryDate; }
-        public void setTheoryScoreEntryDate(LocalDate theoryScoreEntryDate) { this.theoryScoreEntryDate = theoryScoreEntryDate; }
-
-        public LocalDate getPracticeScoreEntryDate() { return practiceScoreEntryDate; }
-        public void setPracticeScoreEntryDate(LocalDate practiceScoreEntryDate) { this.practiceScoreEntryDate = practiceScoreEntryDate; }
-
-        public Instant getTheoryScoreLastUpdatedAt() { return theoryScoreLastUpdatedAt; }
-        public void setTheoryScoreLastUpdatedAt(Instant theoryScoreLastUpdatedAt) { this.theoryScoreLastUpdatedAt = theoryScoreLastUpdatedAt; }
-
-        public Instant getPracticeScoreLastUpdatedAt() { return practiceScoreLastUpdatedAt; }
-        public void setPracticeScoreLastUpdatedAt(Instant practiceScoreLastUpdatedAt) { this.practiceScoreLastUpdatedAt = practiceScoreLastUpdatedAt; }
     }
 }

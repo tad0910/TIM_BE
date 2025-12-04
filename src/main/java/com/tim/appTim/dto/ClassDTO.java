@@ -11,8 +11,6 @@ public class ClassDTO {
     private Integer programId;
     private ProgramsDTO program;
     
-    public ClassDTO() {
-    }
 
     public ClassDTO(Long id, String className, String description, List<MemberDTO> members, Integer programId, ProgramsDTO program) {
         this.id = id;

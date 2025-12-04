@@ -365,12 +365,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                 row.setGradeId(grade.getId());
                 row.setTheoryScore(grade.getTheoryScore());
                 row.setPracticeScore(grade.getPracticeScore());
-                row.setEntryDate(grade.getEntryDate());
-                row.setLastUpdatedAt(grade.getUpdatedAt());
-                row.setTheoryScoreEntryDate(grade.getEntryDate());
-                row.setPracticeScoreEntryDate(grade.getEntryDate());
-                row.setTheoryScoreLastUpdatedAt(grade.getUpdatedAt());
-                row.setPracticeScoreLastUpdatedAt(grade.getUpdatedAt());
             }
             return row;
         }).collect(Collectors.toList());

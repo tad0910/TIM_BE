@@ -1,6 +1,5 @@
 package com.tim.appTim.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -23,13 +22,9 @@ public class UserImage {
     @Column(name = "thoi_gian_tao")
     private LocalDateTime createdAt;
 
-    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "nguoi_dung_id", referencedColumnName = "id", insertable = false, updatable = false)
     private User user;
-
-    public UserImage() {
-    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

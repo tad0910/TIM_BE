@@ -19,8 +19,7 @@ public class PostDTO {
     private String fullName;
     private LinkPreviewDTO linkPreview;
       
-    public PostDTO() {
-    }
+
 
     public PostDTO(Long id,Long userId, String content, String privacy, LocalDateTime createdAt, LocalDateTime updatedAt,
                    Integer totalReactions, Integer totalComments,

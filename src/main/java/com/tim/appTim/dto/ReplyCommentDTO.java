@@ -15,9 +15,6 @@ public class ReplyCommentDTO {
     private String userAvatar;
     private List<FileDTO> files;
 
-    public ReplyCommentDTO() {
-    }
-
     public ReplyCommentDTO(Long id, Long commentId, Long userId, String username, String content, String emotion, LocalDateTime createdAt, String userAvatar, List<FileDTO> files) {
         this.id = id;
         this.commentId = commentId;
