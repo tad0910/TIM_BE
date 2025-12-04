@@ -91,8 +91,7 @@ public class StudentTuitionService {
         profile.setStatus(StudentTuition.TuitionStatus.ACTIVE);
 
         BigDecimal finalTuitionFee = route.getTotalListedFee().subtract(totalDiscountAmount);
-        if (finalTuitionFee.compareTo(BigDecimal.ZERO) < 0)
-            finalTuitionFee = BigDecimal.ZERO;
+        if (finalTuitionFee.compareTo(BigDecimal.ZERO) < 0) finalTuitionFee = BigDecimal.ZERO;
 
         BigDecimal admissionFee = (route.getAdmissionFee() != null) ? route.getAdmissionFee() : BigDecimal.ZERO;
         profile.setTotalActualFee(finalTuitionFee.add(admissionFee));
@@ -171,8 +170,7 @@ public class StudentTuitionService {
                 .findByStudentTuitionIdAndStatus(profile.getId(), StudentPaymentSchedule.PaymentStatus.PENDING);
 
         if (pendingSchedules.isEmpty()) {
-            throw new RuntimeException(
-                    "Sinh viên này đã hoàn thành học phí hoặc không còn đợt nào trạng thái PENDING để điều chỉnh.");
+            throw new RuntimeException("Sinh viên này đã hoàn thành học phí hoặc không còn đợt nào trạng thái PENDING để điều chỉnh.");
         }
 
         for (StudentPaymentSchedule schedule : pendingSchedules) {
@@ -200,9 +198,6 @@ public class StudentTuitionService {
     private void updateTotalActualFee(StudentTuition profile) {
 
         List<StudentPaymentSchedule> allSchedules = profile.getPaymentSchedules();
-        if (allSchedules == null) {
-            allSchedules = new ArrayList<>();
-        }
 
         BigDecimal newTotal = BigDecimal.ZERO;
         for (StudentPaymentSchedule sch : allSchedules) {
@@ -287,7 +282,8 @@ public class StudentTuitionService {
                 "totalStudents", members.size(),
                 "success", successCount,
                 "skipped", skipCount,
-                "errors", errors);
+                "errors", errors
+        );
     }
 
     private List<TuitionInstallmentConfig> generateConfigsFromFrequency(TuitionRoute route) {
@@ -311,10 +307,10 @@ public class StudentTuitionService {
 
     private BigDecimal calculateDiscountForInstallment(
             Coupon coupon, int installmentNumber, int totalInstallments,
-            BigDecimal baseAmount, BigDecimal totalListedFee, BigDecimal totalDiscount) {
+            BigDecimal baseAmount, BigDecimal totalListedFee, BigDecimal totalDiscount
+    ) {
         Coupon.CouponScenario scenario = coupon.getScenario();
-        if (scenario == null)
-            scenario = Coupon.CouponScenario.SPREAD_EVENLY;
+        if (scenario == null) scenario = Coupon.CouponScenario.SPREAD_EVENLY;
 
         switch (scenario) {
             case SPREAD_EVENLY:

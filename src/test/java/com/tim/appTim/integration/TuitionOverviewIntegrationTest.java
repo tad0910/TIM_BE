@@ -10,7 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
@@ -109,7 +108,7 @@ public class TuitionOverviewIntegrationTest {
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getMyHistory_WhenAuthenticated_ShouldReturn200() throws Exception {
-        Page<TuitionTransactionDTO> page = new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
+        Page<TuitionTransactionDTO> page = new PageImpl<>(List.of());
         doReturn(page).when(transactionService).getTransactionHistory(eq(1L), any(Pageable.class));
 
         mockMvc.perform(get(BASE_URL + "/my-history"))
@@ -120,7 +119,7 @@ public class TuitionOverviewIntegrationTest {
     @Test
     @WithUserDetails(value = "admin_user", userDetailsServiceBeanName = "userService")
     void getStudentHistory_WhenAuthorized_ShouldReturn200() throws Exception {
-        Page<TuitionTransactionDTO> page = new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
+        Page<TuitionTransactionDTO> page = new PageImpl<>(List.of());
         doReturn(page).when(transactionService).getTransactionHistory(eq(1L), any(Pageable.class));
 
         mockMvc.perform(get(BASE_URL + "/student/1/history"))

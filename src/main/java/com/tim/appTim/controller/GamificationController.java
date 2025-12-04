@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -66,6 +67,9 @@ public class GamificationController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Lấy thống kê điểm của user hiện tại
+     */
     @GetMapping("/my-stats")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserGamificationStatsDTO> getMyStats(Authentication authentication) {
@@ -77,6 +81,9 @@ public class GamificationController {
         return ResponseEntity.ok(stats);
     }
 
+    /**
+     * Lấy thống kê điểm của user theo ID (admin/teacher)
+     */
     @GetMapping("/users/{userId}/stats")
     @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
     public ResponseEntity<UserGamificationStatsDTO> getUserStats(@PathVariable Long userId) {
@@ -84,6 +91,9 @@ public class GamificationController {
         return ResponseEntity.ok(stats);
     }
 
+    /**
+     * Lấy lịch sử nhận điểm của user hiện tại
+     */
     @GetMapping("/my-point-logs")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<UserPointLogDTO>> getMyPointLogs(Authentication authentication) {
@@ -95,6 +105,9 @@ public class GamificationController {
         return ResponseEntity.ok(logs);
     }
 
+    /**
+     * Lấy lịch sử nhận điểm của user theo ID
+     */
     @GetMapping("/users/{userId}/point-logs")
     @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
     public ResponseEntity<List<UserPointLogDTO>> getUserPointLogs(@PathVariable Long userId) {
@@ -102,6 +115,9 @@ public class GamificationController {
         return ResponseEntity.ok(logs);
     }
 
+    /**
+     * Lấy danh sách thành tích của user hiện tại
+     */
     @GetMapping("/my-achievements")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<UserAchievementDTO>> getMyAchievements(Authentication authentication) {
@@ -113,6 +129,9 @@ public class GamificationController {
         return ResponseEntity.ok(achievements);
     }
 
+    /**
+     * Lấy danh sách thành tích của user theo ID
+     */
     @GetMapping("/users/{userId}/achievements")
     @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
     public ResponseEntity<List<UserAchievementDTO>> getUserAchievements(@PathVariable Long userId) {
@@ -469,6 +488,10 @@ public class GamificationController {
 
     // ========== RANKING SYSTEM ==========
 
+    /**
+     * Lấy bảng xếp hạng hiện tại (real-time)
+     * GET /gamification/ranking/current
+     */
     @GetMapping("/ranking/current")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<RankingResponseDTO> getCurrentRanking(
