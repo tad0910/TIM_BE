@@ -8,6 +8,8 @@ public class UserImageDTO {
     private String description;
     private LocalDateTime createdAt;
 
+    public UserImageDTO() {
+    }
 
     public UserImageDTO(Long id, String imageUrl, String description, LocalDateTime createdAt) {
         this.id = id;

@@ -9,6 +9,9 @@ public class CourseDTO {
     private LocalDate startDate;
     private Double tuitionFee;
 
+    public CourseDTO() {
+    }
+
     public CourseDTO(Long id, String courseName, String description, LocalDate startDate, Double tuitionFee) {
         this.id = id;
         this.courseName = courseName;

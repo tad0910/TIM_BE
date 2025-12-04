@@ -46,14 +46,14 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     private ApplicationContext applicationContext;
 
     public GradeServiceImpl(GradeRepository gradeRepository,
-                            ClassMemberRepository classMemberRepository,
-                            ClassModuleRepository classModuleRepository,
-                            ClassModuleTeacherRepository classModuleTeacherRepository,
-                            UserRepository userRepository,
-                            GradeHistoryRepository gradeHistoryRepository,
-                            NotificationService notificationService, 
-                            TransactionTemplate transactionTemplate,
-                            @Lazy GamificationService gamificationService) {
+            ClassMemberRepository classMemberRepository,
+            ClassModuleRepository classModuleRepository,
+            ClassModuleTeacherRepository classModuleTeacherRepository,
+            UserRepository userRepository,
+            GradeHistoryRepository gradeHistoryRepository,
+            NotificationService notificationService,
+            TransactionTemplate transactionTemplate,
+            @Lazy GamificationService gamificationService) {
         this.gradeRepository = gradeRepository;
         this.classMemberRepository = classMemberRepository;
         this.classModuleRepository = classModuleRepository;
@@ -99,7 +99,8 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                 .map(StudentScoreEntryDTO::getStudentId)
                 .collect(Collectors.toList());
 
-        if (studentIds.isEmpty()) return;
+        if (studentIds.isEmpty())
+            return;
 
         List<User> students = userRepository.findAllById(studentIds);
         Map<Long, User> studentMap = students.stream()
@@ -110,6 +111,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                 .collect(Collectors.toMap(g -> g.getStudent().getId(), g -> g));
 
         List<Grade> gradesToSave = new java.util.ArrayList<>();
+        List<Runnable> postSaveActions = new java.util.ArrayList<>();
 
         for (StudentScoreEntryDTO studentEntry : dto.getScores()) {
             Long studentId = studentEntry.getStudentId();
@@ -143,25 +145,35 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
             gradesToSave.add(grade);
 
-            checkAndNotify(grade, isNewGrade, oldTheoryScore, newTheoryScore, "Điểm lý thuyết", teacher, student, moduleName);
-            checkAndNotify(grade, isNewGrade, oldPracticeScore, newPracticeScore, "Điểm thực hành", teacher, student, moduleName);
+            postSaveActions.add(() -> {
+                checkAndNotify(grade, isNewGrade, oldTheoryScore, newTheoryScore, "Điểm lý thuyết", teacher, student,
+                        moduleName);
+                checkAndNotify(grade, isNewGrade, oldPracticeScore, newPracticeScore, "Điểm thực hành", teacher,
+                        student, moduleName);
+            });
         }
 
         gradeRepository.saveAll(gradesToSave);
+
+        for (Runnable action : postSaveActions) {
+            action.run();
+        }
+
         logger.info("Đã lưu batch {} grades thành công.", gradesToSave.size());
 
         for (Grade grade : gradesToSave) {
             try {
                 BigDecimal theoryScore = grade.getTheoryScore();
                 BigDecimal practiceScore = grade.getPracticeScore();
-                
+
                 if (theoryScore != null && practiceScore != null) {
 
-                    BigDecimal averageScore = theoryScore.add(practiceScore).divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP);
+                    BigDecimal averageScore = theoryScore.add(practiceScore).divide(new BigDecimal("2"), 2,
+                            RoundingMode.HALF_UP);
                     double percentage = averageScore.doubleValue();
-                    
+
                     Long studentId = grade.getStudent().getId();
- 
+
                     if (percentage >= 95.0) {
                         try {
                             gamificationService.awardPoints(studentId, "HIGH_POINT_2");
@@ -185,14 +197,14 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         Long teacherId = teacher.getId();
         int perfectScoreCount = 0;
         BigDecimal perfectScore = new BigDecimal("10");
-        
+
         for (Grade grade : gradesToSave) {
             BigDecimal theoryScore = grade.getTheoryScore();
             BigDecimal practiceScore = grade.getPracticeScore();
 
             boolean hasPerfectScore = (theoryScore != null && theoryScore.compareTo(perfectScore) == 0) ||
-                                     (practiceScore != null && practiceScore.compareTo(perfectScore) == 0);
-            
+                    (practiceScore != null && practiceScore.compareTo(perfectScore) == 0);
+
             if (hasPerfectScore) {
                 perfectScoreCount++;
             }
@@ -210,7 +222,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     }
 
     private void checkAndNotify(Grade grade, boolean isNewGrade, BigDecimal oldVal, BigDecimal newVal,
-                                String componentName, User teacher, User student, String moduleName) {
+            String componentName, User teacher, User student, String moduleName) {
         boolean changed = isNewGrade ||
                 (newVal != null && oldVal == null) ||
                 (newVal == null && oldVal != null) ||
@@ -218,8 +230,9 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
         if (changed) {
             try {
-                Notification.NotificationType type = (isNewGrade || oldVal == null) ?
-                        Notification.NotificationType.GRADE_NEW : Notification.NotificationType.GRADE_UPDATED;
+                Notification.NotificationType type = (isNewGrade || oldVal == null)
+                        ? Notification.NotificationType.GRADE_NEW
+                        : Notification.NotificationType.GRADE_UPDATED;
 
                 saveHistoryAndNotify(grade, componentName, oldVal, newVal, teacher, student, moduleName, type);
             } catch (Exception e) {
@@ -229,9 +242,9 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     }
 
     private void saveHistoryAndNotify(Grade savedGrade, String componentName,
-                                      BigDecimal oldScore, BigDecimal newScore,
-                                      User teacher, User student, String moduleName,
-                                      Notification.NotificationType type) {
+            BigDecimal oldScore, BigDecimal newScore,
+            User teacher, User student, String moduleName,
+            Notification.NotificationType type) {
 
         try {
             GradeHistory history = new GradeHistory();
@@ -244,7 +257,8 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             logger.debug("Đã lưu lịch sử: component={}, oldScore={}, newScore={}",
                     componentName, oldScore, newScore);
         } catch (Exception e) {
-            logger.error("Lỗi khi lưu GradeHistory (component: {}, gradeId: {}): {}. Lỗi này không ảnh hưởng việc lưu điểm.",
+            logger.error(
+                    "Lỗi khi lưu GradeHistory (component: {}, gradeId: {}): {}. Lỗi này không ảnh hưởng việc lưu điểm.",
                     componentName, savedGrade.getId(), e.getMessage(), e);
         }
 
@@ -253,17 +267,20 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     }
 
     private void sendGradeNotification(User teacher, User student, String moduleName,
-                                       String componentName, BigDecimal score, Long classModuleId,
-                                       Long gradeId, Notification.NotificationType type) {
+            String componentName, BigDecimal score, Long classModuleId,
+            Long gradeId, Notification.NotificationType type) {
         try {
             if (applicationContext != null) {
-                logger.info("[Notification] ApplicationContext available, invoking transactional notification sender...");
+                logger.info(
+                        "[Notification] ApplicationContext available, invoking transactional notification sender...");
                 GradeServiceImpl self = applicationContext.getBean(GradeServiceImpl.class);
                 logger.info("[Notification] Retrieved self bean: {}", self != null);
                 if (self != null) {
-                    self.sendGradeNotificationInNewTransaction(teacher, student, moduleName, componentName, score, classModuleId, gradeId, type);
+                    self.sendGradeNotificationInNewTransaction(teacher, student, moduleName, componentName, score,
+                            classModuleId, gradeId, type);
                 } else {
-                    logger.warn("[Notification] Self bean is null even though applicationContext returned. Skipping notification.");
+                    logger.warn(
+                            "[Notification] Self bean is null even though applicationContext returned. Skipping notification.");
                 }
             } else {
                 logger.warn("[Notification] ApplicationContext not ready, skipping notification send.");
@@ -275,18 +292,18 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendGradeNotificationInNewTransaction(User teacher, User student, String moduleName,
-                                                      String componentName, BigDecimal score, Long classModuleId,
-                                                      Long gradeId, Notification.NotificationType type) {
+            String componentName, BigDecimal score, Long classModuleId,
+            Long gradeId, Notification.NotificationType type) {
         try {
             logger.info("--- Bắt đầu gửi thông báo (transaction riêng) ---");
             logger.info("studentId={}, teacherId={}, type={}, componentName={}, score={}",
                     student.getId(), teacher.getId(), type.name(), componentName, score);
 
-            String title = (type == Notification.NotificationType.GRADE_NEW) ? "Bạn có điểm mới" : "Điểm của bạn đã được cập nhật";
+            String title = (type == Notification.NotificationType.GRADE_NEW) ? "Bạn có điểm mới"
+                    : "Điểm của bạn đã được cập nhật";
             String content = String.format(
                     "Bạn có điểm [ %s ] môn [ %s ]: %.1f",
-                    componentName, moduleName, (score != null ? score : 0)
-            );
+                    componentName, moduleName, (score != null ? score : 0));
 
             logger.info("Đang gọi notificationService.createNotification...");
             notificationService.createNotification(
@@ -296,8 +313,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                     "CLASS_MODULE",
                     classModuleId,
                     title,
-                    content
-            );
+                    content);
             logger.info("--- Gửi thông báo thành công ---");
         } catch (Exception e) {
             logger.error("========== LỖI KHI GỬI THÔNG BÁO (TRANSACTION RIÊNG) ==========");
@@ -308,7 +324,6 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             logger.error("================================================================");
         }
     }
-
 
     @Override
     public GradebookDTO getGradebook(Long classModuleId, Long teacherId, Pageable pageable) {
@@ -328,7 +343,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         List<Grade> gradesForThisPage = (studentIdsOnPage.isEmpty())
                 ? List.of()
                 : gradeRepository.findByClassModuleIdAndStudentIdInAndStatus(
-                classModuleId, studentIdsOnPage, Grade.Status.ACTIVE);
+                        classModuleId, studentIdsOnPage, Grade.Status.ACTIVE);
 
         Map<Long, Grade> gradeMap = gradesForThisPage.stream()
                 .collect(Collectors.toMap(grade -> grade.getStudent().getId(), grade -> grade));
@@ -350,6 +365,12 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                 row.setGradeId(grade.getId());
                 row.setTheoryScore(grade.getTheoryScore());
                 row.setPracticeScore(grade.getPracticeScore());
+                row.setEntryDate(grade.getEntryDate());
+                row.setLastUpdatedAt(grade.getUpdatedAt());
+                row.setTheoryScoreEntryDate(grade.getEntryDate());
+                row.setPracticeScoreEntryDate(grade.getEntryDate());
+                row.setTheoryScoreLastUpdatedAt(grade.getUpdatedAt());
+                row.setPracticeScoreLastUpdatedAt(grade.getUpdatedAt());
             }
             return row;
         }).collect(Collectors.toList());
@@ -366,7 +387,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         validateStudentMembership(classModuleId, studentId);
 
         Grade grade = gradeRepository.findByClassModuleIdAndStudentIdAndStatus(
-                        classModuleId, studentId, Grade.Status.ACTIVE)
+                classModuleId, studentId, Grade.Status.ACTIVE)
                 .orElse(null);
 
         if (grade == null) {
@@ -453,7 +474,8 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         }
         boolean isTeaching = classModuleTeacherRepository.existsByClassModuleIdAndUserId(classModuleId, teacherId);
         if (!isTeaching) {
-            throw new ForbiddenException("Access Denied: User is not an authorized teacher for this module or an admin");
+            throw new ForbiddenException(
+                    "Access Denied: User is not an authorized teacher for this module or an admin");
         }
     }
 }
