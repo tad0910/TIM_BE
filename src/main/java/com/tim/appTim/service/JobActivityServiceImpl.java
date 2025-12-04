@@ -3,10 +3,14 @@ package com.tim.appTim.service;
 import com.tim.appTim.dto.JobActivityDTO;
 import com.tim.appTim.dto.JobActivityRequest;
 import com.tim.appTim.dto.NotificationDTO;
+import com.tim.appTim.entity.ClassMember;
+import com.tim.appTim.entity.ClassModule;
+import com.tim.appTim.entity.ClassModuleTeacher;
 import com.tim.appTim.entity.JobActivity;
 import com.tim.appTim.entity.JobLead;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
+
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.ClassMemberRepository;
 import com.tim.appTim.repository.ClassModuleRepository;
@@ -90,6 +94,7 @@ public class JobActivityServiceImpl implements JobActivityService {
     }
 
     @Override
+    @Transactional
     public JobActivityDTO updateNote(Long activityId, String note) {
         JobActivity activity = jobActivityRepository.findById(activityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hoạt động không tồn tại"));

@@ -28,6 +28,9 @@ public class JobLead {
     @Enumerated(EnumType.STRING)
     private LeadStatus status;
 
+    @Column(name = "job_interest", nullable = false)
+    private boolean jobInterest = true;
+
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
