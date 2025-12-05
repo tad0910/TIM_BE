@@ -1,20 +1,28 @@
 package com.tim.appTim.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tim.appTim.dto.AdminJobLeadDTO;
+import com.tim.appTim.dto.JobActivityDTO;
+import com.tim.appTim.dto.JobTrackingOverviewClassDTO;
+import com.tim.appTim.dto.JobTrackingOverviewFilter;
+import com.tim.appTim.dto.JobTrackingOverviewSummaryDTO;
 import com.tim.appTim.dto.JobTrackingRowDTO;
 import com.tim.appTim.dto.JobTrackingUpdateRequest;
 import com.tim.appTim.entity.ClassMember;
+import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.JobActivity;
 import com.tim.appTim.entity.JobApplication;
 import com.tim.appTim.entity.JobActivityType;
@@ -257,5 +265,142 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
 
     private String defaultString(String value, String defaultValue) {
         return (value == null || value.isBlank()) ? defaultValue : value;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public JobTrackingOverviewSummaryDTO getJobTrackingOverview(JobTrackingOverviewFilter filter) {
+        List<Class> classes = classRepository.findAll();
+        JobTrackingOverviewFilter safeFilter = filter != null ? filter : new JobTrackingOverviewFilter();
+
+        List<JobTrackingOverviewClassDTO> classSummaries = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime recentThreshold = now.minusDays(14);
+
+        int totalClasses = 0;
+        int totalStudents = 0;
+        int totalOffers = 0;
+        int totalActiveInterest = 0;
+        int totalRecentUpdates = 0;
+
+        for (Class clazz : classes) {
+            if (safeFilter.getProgramId() != null && !Objects.equals(clazz.getProgramId(), safeFilter.getProgramId())) {
+                continue;
+            }
+
+            if (safeFilter.getMentorId() != null) {
+                boolean mentorBelongs = classMemberRepository.existsByClassIdAndUserIdAndRole(
+                        clazz.getId(), safeFilter.getMentorId(), ClassMember.Role.giao_vien);
+                if (!mentorBelongs) {
+                    continue;
+                }
+            }
+
+            List<JobTrackingRowDTO> rows = getJobTrackingByClass(clazz.getId());
+            int classStudents = rows.size();
+            int classOffers = (int) rows.stream()
+                    .map(JobTrackingRowDTO::getJobStatusCode)
+                    .filter(status -> status != null &&
+                            ("OFFER".equalsIgnoreCase(status) || "OFFICIAL".equalsIgnoreCase(status)))
+                    .count();
+
+            int classActiveInterest = (int) rows.stream().filter(JobTrackingRowDTO::isJobInterest).count();
+            int classRecentUpdates = (int) rows.stream()
+                    .map(JobTrackingRowDTO::getLastUpdated)
+                    .filter(Objects::nonNull)
+                    .filter(timestamp -> !timestamp.isBefore(recentThreshold))
+                    .count();
+
+            int classTotalLeads = (int) rows.stream()
+                    .map(JobTrackingRowDTO::getJobStatusCode)
+                    .filter(status -> status != null && !status.equalsIgnoreCase("NONE"))
+                    .count();
+
+            LocalDateTime lastActivityAt = rows.stream()
+                    .map(JobTrackingRowDTO::getLastUpdated)
+                    .filter(Objects::nonNull)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+
+            int classRecentPercent = classStudents == 0
+                    ? 0
+                    : Math.round((classRecentUpdates * 100f) / classStudents);
+
+            classSummaries.add(JobTrackingOverviewClassDTO.builder()
+                    .classId(clazz.getId())
+                    .className(clazz.getClassName())
+                    .programId(clazz.getProgramId())
+                    .programName(clazz.getProgram() != null ? clazz.getProgram().getName() : null)
+                    .totalStudents(classStudents)
+                    .totalLeads(classTotalLeads)
+                    .offerCount(classOffers)
+                    .activeJobInterest(classActiveInterest)
+                    .updatedWithin14Days(classRecentUpdates)
+                    .recentUpdatePercent(classRecentPercent)
+                    .lastActivityAt(lastActivityAt)
+                    .build());
+
+            totalClasses++;
+            totalStudents += classStudents;
+            totalOffers += classOffers;
+            totalActiveInterest += classActiveInterest;
+            totalRecentUpdates += classRecentUpdates;
+        }
+
+        int recentPercent = totalStudents == 0 ? 0 : Math.round((totalRecentUpdates * 100f) / totalStudents);
+
+        return JobTrackingOverviewSummaryDTO.builder()
+                .totalClasses(totalClasses)
+                .totalStudents(totalStudents)
+                .totalOffers(totalOffers)
+                .activeJobInterest(totalActiveInterest)
+                .updatedWithin14Days(totalRecentUpdates)
+                .recentUpdatePercent(recentPercent)
+                .classes(classSummaries)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdminJobLeadDTO> getStudentLeads(Long classId, Long studentId) {
+        classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + classId));
+
+        classMemberRepository.findByClassIdAndUserId(classId, studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Học viên không thuộc lớp này"));
+
+        List<JobLead> leads = jobLeadRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
+
+        return leads.stream()
+                .map(lead -> AdminJobLeadDTO.builder()
+                        .id(lead.getId())
+                        .companyName(lead.getCompanyName())
+                        .shortName(lead.getShortName())
+                        .address(lead.getAddress())
+                        .website(lead.getWebsite())
+                        .statusCode(lead.getStatus() != null ? lead.getStatus().name() : null)
+                        .statusLabel(lead.getStatus() != null ? lead.getStatus().getDisplayName() : "Chưa có trạng thái")
+                        .jobInterest(lead.isJobInterest())
+                        .createdAt(lead.getCreatedAt())
+                        .fromAdmin(false)
+                        .activities(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(lead.getId()).stream()
+                                .map(this::toJobActivityDTO)
+                                .collect(Collectors.toList()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private JobActivityDTO toJobActivityDTO(JobActivity activity) {
+        return new JobActivityDTO(
+                activity.getId(),
+                activity.getJobLeadId(),
+                activity.getActivityType() != null ? activity.getActivityType().name() : null,
+                activity.getContent(),
+                activity.getHappenedAt(),
+                activity.getCreatedAt(),
+                activity.getSalaryAmount(),
+                activity.getNote(),
+                activity.getFileUrl()
+        );
     }
 }

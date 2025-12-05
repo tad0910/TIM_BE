@@ -9,8 +9,12 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tim.appTim.dto.AdminJobLeadDTO;
+import com.tim.appTim.dto.JobTrackingOverviewFilter;
+import com.tim.appTim.dto.JobTrackingOverviewSummaryDTO;
 import com.tim.appTim.dto.JobTrackingRowDTO;
 import com.tim.appTim.dto.JobTrackingUpdateRequest;
 import com.tim.appTim.service.JobTrackingAdminService;
@@ -23,6 +27,17 @@ import lombok.RequiredArgsConstructor;
 public class JobTrackingAdminController {
 
     private final JobTrackingAdminService jobTrackingAdminService;
+
+    @GetMapping("/overview")
+    @PreAuthorize("hasAuthority('job:read')")
+    public ResponseEntity<JobTrackingOverviewSummaryDTO> getJobTrackingOverview(
+            @RequestParam(value = "programId", required = false) Integer programId,
+            @RequestParam(value = "mentorId", required = false) Long mentorId) {
+        JobTrackingOverviewFilter filter = new JobTrackingOverviewFilter();
+        filter.setProgramId(programId);
+        filter.setMentorId(mentorId);
+        return ResponseEntity.ok(jobTrackingAdminService.getJobTrackingOverview(filter));
+    }
 
     @GetMapping("/classes/{classId}")
     @PreAuthorize("hasAuthority('job:read')")
@@ -37,5 +52,13 @@ public class JobTrackingAdminController {
             @PathVariable Long studentId,
             @RequestBody JobTrackingUpdateRequest request) {
         return ResponseEntity.ok(jobTrackingAdminService.updateJobInterest(classId, studentId, request));
+    }
+
+    @GetMapping("/classes/{classId}/students/{studentId}/leads")
+    @PreAuthorize("hasAuthority('job:read')")
+    public ResponseEntity<List<AdminJobLeadDTO>> getStudentLeads(
+            @PathVariable Long classId,
+            @PathVariable Long studentId) {
+        return ResponseEntity.ok(jobTrackingAdminService.getStudentLeads(classId, studentId));
     }
 }
