@@ -17,4 +17,6 @@ public interface JobTrackingAdminService {
     JobTrackingOverviewSummaryDTO getJobTrackingOverview(JobTrackingOverviewFilter filter);
 
     java.util.List<AdminJobLeadDTO> getStudentLeads(Long classId, Long studentId);
+
+    AdminJobLeadDTO createJobLead(Long classId, Long studentId, String companyName, String shortName, String address, String website);
 }

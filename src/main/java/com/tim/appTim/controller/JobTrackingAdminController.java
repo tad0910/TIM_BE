@@ -7,12 +7,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tim.appTim.dto.AdminJobLeadDTO;
+import com.tim.appTim.dto.CreateJobLeadRequest;
 import com.tim.appTim.dto.JobTrackingOverviewFilter;
 import com.tim.appTim.dto.JobTrackingOverviewSummaryDTO;
 import com.tim.appTim.dto.JobTrackingRowDTO;
@@ -60,5 +62,20 @@ public class JobTrackingAdminController {
             @PathVariable Long classId,
             @PathVariable Long studentId) {
         return ResponseEntity.ok(jobTrackingAdminService.getStudentLeads(classId, studentId));
+    }
+
+    @PostMapping("/classes/{classId}/students/{studentId}/leads")
+    @PreAuthorize("hasAuthority('job:update')")
+    public ResponseEntity<AdminJobLeadDTO> createJobLead(
+            @PathVariable Long classId,
+            @PathVariable Long studentId,
+            @RequestBody CreateJobLeadRequest request) {
+        return ResponseEntity.ok(jobTrackingAdminService.createJobLead(
+                classId,
+                studentId,
+                request.getCompanyName(),
+                request.getShortName(),
+                request.getAddress(),
+                request.getWebsite()));
     }
 }

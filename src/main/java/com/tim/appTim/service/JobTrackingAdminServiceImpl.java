@@ -403,4 +403,44 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
                 activity.getFileUrl()
         );
     }
+
+    @Override
+    @Transactional
+    public AdminJobLeadDTO createJobLead(Long classId, Long studentId, String companyName, String shortName, String address, String website) {
+        classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + classId));
+
+        ClassMember member = classMemberRepository.findByClassIdAndUserId(classId, studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Học viên không thuộc lớp này"));
+
+        User student = Optional.ofNullable(member.getUser())
+                .orElseGet(() -> userRepository.findById(member.getUserId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin học viên")));
+
+        JobLead lead = new JobLead();
+        lead.setStudent(student);
+        lead.setCompanyName(companyName);
+        lead.setShortName(shortName);
+        lead.setAddress(address);
+        lead.setWebsite(website);
+        lead.setStatus(JobLead.LeadStatus.NEW);
+        lead.setJobInterest(true);
+        lead.setCreatedAt(LocalDateTime.now());
+
+        JobLead savedLead = jobLeadRepository.save(lead);
+
+        return AdminJobLeadDTO.builder()
+                .id(savedLead.getId())
+                .companyName(savedLead.getCompanyName())
+                .shortName(savedLead.getShortName())
+                .address(savedLead.getAddress())
+                .website(savedLead.getWebsite())
+                .statusCode(savedLead.getStatus().name())
+                .statusLabel(savedLead.getStatus().getDisplayName())
+                .jobInterest(savedLead.isJobInterest())
+                .createdAt(savedLead.getCreatedAt())
+                .fromAdmin(true)
+                .activities(Collections.emptyList())
+                .build();
+    }
 }
