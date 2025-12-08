@@ -47,7 +47,7 @@ public class GamificationBehaviorService {
         return mapToDTO(behavior);
     }
 
-    @Transactional(readOnly = true)
+    //@Transactional(readOnly = true)
     public GamificationBehaviorDTO createBehavior(GamificationBehaviorDTO dto) {
         GamificationBehaviorGroup group = groupRepository.findById(dto.getGroupId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhóm hành vi với ID: " + dto.getGroupId()));

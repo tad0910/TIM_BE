@@ -34,17 +34,17 @@ public class GamificationDataLoader implements CommandLineRunner {
                 GamificationBehavior.FrequencyType.ONCE, 1, 0, 10, 5);
         createBehaviorIfNotFound(studyGroup, "HIGH_POINT_2",
                 GamificationBehavior.FrequencyType.ONCE, 1, 0, 20, 10);
-        createBehaviorIfNotFound(studyGroup, "READ_BLOG",
+        createBehaviorIfNotFound(activityGroup, "READ_BLOG",
                 GamificationBehavior.FrequencyType.ONCE, 1, 2, 0, 2);
 
         // Group: Tương tác
-        createBehaviorIfNotFound(interactionGroup, "FIRST_POST",
+        createBehaviorIfNotFound(activityGroup, "FIRST_POST",
                 GamificationBehavior.FrequencyType.ONCE, 1, 0, 0, 10);
         createBehaviorIfNotFound(interactionGroup, "POST'S_LIKE",
                 GamificationBehavior.FrequencyType.MONTHLY, 10, 0, 5, 5);
         createBehaviorIfNotFound(interactionGroup, "POST_SHARE",
                 GamificationBehavior.FrequencyType.MONTHLY, 10, 0, 5, 5);
-        createBehaviorIfNotFound(interactionGroup, "GIVING_SCORES",
+        createBehaviorIfNotFound(studyGroup, "GIVING_SCORES",
                 GamificationBehavior.FrequencyType.MONTHLY, 10, 0, 0, 5);
     }
 
