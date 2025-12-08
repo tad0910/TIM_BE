@@ -44,9 +44,9 @@ public class GamificationService {
         this.rankingService = rankingService;
     }
 
-    public AwardPointsResponse awardPoints(Long userId, String behaviorCode) {
-        GamificationBehavior behavior = behaviorRepository.findByCode(behaviorCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hành vi với mã: " + behaviorCode));
+    public AwardPointsResponse awardPoints(Long userId, String behaviorName) {
+        GamificationBehavior behavior = behaviorRepository.findByName(behaviorName)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hành vi với tên: " + behaviorName));
 
         if (!canAwardPoints(userId, behavior)) {
             throw new BadRequestException("Bạn đã đạt giới hạn điểm thưởng cho hành vi này trong khoảng thời gian hiện tại");
@@ -285,7 +285,6 @@ public class GamificationService {
         dto.setUserId(log.getUserId());
         if (log.getBehavior() != null) {
             dto.setBehaviorId(log.getBehavior().getId());
-            dto.setBehaviorCode(log.getBehavior().getCode());
             dto.setBehaviorName(log.getBehavior().getName());
         }
         dto.setPointsDiligenceEarned(log.getPointsDiligenceEarned());

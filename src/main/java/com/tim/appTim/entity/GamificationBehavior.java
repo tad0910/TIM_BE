@@ -14,10 +14,7 @@ public class GamificationBehavior {
     @JoinColumn(name = "group_id", nullable = false)
     private GamificationBehaviorGroup group;
 
-    @Column(name = "code", nullable = false, unique = true, length = 50)
-    private String code;
-
-    @Column(name = "name", nullable = false, length = 255)
+    @Column(name = "name", nullable = false, unique = true, length = 255)
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -57,9 +54,6 @@ public class GamificationBehavior {
 
     public GamificationBehaviorGroup getGroup() { return group; }
     public void setGroup(GamificationBehaviorGroup group) { this.group = group; }
-
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

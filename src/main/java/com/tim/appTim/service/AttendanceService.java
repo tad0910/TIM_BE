@@ -13,6 +13,7 @@ import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.AttendanceSessionRepository;
 import com.tim.appTim.repository.AttendanceRecordRepository;
+import com.tim.appTim.constants.GamificationBehaviorNames;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -216,7 +217,7 @@ public class AttendanceService {
             if (savedRecord.getStatus() == AttendanceRecord.AttendanceStatus.present && 
                 !session.getIsLate()) {
                 try {
-                    gamificationService.awardPoints(savedRecord.getStudentId().longValue(), "ATTEND_ON_TIME");
+                    gamificationService.awardPoints(savedRecord.getStudentId().longValue(), GamificationBehaviorNames.ATTEND_ON_TIME);
                 } catch (Exception e) {
 
                     System.err.println("Failed to award points for attendance: " + e.getMessage());

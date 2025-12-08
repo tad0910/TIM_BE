@@ -11,6 +11,7 @@ import com.tim.appTim.entity.Post;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.constants.GamificationBehaviorNames;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
@@ -155,7 +156,7 @@ public class PostService {
         try {
             long postCount = postRepository.countByUserId(userId);
             if (postCount == 1) {
-                gamificationService.awardPoints(userId, "FIRST_POST");
+                gamificationService.awardPoints(userId, GamificationBehaviorNames.FIRST_POST);
             }
         } catch (Exception e) {
             System.err.println("Failed to award points for first post: " + e.getMessage());
@@ -163,7 +164,7 @@ public class PostService {
 
         if (savedPost.getLinkUrl() != null) {
             try {
-                gamificationService.awardPoints(userId, "POST_SHARE");
+                gamificationService.awardPoints(userId, GamificationBehaviorNames.POST_SHARE);
             } catch (Exception e) {
                 System.err.println("Failed to award points for post share: " + e.getMessage());
             }

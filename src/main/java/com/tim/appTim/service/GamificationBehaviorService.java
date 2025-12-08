@@ -41,9 +41,9 @@ public class GamificationBehaviorService {
     }
 
     @Transactional(readOnly = true)
-    public GamificationBehaviorDTO getBehaviorByCode(String code) {
-        GamificationBehavior behavior = behaviorRepository.findByCode(code)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hành vi với mã: " + code));
+    public GamificationBehaviorDTO getBehaviorByName(String name) {
+        GamificationBehavior behavior = behaviorRepository.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hành vi với tên: " + name));
         return mapToDTO(behavior);
     }
 
@@ -53,7 +53,6 @@ public class GamificationBehaviorService {
 
         GamificationBehavior behavior = new GamificationBehavior();
         behavior.setGroup(group);
-        behavior.setCode(dto.getCode());
         behavior.setName(dto.getName());
         behavior.setFrequencyType(GamificationBehavior.FrequencyType.valueOf(dto.getFrequencyType()));
         behavior.setMaxTimesPerFrequency(dto.getMaxTimesPerFrequency());
@@ -74,7 +73,6 @@ public class GamificationBehaviorService {
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhóm hành vi với ID: " + dto.getGroupId()));
             behavior.setGroup(group);
         }
-        if (dto.getCode() != null) behavior.setCode(dto.getCode());
         if (dto.getName() != null) behavior.setName(dto.getName());
         if (dto.getFrequencyType() != null) {
             behavior.setFrequencyType(GamificationBehavior.FrequencyType.valueOf(dto.getFrequencyType()));
@@ -104,7 +102,6 @@ public class GamificationBehaviorService {
             dto.setGroupId(behavior.getGroup().getId());
             dto.setGroupName(behavior.getGroup().getName());
         }
-        dto.setCode(behavior.getCode());
         dto.setName(behavior.getName());
         dto.setFrequencyType(behavior.getFrequencyType().name());
         dto.setMaxTimesPerFrequency(behavior.getMaxTimesPerFrequency());

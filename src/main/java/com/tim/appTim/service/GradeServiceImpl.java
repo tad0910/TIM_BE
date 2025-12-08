@@ -5,6 +5,7 @@ import com.tim.appTim.entity.*;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
+import com.tim.appTim.constants.GamificationBehaviorNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -176,14 +177,14 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
                     if (percentage >= 95.0) {
                         try {
-                            gamificationService.awardPoints(studentId, "HIGH_POINT_2");
+                            gamificationService.awardPoints(studentId, GamificationBehaviorNames.HIGH_POINT_2);
                         } catch (Exception e) {
                             logger.warn("Failed to award HIGH_POINT_2 for student {}: {}", studentId, e.getMessage());
                         }
                     } else if (percentage >= 80.0) {
 
                         try {
-                            gamificationService.awardPoints(studentId, "HIGH_POINT_1");
+                            gamificationService.awardPoints(studentId, GamificationBehaviorNames.HIGH_POINT_1);
                         } catch (Exception e) {
                             logger.warn("Failed to award HIGH_POINT_1 for student {}: {}", studentId, e.getMessage());
                         }
@@ -213,7 +214,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         if (perfectScoreCount > 0) {
             for (int i = 0; i < perfectScoreCount; i++) {
                 try {
-                    gamificationService.awardPoints(teacherId, "GIVING_SCORES");
+                    gamificationService.awardPoints(teacherId, GamificationBehaviorNames.GIVING_SCORES);
                 } catch (Exception e) {
                     logger.warn("Failed to award GIVING_SCORES for teacher {}: {}", teacherId, e.getMessage());
                 }

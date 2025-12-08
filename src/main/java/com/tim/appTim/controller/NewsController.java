@@ -5,6 +5,7 @@ import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.NewsService;
 import com.tim.appTim.service.GamificationService;
 import com.tim.appTim.service.UserService;
+import com.tim.appTim.constants.GamificationBehaviorNames;  
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +42,7 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                gamificationService.awardPoints(userId, "READ_BLOG");
+                gamificationService.awardPoints(userId, GamificationBehaviorNames.READ_BLOG);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());
             }
@@ -57,7 +58,7 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                gamificationService.awardPoints(userId, "READ_BLOG");
+                gamificationService.awardPoints(userId, GamificationBehaviorNames.READ_BLOG);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());
             }
@@ -74,7 +75,7 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                gamificationService.awardPoints(userId, "READ_BLOG");
+                gamificationService.awardPoints(userId, GamificationBehaviorNames.READ_BLOG);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());
             }

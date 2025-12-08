@@ -18,6 +18,7 @@ import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.PostRepository;
 import com.tim.appTim.repository.ReactionRepository;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.constants.GamificationBehaviorNames;
 
 @Service
 @Transactional
@@ -76,7 +77,7 @@ public class ReactionService {
 
         if (totalReactions >= 10) {
             try {
-                gamificationService.awardPoints(post.getUser().getId(), "POST'S_LIKE");
+                gamificationService.awardPoints(post.getUser().getId(), GamificationBehaviorNames.POSTS_LIKE);
             } catch (Exception e) {
                 System.err.println("Failed to award points for post likes: " + e.getMessage());
             }

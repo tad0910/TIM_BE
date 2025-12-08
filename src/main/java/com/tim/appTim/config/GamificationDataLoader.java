@@ -4,6 +4,7 @@ import com.tim.appTim.entity.GamificationBehavior;
 import com.tim.appTim.entity.GamificationBehaviorGroup;
 import com.tim.appTim.repository.GamificationBehaviorGroupRepository;
 import com.tim.appTim.repository.GamificationBehaviorRepository;
+import com.tim.appTim.constants.GamificationBehaviorNames;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
@@ -28,23 +29,23 @@ public class GamificationDataLoader implements CommandLineRunner {
 
         // 2. Create Behaviors
         // Group: Học tập
-        createBehaviorIfNotFound(studyGroup, "ATTEND_ON_TIME", "Điểm danh đúng giờ",
+        createBehaviorIfNotFound(studyGroup, GamificationBehaviorNames.ATTEND_ON_TIME,
                 GamificationBehavior.FrequencyType.DAILY, 1, 5, 0, 0);
-        createBehaviorIfNotFound(studyGroup, "HIGH_POINT_1", "Đạt điểm cao (>80%)",
+        createBehaviorIfNotFound(studyGroup, GamificationBehaviorNames.HIGH_POINT_1,
                 GamificationBehavior.FrequencyType.ONCE, 1, 0, 10, 5);
-        createBehaviorIfNotFound(studyGroup, "HIGH_POINT_2", "Đạt điểm xuất sắc (>95%)",
+        createBehaviorIfNotFound(studyGroup, GamificationBehaviorNames.HIGH_POINT_2,
                 GamificationBehavior.FrequencyType.ONCE, 1, 0, 20, 10);
-        createBehaviorIfNotFound(studyGroup, "READ_BLOG", "Đọc tin tức lần đầu",
+        createBehaviorIfNotFound(studyGroup, GamificationBehaviorNames.READ_BLOG,
                 GamificationBehavior.FrequencyType.ONCE, 1, 2, 0, 2);
 
         // Group: Tương tác
-        createBehaviorIfNotFound(interactionGroup, "FIRST_POST", "Đăng bài viết đầu tiên",
+        createBehaviorIfNotFound(interactionGroup, GamificationBehaviorNames.FIRST_POST,
                 GamificationBehavior.FrequencyType.ONCE, 1, 0, 0, 10);
-        createBehaviorIfNotFound(interactionGroup, "POST'S_LIKE", "Bài viết được yêu thích (>10 likes)",
+        createBehaviorIfNotFound(interactionGroup, GamificationBehaviorNames.POSTS_LIKE,
                 GamificationBehavior.FrequencyType.MONTHLY, 10, 0, 5, 5);
-        createBehaviorIfNotFound(interactionGroup, "POST_SHARE", "Chia sẻ kiến thức (Bài viết có link)",
+        createBehaviorIfNotFound(interactionGroup, GamificationBehaviorNames.POST_SHARE,
                 GamificationBehavior.FrequencyType.MONTHLY, 10, 0, 5, 5);
-        createBehaviorIfNotFound(interactionGroup, "GIVING_SCORES", "Giáo viên chấm điểm 10",
+        createBehaviorIfNotFound(interactionGroup, GamificationBehaviorNames.GIVING_SCORES,
                 GamificationBehavior.FrequencyType.MONTHLY, 10, 0, 0, 5);
     }
 
@@ -54,7 +55,7 @@ public class GamificationDataLoader implements CommandLineRunner {
         // Since repository might not have findByName, we can check all or just try to
         // find one.
         // But better to implement findByName in repository or just iterate.
-        // For simplicity, let's assume we can't easily find by name without adding
+// For simplicity, let's assume we can't easily find by name without adding
         // method to repo.
         // Wait, I should check if findByName exists in repo.
         // Based on file list, GamificationBehaviorGroupRepository is small (343 bytes),
@@ -76,17 +77,16 @@ public class GamificationDataLoader implements CommandLineRunner {
         return groupRepository.save(group);
     }
 
-    private void createBehaviorIfNotFound(GamificationBehaviorGroup group, String code, String name,
+    private void createBehaviorIfNotFound(GamificationBehaviorGroup group, String name,
             GamificationBehavior.FrequencyType frequencyType, int maxTimes,
             int diligence, int competence, int experience) {
-        Optional<GamificationBehavior> existing = behaviorRepository.findByCode(code);
+        Optional<GamificationBehavior> existing = behaviorRepository.findByName(name);
         if (existing.isPresent()) {
             return;
         }
 
         GamificationBehavior behavior = new GamificationBehavior();
         behavior.setGroup(group);
-        behavior.setCode(code);
         behavior.setName(name);
         behavior.setFrequencyType(frequencyType);
         behavior.setMaxTimesPerFrequency(maxTimes);
