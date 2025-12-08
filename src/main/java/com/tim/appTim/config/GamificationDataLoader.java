@@ -4,7 +4,6 @@ import com.tim.appTim.entity.GamificationBehavior;
 import com.tim.appTim.entity.GamificationBehaviorGroup;
 import com.tim.appTim.repository.GamificationBehaviorGroupRepository;
 import com.tim.appTim.repository.GamificationBehaviorRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,11 +11,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Configuration
-@RequiredArgsConstructor
+
 public class GamificationDataLoader implements CommandLineRunner {
 
     private final GamificationBehaviorGroupRepository groupRepository;
     private final GamificationBehaviorRepository behaviorRepository;
+
+        public GamificationDataLoader(GamificationBehaviorGroupRepository groupRepository,
+                                      GamificationBehaviorRepository behaviorRepository) {
+                this.groupRepository = groupRepository;
+                this.behaviorRepository = behaviorRepository;
+        }
 
     @Override
     @Transactional
