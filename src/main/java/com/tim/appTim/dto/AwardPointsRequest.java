@@ -2,19 +2,19 @@ package com.tim.appTim.dto;
 
 public class AwardPointsRequest {
     private Long userId;
-    private String behaviorCode;
+    private Integer behaviorId;
 
     public AwardPointsRequest() {}
 
-    public AwardPointsRequest(Long userId, String behaviorCode) {
+    public AwardPointsRequest(Long userId, Integer behaviorId) {
         this.userId = userId;
-        this.behaviorCode = behaviorCode;
+        this.behaviorId = behaviorId;
     }
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
-    public String getBehaviorCode() { return behaviorCode; }
-    public void setBehaviorCode(String behaviorCode) { this.behaviorCode = behaviorCode; }
+    public Integer getBehaviorId() { return behaviorId; }
+    public void setBehaviorId(Integer behaviorId) { this.behaviorId = behaviorId; }
 }
 

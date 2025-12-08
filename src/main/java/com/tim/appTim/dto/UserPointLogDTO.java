@@ -6,7 +6,6 @@ public class UserPointLogDTO {
     private Long id;
     private Long userId;
     private Integer behaviorId;
-    private String behaviorCode;
     private String behaviorName;
     private Integer pointsDiligenceEarned;
     private Integer pointsCompetenceEarned;
@@ -23,9 +22,6 @@ public class UserPointLogDTO {
 
     public Integer getBehaviorId() { return behaviorId; }
     public void setBehaviorId(Integer behaviorId) { this.behaviorId = behaviorId; }
-
-    public String getBehaviorCode() { return behaviorCode; }
-    public void setBehaviorCode(String behaviorCode) { this.behaviorCode = behaviorCode; }
 
     public String getBehaviorName() { return behaviorName; }
     public void setBehaviorName(String behaviorName) { this.behaviorName = behaviorName; }

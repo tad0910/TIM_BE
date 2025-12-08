@@ -5,6 +5,7 @@ import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.NewsService;
 import com.tim.appTim.service.GamificationService;
 import com.tim.appTim.service.UserService;
+import com.tim.appTim.service.BehaviorLookupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +24,19 @@ public class NewsController {
     private final NewsService newsService;
     private final GamificationService gamificationService;
     private final UserService userService;
+    private final BehaviorLookupService behaviorLookupService;
     
     @Autowired
     private UserRepository userRepository;
 
     public NewsController(NewsService newsService, 
                          @Lazy GamificationService gamificationService,
-                         UserService userService) {
+                         UserService userService,
+                         BehaviorLookupService behaviorLookupService) {
         this.newsService = newsService;
         this.gamificationService = gamificationService;
         this.userService = userService;
+        this.behaviorLookupService = behaviorLookupService;
     }
 
     @GetMapping("/latest")
@@ -41,7 +45,8 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                gamificationService.awardPoints(userId, "READ_BLOG");
+                Integer behaviorId = behaviorLookupService.getIdByName("READ_BLOG");
+                gamificationService.awardPoints(userId, behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());
             }
@@ -57,7 +62,8 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                gamificationService.awardPoints(userId, "READ_BLOG");
+                Integer behaviorId = behaviorLookupService.getIdByName("READ_BLOG");
+                gamificationService.awardPoints(userId, behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());
             }
@@ -74,7 +80,8 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                gamificationService.awardPoints(userId, "READ_BLOG");
+                Integer behaviorId = behaviorLookupService.getIdByName("READ_BLOG");
+                gamificationService.awardPoints(userId, behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());
             }

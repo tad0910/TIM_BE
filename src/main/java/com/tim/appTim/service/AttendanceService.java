@@ -13,6 +13,7 @@ import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.AttendanceSessionRepository;
 import com.tim.appTim.repository.AttendanceRecordRepository;
+import com.tim.appTim.service.BehaviorLookupService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -36,6 +37,7 @@ public class AttendanceService {
     private final AttendanceSessionRepository sessionRepository;
     private final AttendanceRecordRepository recordRepository;
     private final UserService userService;
+    private final BehaviorLookupService behaviorLookupService;
     private final GamificationService gamificationService;
 
     @PersistenceContext
@@ -45,11 +47,13 @@ public class AttendanceService {
     public AttendanceService(AttendanceSessionRepository sessionRepository,
                              AttendanceRecordRepository recordRepository, 
                              UserService userService,
-                             @Lazy GamificationService gamificationService) {
+                             @Lazy GamificationService gamificationService,
+                             BehaviorLookupService behaviorLookupService) {
         this.sessionRepository = sessionRepository;
         this.recordRepository = recordRepository;
         this.userService = userService;
         this.gamificationService = gamificationService;
+        this.behaviorLookupService = behaviorLookupService;
     }
 
     public List<AttendanceHistoryDto> getAttendanceHistory(Integer classId) {
@@ -216,7 +220,8 @@ public class AttendanceService {
             if (savedRecord.getStatus() == AttendanceRecord.AttendanceStatus.present && 
                 !session.getIsLate()) {
                 try {
-                    gamificationService.awardPoints(savedRecord.getStudentId().longValue(), "ATTEND_ON_TIME");
+                    Integer behaviorId = behaviorLookupService.getIdByName("ATTEND_ON_TIME");
+                    gamificationService.awardPoints(savedRecord.getStudentId().longValue(), behaviorId);
                 } catch (Exception e) {
 
                     System.err.println("Failed to award points for attendance: " + e.getMessage());

@@ -91,7 +91,6 @@ public class GamificationBehaviorGroupService {
             dto.setGroupId(behavior.getGroup().getId());
             dto.setGroupName(behavior.getGroup().getName());
         }
-        dto.setCode(behavior.getCode());
         dto.setName(behavior.getName());
         dto.setFrequencyType(behavior.getFrequencyType().name());
         dto.setMaxTimesPerFrequency(behavior.getMaxTimesPerFrequency());

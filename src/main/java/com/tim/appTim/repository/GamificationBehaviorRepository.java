@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface GamificationBehaviorRepository extends JpaRepository<GamificationBehavior, Integer> {
-    Optional<GamificationBehavior> findByCode(String code);
+    Optional<GamificationBehavior> findByName(String name);
     List<GamificationBehavior> findByGroupId(Integer groupId);
 }
 
