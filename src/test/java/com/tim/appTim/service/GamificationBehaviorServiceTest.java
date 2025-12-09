@@ -46,7 +46,6 @@ class GamificationBehaviorServiceTest {
 
         behavior = new GamificationBehavior();
         behavior.setId(1);
-        behavior.setCode("ATTEND_ON_TIME");
         behavior.setName("Điểm danh đúng giờ");
         behavior.setGroup(group);
         behavior.setFrequencyType(GamificationBehavior.FrequencyType.DAILY);
@@ -58,7 +57,6 @@ class GamificationBehaviorServiceTest {
 
         behaviorDTO = new GamificationBehaviorDTO();
         behaviorDTO.setGroupId(1);
-        behaviorDTO.setCode("ATTEND_ON_TIME");
         behaviorDTO.setName("Điểm danh đúng giờ");
         behaviorDTO.setFrequencyType("DAILY");
         behaviorDTO.setMaxTimesPerFrequency(1);
@@ -79,7 +77,7 @@ class GamificationBehaviorServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(behavior.getCode(), result.get(0).getCode());
+        assertEquals(behavior.getName(), result.get(0).getName());
         verify(behaviorRepository).findAll();
     }
 
@@ -107,7 +105,7 @@ class GamificationBehaviorServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(behavior.getCode(), result.getCode());
+        assertEquals(behavior.getName(), result.getName());
         assertEquals(behavior.getName(), result.getName());
         verify(behaviorRepository).findById(1);
     }
@@ -126,30 +124,30 @@ class GamificationBehaviorServiceTest {
     }
 
     @Test
-    void getBehaviorByCode_WhenExists_ShouldReturnBehavior() {
+    void getBehaviorByName_WhenExists_ShouldReturnBehavior() {
         // Arrange
-        when(behaviorRepository.findByCode("ATTEND_ON_TIME")).thenReturn(Optional.of(behavior));
+        when(behaviorRepository.findByName("Điểm danh đúng giờ")).thenReturn(Optional.of(behavior));
 
         // Act
-        GamificationBehaviorDTO result = behaviorService.getBehaviorByCode("ATTEND_ON_TIME");
+        GamificationBehaviorDTO result = behaviorService.getBehaviorByName("Điểm danh đúng giờ");
 
         // Assert
         assertNotNull(result);
-        assertEquals(behavior.getCode(), result.getCode());
-        verify(behaviorRepository).findByCode("ATTEND_ON_TIME");
+        assertEquals(behavior.getName(), result.getName());
+        verify(behaviorRepository).findByName("Điểm danh đúng giờ");
     }
 
     @Test
-    void getBehaviorByCode_WhenNotExists_ShouldThrowException() {
+    void getBehaviorByName_WhenNotExists_ShouldThrowException() {
         // Arrange
-        when(behaviorRepository.findByCode("INVALID_CODE")).thenReturn(Optional.empty());
+        when(behaviorRepository.findByName("INVALID_NAME")).thenReturn(Optional.empty());
 
         // Act & Assert
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            behaviorService.getBehaviorByCode("INVALID_CODE");
+            behaviorService.getBehaviorByName("INVALID_NAME");
         });
         assertTrue(exception.getMessage().contains("Không tìm thấy hành vi"));
-        verify(behaviorRepository).findByCode("INVALID_CODE");
+        verify(behaviorRepository).findByName("INVALID_NAME");
     }
 
     @Test
@@ -168,7 +166,7 @@ class GamificationBehaviorServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(behaviorDTO.getCode(), result.getCode());
+        assertEquals(behaviorDTO.getName(), result.getName());
         assertEquals(behaviorDTO.getName(), result.getName());
         verify(groupRepository).findById(1);
         verify(behaviorRepository).save(any(GamificationBehavior.class));
@@ -261,7 +259,6 @@ class GamificationBehaviorServiceTest {
 
         // Assert
         // Original values should remain
-        assertNotNull(behavior.getCode());
         assertNotNull(behavior.getName());
         verify(behaviorRepository).save(behavior);
     }
@@ -322,7 +319,6 @@ class GamificationBehaviorServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(behavior.getId(), result.getId());
-        assertEquals(behavior.getCode(), result.getCode());
         assertEquals(behavior.getName(), result.getName());
         assertEquals(behavior.getFrequencyType().name(), result.getFrequencyType());
         assertEquals(behavior.getMaxTimesPerFrequency(), result.getMaxTimesPerFrequency());

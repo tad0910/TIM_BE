@@ -36,6 +36,8 @@ class AttendanceServiceTest {
     @Mock
     private GamificationService gamificationService;
     @Mock
+    private BehaviorLookupService behaviorLookupService;
+    @Mock
     private jakarta.persistence.EntityManager entityManager;
 
     @InjectMocks
@@ -119,6 +121,7 @@ class AttendanceServiceTest {
         when(attendanceSessionRepository.findByScheduleId(1L)).thenReturn(Optional.of(session));
         // Mock authorization
         when(attendanceRecordRepository.countByScheduleIdAndMarkedBy(1L, 1)).thenReturn(1L);
+        when(behaviorLookupService.getIdByName("ATTEND_ON_TIME")).thenReturn(1);
 
         when(attendanceRecordRepository.save(any(AttendanceRecord.class))).thenAnswer(i -> {
             AttendanceRecord r = i.getArgument(0);
@@ -129,7 +132,7 @@ class AttendanceServiceTest {
         attendanceService.markAttendanceBatch(1L, request, null);
 
         verify(attendanceRecordRepository, times(1)).save(any(AttendanceRecord.class));
-        verify(gamificationService, times(1)).awardPoints(eq(2L), eq("ATTEND_ON_TIME"));
+        verify(gamificationService, times(1)).awardPoints(eq(2L), eq(1));
     }
 
     @Test
@@ -150,6 +153,6 @@ class AttendanceServiceTest {
         attendanceService.markAttendanceBatch(1L, request, null);
 
         verify(attendanceRecordRepository, times(1)).save(any(AttendanceRecord.class));
-        verify(gamificationService, never()).awardPoints(eq(2L), eq("ATTEND_ON_TIME"));
+        verify(gamificationService, never()).awardPoints(eq(2L), eq(1));
     }
 }

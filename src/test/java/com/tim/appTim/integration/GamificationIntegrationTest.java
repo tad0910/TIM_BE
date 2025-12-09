@@ -74,13 +74,13 @@ public class GamificationIntegrationTest {
     void awardPoints_WhenValidRequest_ShouldReturn200() throws Exception {
         AwardPointsRequest request = new AwardPointsRequest();
         request.setUserId(1L);
-        request.setBehaviorCode("ATTEND_ON_TIME");
+        request.setBehaviorId(1);
 
         mockMvc.perform(post(BASE_URL + "/award-points")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(1))
+.andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.message").exists());
     }
 
@@ -89,7 +89,7 @@ public class GamificationIntegrationTest {
     void awardPoints_WhenNoPermission_ShouldReturn403() throws Exception {
         AwardPointsRequest request = new AwardPointsRequest();
         request.setUserId(1L);
-        request.setBehaviorCode("ATTEND_ON_TIME");
+        request.setBehaviorId(1);
 
         mockMvc.perform(post(BASE_URL + "/award-points")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +101,7 @@ public class GamificationIntegrationTest {
     void awardPoints_WhenUnauthenticated_ShouldReturn401() throws Exception {
         AwardPointsRequest request = new AwardPointsRequest();
         request.setUserId(1L);
-        request.setBehaviorCode("ATTEND_ON_TIME");
+        request.setBehaviorId(1);
 
         mockMvc.perform(post(BASE_URL + "/award-points")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -111,10 +111,10 @@ public class GamificationIntegrationTest {
 
     @Test
     @WithMockUser(username = "admin_user", authorities = {"gamification:award_points"})
-    void awardPoints_WhenInvalidBehaviorCode_ShouldReturn404() throws Exception {
+    void awardPoints_WhenInvalidBehaviorId_ShouldReturn404() throws Exception {
         AwardPointsRequest request = new AwardPointsRequest();
         request.setUserId(1L);
-        request.setBehaviorCode("INVALID_CODE");
+        request.setBehaviorId(9999);
 
         mockMvc.perform(post(BASE_URL + "/award-points")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -154,7 +154,7 @@ public class GamificationIntegrationTest {
 
     @Test
     @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void getUserStats_WhenOtherUser_ShouldReturn403() throws Exception {
+void getUserStats_WhenOtherUser_ShouldReturn403() throws Exception {
         mockMvc.perform(get(BASE_URL + "/users/2/stats"))
                 .andExpect(status().isForbidden());
     }
@@ -224,8 +224,7 @@ public class GamificationIntegrationTest {
         dto.setShowOnDashboard(true);
         dto.setCreatedBy(1);
         GamificationPointTypeDTO created = pointTypeService.createPointType(dto);
-
-        mockMvc.perform(get(BASE_URL + "/point-types/" + created.getId()))
+mockMvc.perform(get(BASE_URL + "/point-types/" + created.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(created.getId()))
                 .andExpect(jsonPath("$.name").value("Test Point Type"));
@@ -288,7 +287,7 @@ public class GamificationIntegrationTest {
         dto.setDescription("Test Description");
         dto.setMaxPoints(100);
         dto.setIsActive(true);
-        dto.setShowOnDashboard(true);
+dto.setShowOnDashboard(true);
         dto.setCreatedBy(1);
         GamificationPointTypeDTO created = pointTypeService.createPointType(dto);
 
@@ -356,7 +355,7 @@ public class GamificationIntegrationTest {
         mockMvc.perform(get(BASE_URL + "/behaviors/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.code").value("ATTEND_ON_TIME"));
+.andExpect(jsonPath("$.name").exists());
     }
 
     @Test
@@ -367,26 +366,10 @@ public class GamificationIntegrationTest {
     }
 
     @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void getBehaviorByCode_WhenExists_ShouldReturn200() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/behaviors/code/ATTEND_ON_TIME"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("ATTEND_ON_TIME"));
-    }
-
-    @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
-    void getBehaviorByCode_WhenNotExists_ShouldReturn404() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/behaviors/code/INVALID_CODE"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
     @WithMockUser(username = "admin_user", authorities = {"gamification:create"})
     void createBehavior_WhenValidRequest_ShouldReturn201() throws Exception {
         GamificationBehaviorDTO dto = new GamificationBehaviorDTO();
         dto.setGroupId(1);
-        dto.setCode("TEST_BEHAVIOR");
         dto.setName("Test Behavior");
         dto.setFrequencyType("DAILY");
         dto.setMaxTimesPerFrequency(1);
@@ -398,7 +381,7 @@ public class GamificationIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.code").value("TEST_BEHAVIOR"))
+                .andExpect(jsonPath("$.name").value("Test Behavior"))
                 .andExpect(header().exists("Location"));
     }
 
@@ -407,7 +390,6 @@ public class GamificationIntegrationTest {
     void createBehavior_WhenNoPermission_ShouldReturn403() throws Exception {
         GamificationBehaviorDTO dto = new GamificationBehaviorDTO();
         dto.setGroupId(1);
-        dto.setCode("TEST_BEHAVIOR");
         dto.setName("Test Behavior");
 
         mockMvc.perform(post(BASE_URL + "/behaviors")
@@ -421,7 +403,6 @@ public class GamificationIntegrationTest {
     void createBehavior_WhenInvalidGroupId_ShouldReturn404() throws Exception {
         GamificationBehaviorDTO dto = new GamificationBehaviorDTO();
         dto.setGroupId(9999);
-        dto.setCode("TEST_BEHAVIOR");
         dto.setName("Test Behavior");
         dto.setFrequencyType("DAILY");
         dto.setMaxTimesPerFrequency(1);
@@ -437,7 +418,6 @@ public class GamificationIntegrationTest {
     void updateBehavior_WhenValidRequest_ShouldReturn200() throws Exception {
         GamificationBehaviorDTO dto = new GamificationBehaviorDTO();
         dto.setGroupId(1);
-        dto.setCode("UPDATED_BEHAVIOR");
         dto.setName("Updated Behavior");
         dto.setFrequencyType("WEEKLY");
         dto.setMaxTimesPerFrequency(2);
@@ -447,9 +427,9 @@ public class GamificationIntegrationTest {
 
         mockMvc.perform(put(BASE_URL + "/behaviors/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+.content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("UPDATED_BEHAVIOR"));
+                .andExpect(jsonPath("$.name").value("Updated Behavior"));
     }
 
     @Test
@@ -457,7 +437,6 @@ public class GamificationIntegrationTest {
     void updateBehavior_WhenNotExists_ShouldReturn404() throws Exception {
         GamificationBehaviorDTO dto = new GamificationBehaviorDTO();
         dto.setGroupId(1);
-        dto.setCode("UPDATED_BEHAVIOR");
         dto.setName("Updated Behavior");
 
         mockMvc.perform(put(BASE_URL + "/behaviors/9999")
@@ -518,7 +497,7 @@ public class GamificationIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin_user", authorities = {"gamification:update"})
+@WithMockUser(username = "admin_user", authorities = {"gamification:update"})
     void updateBehaviorGroup_WhenValidRequest_ShouldReturn200() throws Exception {
         GamificationBehaviorGroupDTO dto = new GamificationBehaviorGroupDTO();
         dto.setName("Updated Group");
@@ -579,7 +558,7 @@ public class GamificationIntegrationTest {
         levelDto.setLevelName("Bronze");
         levelDto.setRequiredPointTypeEnum("EXPERIENCE");
         levelDto.setMinPointsRequired(100);
-        achievementService.createAchievementLevel(levelDto);
+achievementService.createAchievementLevel(levelDto);
 
         mockMvc.perform(get(BASE_URL + "/achievements/" + achievement.getId() + "/levels"))
                 .andExpect(status().isOk())
@@ -641,7 +620,7 @@ public class GamificationIntegrationTest {
                         .file(imageFile)
                         .param("name", "Updated Achievement")
                         .with(request -> {
-                            request.setMethod("PUT");
+request.setMethod("PUT");
                             return request;
                         }))
                 .andExpect(status().isOk())
@@ -702,7 +681,7 @@ public class GamificationIntegrationTest {
                             request.setMethod("PUT");
                             return request;
                         }))
-                .andExpect(status().isOk())
+.andExpect(status().isOk())
                 .andExpect(jsonPath("$.levelName").value("Silver"));
     }
 
@@ -767,7 +746,7 @@ public class GamificationIntegrationTest {
     void getMonthlyRanking_WhenMissingMonthYear_ShouldReturn400() throws Exception {
         mockMvc.perform(get(BASE_URL + "/ranking/monthly"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Bad Request"))
+.andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").exists());
     }
 
@@ -834,7 +813,7 @@ public class GamificationIntegrationTest {
     }
 
     @Test
-    @WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
+@WithUserDetails(value = "post_owner", userDetailsServiceBeanName = "userService")
     void getGuide_WhenAuthenticated_ShouldReturn200Or404() throws Exception {
         mockMvc.perform(get(BASE_URL + "/guide"))
                 .andExpect(result -> {
@@ -900,10 +879,9 @@ public class GamificationIntegrationTest {
     @Test
     @WithMockUser(username = "admin_user", authorities = {"gamification:award_points"})
     void awardPoints_WhenExceedsFrequencyLimit_ShouldReturn400() throws Exception {
-
-        AwardPointsRequest request = new AwardPointsRequest();
+AwardPointsRequest request = new AwardPointsRequest();
         request.setUserId(1L);
-        request.setBehaviorCode("ATTEND_ON_TIME");
+        request.setBehaviorId(1);
 
         mockMvc.perform(post(BASE_URL + "/award-points")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -942,7 +920,6 @@ public class GamificationIntegrationTest {
     void createBehavior_WhenInvalidFrequencyType_ShouldReturn400() throws Exception {
         GamificationBehaviorDTO dto = new GamificationBehaviorDTO();
         dto.setGroupId(1);
-        dto.setCode("TEST_BEHAVIOR");
         dto.setName("Test Behavior");
         dto.setFrequencyType("INVALID_TYPE");
         dto.setMaxTimesPerFrequency(1);
@@ -965,4 +942,3 @@ public class GamificationIntegrationTest {
                 .andExpect(jsonPath("$.sortBy").exists());
     }
 }
-

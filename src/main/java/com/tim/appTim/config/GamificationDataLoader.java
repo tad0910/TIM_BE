@@ -26,13 +26,10 @@ public class GamificationDataLoader implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // 1. Create Groups
         GamificationBehaviorGroup studyGroup = createGroupIfNotFound("Học tập");
         GamificationBehaviorGroup interactionGroup = createGroupIfNotFound("Tương tác");
         GamificationBehaviorGroup activityGroup = createGroupIfNotFound("Hoạt động");
 
-        // 2. Create Behaviors
-        // Group: Học tập
         createBehaviorIfNotFound(studyGroup, "ATTEND_ON_TIME",
                 GamificationBehavior.FrequencyType.DAILY, 1, 5, 0, 0);
         createBehaviorIfNotFound(studyGroup, "HIGH_POINT_1",
@@ -42,7 +39,6 @@ public class GamificationDataLoader implements CommandLineRunner {
         createBehaviorIfNotFound(activityGroup, "READ_BLOG",
                 GamificationBehavior.FrequencyType.ONCE, 1, 2, 0, 2);
 
-        // Group: Tương tác
         createBehaviorIfNotFound(activityGroup, "FIRST_POST",
                 GamificationBehavior.FrequencyType.ONCE, 1, 0, 0, 10);
         createBehaviorIfNotFound(interactionGroup, "POST'S_LIKE",
