@@ -1,11 +1,12 @@
 package com.tim.appTim.repository;
 
-import com.tim.appTim.entity.GamificationBehavior;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.tim.appTim.entity.GamificationBehavior;
 
 @Repository
 public interface GamificationBehaviorRepository extends JpaRepository<GamificationBehavior, Integer> {

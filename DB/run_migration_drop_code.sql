@@ -1,7 +1,10 @@
--- Migration: drop 'code' column and enforce UNIQUE on 'name' for gamification_behaviors
--- Please backup your database before running.
+-- ============================================
+-- Migration Script: Drop 'code' column from gamification_behaviors
+-- Database: MariaDB/MySQL
+-- Safe to run multiple times (checks before dropping)
+-- ============================================
 
--- Drop index on code if exists (MySQL 5.7+ supports IF EXISTS)
+-- Step 1: Drop index on 'code' if exists
 SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
                WHERE table_schema = DATABASE() 
                AND table_name = 'gamification_behaviors' 
@@ -11,6 +14,7 @@ PREPARE stmt FROM @sqlstmt;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
+-- Step 2: Drop index 'unique_code' if exists
 SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
                WHERE table_schema = DATABASE() 
                AND table_name = 'gamification_behaviors' 
@@ -20,7 +24,7 @@ PREPARE stmt FROM @sqlstmt;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
--- Drop code column if exists
+-- Step 3: Drop 'code' column if exists
 SET @exist := (SELECT COUNT(*) FROM information_schema.columns 
                WHERE table_schema = DATABASE() 
                AND table_name = 'gamification_behaviors' 
@@ -30,7 +34,7 @@ PREPARE stmt FROM @sqlstmt;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
--- Ensure unique constraint on name
+-- Step 4: Drop existing 'unique_name' index if exists (to avoid error if re-running)
 SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
                WHERE table_schema = DATABASE() 
                AND table_name = 'gamification_behaviors' 
@@ -40,6 +44,19 @@ PREPARE stmt FROM @sqlstmt;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
+-- Step 5: Add unique constraint on 'name' column
 ALTER TABLE gamification_behaviors ADD UNIQUE KEY unique_name (name);
 
+-- Verification: Check if migration was successful
+SELECT 
+    CASE 
+        WHEN COUNT(*) = 0 THEN 'SUCCESS: Column "code" has been removed'
+        ELSE 'WARNING: Column "code" still exists'
+    END AS migration_status
+FROM information_schema.columns 
+WHERE table_schema = DATABASE() 
+  AND table_name = 'gamification_behaviors' 
+  AND column_name = 'code';
+
+SELECT 'Migration completed!' AS result;
 
