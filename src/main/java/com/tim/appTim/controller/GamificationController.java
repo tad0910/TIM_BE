@@ -63,7 +63,7 @@ public class GamificationController {
             @Valid @RequestBody AwardPointsRequest request) {
         AwardPointsResponse response = gamificationService.awardPoints(
                 request.getUserId(), 
-                request.getBehaviorCode());
+                request.getBehaviorId());
         return ResponseEntity.ok(response);
     }
 
@@ -251,10 +251,10 @@ public class GamificationController {
         return ResponseEntity.ok(behavior);
     }
 
-    @GetMapping("/behaviors/code/{code}")
+    @GetMapping("/behaviors/name/{name}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<GamificationBehaviorDTO> getBehaviorByCode(@PathVariable String code) {
-        GamificationBehaviorDTO behavior = behaviorService.getBehaviorByCode(code);
+    public ResponseEntity<GamificationBehaviorDTO> getBehaviorByName(@PathVariable String name) {
+        GamificationBehaviorDTO behavior = behaviorService.getBehaviorByName(name);
         return ResponseEntity.ok(behavior);
     }
 

@@ -42,6 +42,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     private final NotificationService notificationService;
     private final TransactionTemplate transactionTemplate;
     private final GamificationService gamificationService;
+    private final BehaviorLookupService behaviorLookupService;
 
     private ApplicationContext applicationContext;
 
@@ -53,7 +54,8 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             GradeHistoryRepository gradeHistoryRepository,
             NotificationService notificationService,
             TransactionTemplate transactionTemplate,
-            @Lazy GamificationService gamificationService) {
+            @Lazy GamificationService gamificationService,
+            BehaviorLookupService behaviorLookupService) {
         this.gradeRepository = gradeRepository;
         this.classMemberRepository = classMemberRepository;
         this.classModuleRepository = classModuleRepository;
@@ -63,6 +65,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         this.notificationService = notificationService;
         this.transactionTemplate = transactionTemplate;
         this.gamificationService = gamificationService;
+        this.behaviorLookupService = behaviorLookupService;
     }
 
     @Override
@@ -176,14 +179,16 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
                     if (percentage >= 95.0) {
                         try {
-                            gamificationService.awardPoints(studentId, "HIGH_POINT_2");
+                            Integer behaviorId = behaviorLookupService.getIdByName("HIGH_POINT_2");
+                            gamificationService.awardPoints(studentId, behaviorId);
                         } catch (Exception e) {
                             logger.warn("Failed to award HIGH_POINT_2 for student {}: {}", studentId, e.getMessage());
                         }
                     } else if (percentage >= 80.0) {
 
                         try {
-                            gamificationService.awardPoints(studentId, "HIGH_POINT_1");
+                            Integer behaviorId = behaviorLookupService.getIdByName("HIGH_POINT_1");
+                            gamificationService.awardPoints(studentId, behaviorId);
                         } catch (Exception e) {
                             logger.warn("Failed to award HIGH_POINT_1 for student {}: {}", studentId, e.getMessage());
                         }
@@ -213,7 +218,8 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         if (perfectScoreCount > 0) {
             for (int i = 0; i < perfectScoreCount; i++) {
                 try {
-                    gamificationService.awardPoints(teacherId, "GIVING_SCORES");
+                    Integer behaviorId = behaviorLookupService.getIdByName("GIVING_SCORES");
+                    gamificationService.awardPoints(teacherId, behaviorId);
                 } catch (Exception e) {
                     logger.warn("Failed to award GIVING_SCORES for teacher {}: {}", teacherId, e.getMessage());
                 }

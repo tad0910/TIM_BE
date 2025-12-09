@@ -41,6 +41,8 @@ class ReactionServiceTest {
     private NotificationService notificationService;
     @Mock
     private GamificationService gamificationService;
+    @Mock
+    private BehaviorLookupService behaviorLookupService;
 
     @InjectMocks
     private ReactionService reactionService;
@@ -148,10 +150,11 @@ class ReactionServiceTest {
                 .thenReturn(Optional.empty());
         when(reactionRepository.save(any(Reaction.class))).thenReturn(reaction);
         when(reactionRepository.countByPostAndCommentIsNullAndReplyCommentIsNull(post)).thenReturn(10L); // >= 10
+        when(behaviorLookupService.getIdByName("POST'S_LIKE")).thenReturn(1);
 
         reactionService.createOrUpdateReaction(100L, 1L, Reaction.EmotionType.like);
 
-        verify(gamificationService).awardPoints(eq(1L), eq("POST'S_LIKE"));
+        verify(gamificationService).awardPoints(eq(1L), eq(1));
     }
 
     // --- createOrUpdateCommentReaction ---

@@ -29,6 +29,7 @@ public class ReactionService {
     private final ReplyCommentRepository replyCommentRepository;
     private final NotificationService notificationService;
     private final GamificationService gamificationService;
+    private final BehaviorLookupService behaviorLookupService;
 
     @Autowired
     public ReactionService(
@@ -38,7 +39,8 @@ public class ReactionService {
             CommentRepository commentRepository,
             ReplyCommentRepository replyCommentRepository,
             @Lazy NotificationService notificationService,
-            @Lazy GamificationService gamificationService
+            @Lazy GamificationService gamificationService,
+            BehaviorLookupService behaviorLookupService
     ) {
         this.reactionRepository = reactionRepository;
         this.postRepository = postRepository;
@@ -47,6 +49,7 @@ public class ReactionService {
         this.replyCommentRepository = replyCommentRepository;
         this.notificationService = notificationService;
         this.gamificationService = gamificationService;
+        this.behaviorLookupService = behaviorLookupService;
     }
 
     @Transactional
@@ -76,7 +79,8 @@ public class ReactionService {
 
         if (totalReactions >= 10) {
             try {
-                gamificationService.awardPoints(post.getUser().getId(), "POST'S_LIKE");
+                Integer behaviorId = behaviorLookupService.getIdByName("POST'S_LIKE");
+                gamificationService.awardPoints(post.getUser().getId(), behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for post likes: " + e.getMessage());
             }

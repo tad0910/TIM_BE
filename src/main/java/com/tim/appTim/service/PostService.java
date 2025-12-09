@@ -23,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.tim.appTim.service.BehaviorLookupService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,7 @@ public class PostService {
     private final LinkPreviewService linkPreviewService;
     private final FileRepository fileRepository;
     private final GamificationService gamificationService;
+    private final BehaviorLookupService behaviorLookupService;
 
     private static final Pattern URL_PATTERN = Pattern.compile(
             "\\b(https?://[\\w.-]+(?:\\:[0-9]+)?(?:/[^\\s]*)?)\\b",
@@ -53,7 +55,8 @@ public class PostService {
     public PostService(PostRepository postRepository, UserRepository userRepository,
             CommentService commentService, ReactionService reactionService, CommentRepository commentRepository,
             LinkPreviewService linkPreviewService, FileRepository fileRepository,
-            @Lazy GamificationService gamificationService) {
+            @Lazy GamificationService gamificationService,
+            BehaviorLookupService behaviorLookupService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentService = commentService;
@@ -62,6 +65,7 @@ public class PostService {
         this.linkPreviewService = linkPreviewService;
         this.fileRepository = fileRepository;
         this.gamificationService = gamificationService;
+        this.behaviorLookupService = behaviorLookupService;
     }
 
     private String extractFirstUrl(String content) {
@@ -155,7 +159,8 @@ public class PostService {
         try {
             long postCount = postRepository.countByUserId(userId);
             if (postCount == 1) {
-                gamificationService.awardPoints(userId, "FIRST_POST");
+                Integer behaviorId = behaviorLookupService.getIdByName("FIRST_POST");
+                gamificationService.awardPoints(userId, behaviorId);
             }
         } catch (Exception e) {
             System.err.println("Failed to award points for first post: " + e.getMessage());
@@ -163,7 +168,8 @@ public class PostService {
 
         if (savedPost.getLinkUrl() != null) {
             try {
-                gamificationService.awardPoints(userId, "POST_SHARE");
+                Integer behaviorId = behaviorLookupService.getIdByName("POST_SHARE");
+                gamificationService.awardPoints(userId, behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for post share: " + e.getMessage());
             }

@@ -51,7 +51,6 @@ class GamificationBehaviorGroupServiceTest {
 
         behavior = new GamificationBehavior();
         behavior.setId(1);
-        behavior.setCode("ATTEND_ON_TIME");
         behavior.setName("Điểm danh đúng giờ");
         behavior.setGroup(group);
         behavior.setFrequencyType(GamificationBehavior.FrequencyType.DAILY);
@@ -108,7 +107,7 @@ class GamificationBehaviorGroupServiceTest {
         assertNotNull(result);
         assertNotNull(result.get(0).getBehaviors());
         assertEquals(1, result.get(0).getBehaviors().size());
-        assertEquals(behavior.getCode(), result.get(0).getBehaviors().get(0).getCode());
+        assertEquals(behavior.getName(), result.get(0).getBehaviors().get(0).getName());
     }
 
     @Test
@@ -286,7 +285,6 @@ class GamificationBehaviorGroupServiceTest {
         assertNotNull(result.getBehaviors());
         GamificationBehaviorDTO behaviorDTO = result.getBehaviors().get(0);
         assertEquals(behavior.getId(), behaviorDTO.getId());
-        assertEquals(behavior.getCode(), behaviorDTO.getCode());
         assertEquals(behavior.getName(), behaviorDTO.getName());
         assertEquals(behavior.getFrequencyType().name(), behaviorDTO.getFrequencyType());
         assertEquals(behavior.getPointDiligence(), behaviorDTO.getPointDiligence());
