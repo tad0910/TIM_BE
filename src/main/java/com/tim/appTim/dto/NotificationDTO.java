@@ -13,6 +13,7 @@ public class NotificationDTO {
     private Long targetId;
     private String title;
     private String content;
+    private String iconUrl;
     private Boolean isRead;
     private LocalDateTime createdAt;
     private LocalDateTime readAt;
@@ -22,7 +23,7 @@ public class NotificationDTO {
 
     public NotificationDTO(Long id, Long receiverId, Long senderId, String senderUsername,
                            String senderAvatar, String notificationType, String targetType,
-                           Long targetId, String title, String content, Boolean isRead,
+                           Long targetId, String title, String content, String iconUrl, Boolean isRead,
                            LocalDateTime createdAt, LocalDateTime readAt, String actionUrl) {
         this.id = id;
         this.receiverId = receiverId;
@@ -34,6 +35,7 @@ public class NotificationDTO {
         this.targetId = targetId;
         this.title = title;
         this.content = content;
+        this.iconUrl = iconUrl;
         this.isRead = isRead;
         this.createdAt = createdAt;
         this.readAt = readAt;
@@ -69,6 +71,9 @@ public class NotificationDTO {
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+
+    public String getIconUrl() { return iconUrl; }
+    public void setIconUrl(String iconUrl) { this.iconUrl = iconUrl; }
 
     public Boolean getIsRead() { return isRead; }
     public void setIsRead(Boolean isRead) { this.isRead = isRead; }

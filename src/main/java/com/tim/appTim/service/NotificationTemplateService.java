@@ -70,6 +70,24 @@ public class NotificationTemplateService {
         return new RenderedTemplate(title, content, template.getIconUrl());
     }
 
+    public RenderedTemplate renderById(Long templateId, Map<String, Object> variables) {
+        if (templateId == null) {
+            return null;
+        }
+
+        Optional<NotificationTemplate> templateOpt = templateRepository.findById(templateId);
+
+        if (templateOpt.isEmpty()) {
+            return null;
+        }
+
+        NotificationTemplate template = templateOpt.get();
+        String title = applyVariables(template.getTitle(), variables);
+        String content = applyVariables(template.getContent(), variables);
+
+        return new RenderedTemplate(title, content, template.getIconUrl());
+    }
+
     private String applyVariables(String input, Map<String, Object> variables) {
         if (input == null || variables == null || variables.isEmpty()) {
             return input;

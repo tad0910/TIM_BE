@@ -12,6 +12,9 @@ public class GamificationBehaviorDTO {
     private Integer pointDiligence;
     private Integer pointCompetence;
     private Integer pointExperience;
+    private Long notificationTemplateDiligenceId;
+    private Long notificationTemplateCompetenceId;
+    private Long notificationTemplateExperienceId;
     private LocalDateTime createdAt;
 
     public GamificationBehaviorDTO() {}
@@ -42,6 +45,15 @@ public class GamificationBehaviorDTO {
 
     public Integer getPointExperience() { return pointExperience; }
     public void setPointExperience(Integer pointExperience) { this.pointExperience = pointExperience; }
+
+    public Long getNotificationTemplateDiligenceId() { return notificationTemplateDiligenceId; }
+    public void setNotificationTemplateDiligenceId(Long notificationTemplateDiligenceId) { this.notificationTemplateDiligenceId = notificationTemplateDiligenceId; }
+
+    public Long getNotificationTemplateCompetenceId() { return notificationTemplateCompetenceId; }
+    public void setNotificationTemplateCompetenceId(Long notificationTemplateCompetenceId) { this.notificationTemplateCompetenceId = notificationTemplateCompetenceId; }
+
+    public Long getNotificationTemplateExperienceId() { return notificationTemplateExperienceId; }
+    public void setNotificationTemplateExperienceId(Long notificationTemplateExperienceId) { this.notificationTemplateExperienceId = notificationTemplateExperienceId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

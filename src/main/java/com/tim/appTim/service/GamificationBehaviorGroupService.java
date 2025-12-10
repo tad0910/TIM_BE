@@ -97,6 +97,15 @@ public class GamificationBehaviorGroupService {
         dto.setPointDiligence(behavior.getPointDiligence());
         dto.setPointCompetence(behavior.getPointCompetence());
         dto.setPointExperience(behavior.getPointExperience());
+        if (behavior.getNotificationTemplateDiligence() != null) {
+            dto.setNotificationTemplateDiligenceId(behavior.getNotificationTemplateDiligence().getId());
+        }
+        if (behavior.getNotificationTemplateCompetence() != null) {
+            dto.setNotificationTemplateCompetenceId(behavior.getNotificationTemplateCompetence().getId());
+        }
+        if (behavior.getNotificationTemplateExperience() != null) {
+            dto.setNotificationTemplateExperienceId(behavior.getNotificationTemplateExperience().getId());
+        }
         dto.setCreatedAt(behavior.getCreatedAt());
         return dto;
     }

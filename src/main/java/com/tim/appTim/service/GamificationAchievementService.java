@@ -3,8 +3,10 @@ package com.tim.appTim.service;
 import com.tim.appTim.dto.AchievementLevelDTO;
 import com.tim.appTim.entity.GamificationAchievement;
 import com.tim.appTim.entity.GamificationAchievementLevel;
+import com.tim.appTim.entity.NotificationTemplate;
 import com.tim.appTim.repository.GamificationAchievementRepository;
 import com.tim.appTim.repository.GamificationAchievementLevelRepository;
+import com.tim.appTim.repository.NotificationTemplateRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +20,15 @@ public class GamificationAchievementService {
 
     private final GamificationAchievementRepository achievementRepository;
     private final GamificationAchievementLevelRepository levelRepository;
+    private final NotificationTemplateRepository notificationTemplateRepository;
 
     public GamificationAchievementService(
             GamificationAchievementRepository achievementRepository,
-            GamificationAchievementLevelRepository levelRepository) {
+            GamificationAchievementLevelRepository levelRepository,
+            NotificationTemplateRepository notificationTemplateRepository) {
         this.achievementRepository = achievementRepository;
         this.levelRepository = levelRepository;
+        this.notificationTemplateRepository = notificationTemplateRepository;
     }
 
     @Transactional(readOnly = true)
@@ -94,6 +99,13 @@ public class GamificationAchievementService {
         level.setMinPointsRequired(dto.getMinPointsRequired());
         level.setImageUrl(dto.getImageUrl());
 
+        // Set notification template if provided
+        if (dto.getNotificationTemplateId() != null) {
+            NotificationTemplate template = notificationTemplateRepository.findById(dto.getNotificationTemplateId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy notification template với ID: " + dto.getNotificationTemplateId()));
+            level.setNotificationTemplate(template);
+        }
+
         GamificationAchievementLevel saved = levelRepository.save(level);
         return mapToLevelDTO(saved);
     }
@@ -115,6 +127,16 @@ public class GamificationAchievementService {
         }
         if (dto.getMinPointsRequired() != null) level.setMinPointsRequired(dto.getMinPointsRequired());
         if (dto.getImageUrl() != null) level.setImageUrl(dto.getImageUrl());
+
+        // Update notification template if provided
+        if (dto.getNotificationTemplateId() != null) {
+            NotificationTemplate template = notificationTemplateRepository.findById(dto.getNotificationTemplateId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy notification template với ID: " + dto.getNotificationTemplateId()));
+            level.setNotificationTemplate(template);
+        } else if (dto.getNotificationTemplateId() == null && level.getNotificationTemplate() != null) {
+            // Allow clearing the template by sending null
+            level.setNotificationTemplate(null);
+        }
 
         GamificationAchievementLevel saved = levelRepository.save(level);
         return mapToLevelDTO(saved);
@@ -141,6 +163,9 @@ public class GamificationAchievementService {
         }
         dto.setMinPointsRequired(level.getMinPointsRequired());
         dto.setImageUrl(level.getImageUrl());
+        if (level.getNotificationTemplate() != null) {
+            dto.setNotificationTemplateId(level.getNotificationTemplate().getId());
+        }
         dto.setCreatedAt(level.getCreatedAt());
         return dto;
     }
