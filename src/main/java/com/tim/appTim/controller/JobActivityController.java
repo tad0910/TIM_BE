@@ -21,6 +21,7 @@ public class JobActivityController {
     private final JobActivityService jobActivityService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@userService.ownsJobLead(authentication, #request.jobLeadId)")
     public ResponseEntity<JobActivityDTO> addActivity(
             @RequestPart("data") JobActivityRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file) {
@@ -29,11 +30,13 @@ public class JobActivityController {
     }
 
     @GetMapping("/{jobLeadId}")
+    @PreAuthorize("@userService.ownsJobLead(authentication, #jobLeadId)")
     public ResponseEntity<List<JobActivityDTO>> getActivities(@PathVariable Long jobLeadId) {
         return ResponseEntity.ok(jobActivityService.getActivitiesByLead(jobLeadId));
     }
 
     @PutMapping("/{id}/note")
+    @PreAuthorize("@userService.ownsJobActivity(authentication, #id)")
     public ResponseEntity<JobActivityDTO> updateNote(@PathVariable Long id, @RequestBody Map<String, String> request) {
         String note = request.get("note");
         return ResponseEntity.ok(jobActivityService.updateNote(id, note));

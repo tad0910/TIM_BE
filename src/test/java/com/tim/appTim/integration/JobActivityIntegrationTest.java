@@ -76,7 +76,7 @@ public class JobActivityIntegrationTest {
                 .file(jsonPart))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("Interview Round 1"))
-                .andExpect(jsonPath("$.activityType").value("INTERVIEWING"));
+                .andExpect(jsonPath("$.activityType").value("INTERVIEW"));
     }
 
     @Test
@@ -148,7 +148,7 @@ public class JobActivityIntegrationTest {
 
         mockMvc.perform(multipart("/api/student/job-activities")
                 .file(jsonPart))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -159,6 +159,6 @@ public class JobActivityIntegrationTest {
         mockMvc.perform(put("/api/student/job-activities/9999/note")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 }

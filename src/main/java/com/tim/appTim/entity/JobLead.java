@@ -31,6 +31,9 @@ public class JobLead {
     @Column(name = "job_interest", nullable = false)
     private boolean jobInterest = true;
 
+    @Column(name = "created_by_admin", nullable = false)
+    private boolean createdByAdmin = false;
+
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)

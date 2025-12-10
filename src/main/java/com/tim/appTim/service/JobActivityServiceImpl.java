@@ -19,7 +19,11 @@ import com.tim.appTim.repository.ClassModuleTeacherRepository;
 import com.tim.appTim.repository.JobActivityRepository;
 import com.tim.appTim.repository.JobLeadRepository;
 import com.tim.appTim.repository.NotificationRepository;
+import com.tim.appTim.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,12 +46,15 @@ public class JobActivityServiceImpl implements JobActivityService {
     private final ClassModuleTeacherRepository classModuleTeacherRepository;
     private final NotificationRepository notificationRepository;
     private final SseService sseService;
+    private final UserService userService;
 
     @Override
     @Transactional
     public JobActivityDTO addActivity(JobActivityRequest request, MultipartFile file) {
         JobLead jobLead = jobLeadRepository.findById(request.getJobLeadId())
                 .orElseThrow(() -> new ResourceNotFoundException("Đầu mối không tồn tại"));
+
+        ensureLeadOwnership(jobLead);
 
         JobActivity activity = new JobActivity();
         activity.setJobLead(jobLead);
@@ -88,6 +95,8 @@ public class JobActivityServiceImpl implements JobActivityService {
 
     @Override
     public List<JobActivityDTO> getActivitiesByLead(Long jobLeadId) {
+        ensureLeadOwnership(jobLeadId);
+
         return jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(jobLeadId)
                 .stream()
                 .map(this::toDto)
@@ -99,6 +108,8 @@ public class JobActivityServiceImpl implements JobActivityService {
     public JobActivityDTO updateNote(Long activityId, String note) {
         JobActivity activity = jobActivityRepository.findById(activityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hoạt động không tồn tại"));
+
+        ensureLeadOwnership(activity.getJobLead());
 
         activity.setNote(note);
         JobActivity savedActivity = jobActivityRepository.save(activity);
@@ -154,6 +165,20 @@ public class JobActivityServiceImpl implements JobActivityService {
         }
 
         return currentStatus.ordinal() <= targetStatus.ordinal();
+    }
+
+    private void ensureLeadOwnership(JobLead jobLead) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean ownsLead = userService.ownsJobLead(authentication, jobLead.getId());
+        if (!ownsLead) {
+            throw new AccessDeniedException("Bạn không có quyền truy cập đầu mối này");
+        }
+    }
+
+    private void ensureLeadOwnership(Long jobLeadId) {
+        JobLead jobLead = jobLeadRepository.findById(jobLeadId)
+                .orElseThrow(() -> new ResourceNotFoundException("Đầu mối không tồn tại"));
+        ensureLeadOwnership(jobLead);
     }
 
     private void notifyTeachers(User student, String title, String content, Notification.NotificationType type,

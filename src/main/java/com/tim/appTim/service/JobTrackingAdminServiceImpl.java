@@ -382,7 +382,7 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
                         .statusLabel(lead.getStatus() != null ? lead.getStatus().getDisplayName() : "Chưa có trạng thái")
                         .jobInterest(lead.isJobInterest())
                         .createdAt(lead.getCreatedAt())
-                        .fromAdmin(false)
+                        .fromAdmin(lead.isCreatedByAdmin())
                         .activities(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(lead.getId()).stream()
                                 .map(this::toJobActivityDTO)
                                 .collect(Collectors.toList()))
@@ -425,6 +425,7 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
         lead.setWebsite(website);
         lead.setStatus(JobLead.LeadStatus.NEW);
         lead.setJobInterest(true);
+        lead.setCreatedByAdmin(true);
         lead.setCreatedAt(LocalDateTime.now());
 
         JobLead savedLead = jobLeadRepository.save(lead);

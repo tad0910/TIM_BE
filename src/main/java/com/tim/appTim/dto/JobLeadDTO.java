@@ -14,6 +14,8 @@ public class JobLeadDTO {
     private String shortName;
     private String address;
     private String website;
+    private String statusCode;
+    private String statusLabel;
     private String status;
 
     private boolean isFromAdmin;
