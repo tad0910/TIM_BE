@@ -74,7 +74,8 @@ public class BlogUpdateCheckerService {
                         "BLOG_POST",
                         0L,
                         title,
-                        content
+                        content,
+                        null
                 );
             } catch (Exception e) {
                 logger.error("Lỗi khi gửi thông báo blog mới cho user {}: {}", user.getId(), e.getMessage());

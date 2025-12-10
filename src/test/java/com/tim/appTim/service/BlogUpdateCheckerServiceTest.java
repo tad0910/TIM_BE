@@ -62,7 +62,7 @@ class BlogUpdateCheckerServiceTest {
 
         // Assert
         verify(newsService).getLatestBlogs();
-        verify(notificationService, never()).createNotification(anyLong(), any(), any(), any(), anyLong(), anyString(), anyString());
+        verify(notificationService, never()).createNotification(anyLong(), any(), any(), any(), anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -76,7 +76,7 @@ class BlogUpdateCheckerServiceTest {
 
         // Assert
         verify(newsService).getLatestBlogs();
-        verify(notificationService, never()).createNotification(anyLong(), any(), any(), any(), anyLong(), anyString(), anyString());
+        verify(notificationService, never()).createNotification(anyLong(), any(), any(), any(), anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -107,7 +107,8 @@ class BlogUpdateCheckerServiceTest {
                 eq("BLOG_POST"),
                 eq(0L),
                 eq("Có blog mới từ Codegym"),
-                eq("Another Blog Post")
+                eq("Another Blog Post"),
+                any()
         );
     }
 
@@ -128,7 +129,7 @@ class BlogUpdateCheckerServiceTest {
 
         // Assert
         verify(newsService, times(2)).getLatestBlogs();
-        verify(notificationService, never()).createNotification(anyLong(), any(), any(), any(), anyLong(), anyString(), anyString());
+        verify(notificationService, never()).createNotification(anyLong(), any(), any(), any(), anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -138,7 +139,7 @@ class BlogUpdateCheckerServiceTest {
         when(newsService.getLatestBlogs()).thenReturn(blogs);
         when(userRepository.findAll()).thenReturn(List.of(user1, user2));
         doThrow(new RuntimeException("Notification failed"))
-                .when(notificationService).createNotification(eq(1L), any(), any(), any(), anyLong(), anyString(), anyString());
+                .when(notificationService).createNotification(eq(1L), any(), any(), any(), anyLong(), anyString(), anyString(), any());
 
         // First call to initialize
         blogUpdateCheckerService.checkForNewBlogs();
@@ -155,7 +156,7 @@ class BlogUpdateCheckerServiceTest {
         });
 
         // Assert
-        verify(notificationService, atLeastOnce()).createNotification(anyLong(), any(), any(), any(), anyLong(), anyString(), anyString());
+        verify(notificationService, atLeastOnce()).createNotification(anyLong(), any(), any(), any(), anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -180,8 +181,8 @@ class BlogUpdateCheckerServiceTest {
         blogUpdateCheckerService.checkForNewBlogs();
 
         // Assert
-        verify(notificationService).createNotification(eq(1L), any(), any(), any(), anyLong(), anyString(), anyString());
-        verify(notificationService).createNotification(eq(2L), any(), any(), any(), anyLong(), anyString(), anyString());
+        verify(notificationService).createNotification(eq(1L), any(), any(), any(), anyLong(), anyString(), anyString(), any());
+        verify(notificationService).createNotification(eq(2L), any(), any(), any(), anyLong(), anyString(), anyString(), any());
     }
 }
 

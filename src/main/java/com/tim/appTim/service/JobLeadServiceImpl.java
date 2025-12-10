@@ -158,6 +158,7 @@ public class JobLeadServiceImpl implements JobLeadService {
                                 savedNotification.getTargetId(),
                                 savedNotification.getTitle(),
                                 savedNotification.getContent(),
+                                savedNotification.getIconUrl(),
                                 savedNotification.getIsRead(),
                                 savedNotification.getCreatedAt(),
                                 savedNotification.getReadAt(),
