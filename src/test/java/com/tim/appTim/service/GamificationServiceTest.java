@@ -8,6 +8,8 @@ import com.tim.appTim.entity.*;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
+import com.tim.appTim.service.NotificationTemplateService;
+import com.tim.appTim.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,12 +47,17 @@ class GamificationServiceTest {
     private NotificationService notificationService;
     @Mock
     private RankingService rankingService;
+    @Mock
+    private NotificationTemplateService notificationTemplateService;
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private GamificationService gamificationService;
 
     private GamificationBehavior behavior;
     private UserGamificationStats stats;
+    private User user;
 
     @BeforeEach
     void setUp() {
@@ -67,6 +74,15 @@ class GamificationServiceTest {
         stats.setTotalDiligence(0);
         stats.setTotalCompetence(0);
         stats.setTotalExperience(0);
+
+        user = new User();
+        user.setId(1L);
+        user.setFirstName("Test");
+        user.setLastName("User");
+        user.setUsername("testuser");
+
+        lenient().when(userService.findById(1L)).thenReturn(user);
+        lenient().when(notificationTemplateService.render(any(), any())).thenReturn(null);
     }
 
     @Test
