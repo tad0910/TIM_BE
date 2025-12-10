@@ -32,6 +32,9 @@ public class Notification {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "icon_url", length = 500)
+    private String iconUrl;
+
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
@@ -80,6 +83,11 @@ public class Notification {
 
     public Notification(Long receiverId, Long senderId, NotificationType notificationType,
             String targetType, Long targetId, String title, String content) {
+        this(receiverId, senderId, notificationType, targetType, targetId, title, content, null);
+    }
+
+    public Notification(Long receiverId, Long senderId, NotificationType notificationType,
+            String targetType, Long targetId, String title, String content, String iconUrl) {
         this.receiverId = receiverId;
         this.senderId = senderId;
         this.notificationType = notificationType;
@@ -87,6 +95,7 @@ public class Notification {
         this.targetId = targetId;
         this.title = title;
         this.content = content;
+        this.iconUrl = iconUrl;
         this.isRead = false;
         this.createdAt = LocalDateTime.now();
     }
@@ -154,6 +163,9 @@ public class Notification {
     public void setContent(String content) {
         this.content = content;
     }
+
+    public String getIconUrl() { return iconUrl; }
+    public void setIconUrl(String iconUrl) { this.iconUrl = iconUrl; }
 
     public Boolean getIsRead() {
         return isRead;

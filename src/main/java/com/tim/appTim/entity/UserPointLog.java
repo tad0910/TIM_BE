@@ -1,6 +1,8 @@
 package com.tim.appTim.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,6 +17,7 @@ public class UserPointLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behavior_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     private GamificationBehavior behavior;
 
     @Column(name = "points_diligence_earned")

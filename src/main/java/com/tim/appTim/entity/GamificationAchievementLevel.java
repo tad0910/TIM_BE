@@ -30,6 +30,10 @@ public class GamificationAchievementLevel {
     @Column(name = "image_url_levels", length = 255)
     private String imageUrl;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notification_template_id")
+    private NotificationTemplate notificationTemplate;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -64,6 +68,9 @@ public class GamificationAchievementLevel {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public NotificationTemplate getNotificationTemplate() { return notificationTemplate; }
+    public void setNotificationTemplate(NotificationTemplate notificationTemplate) { this.notificationTemplate = notificationTemplate; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -33,6 +33,18 @@ public class GamificationBehavior {
     @Column(name = "point_experience")
     private Integer pointExperience = 0;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notification_template_diligence_id")
+    private NotificationTemplate notificationTemplateDiligence;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notification_template_competence_id")
+    private NotificationTemplate notificationTemplateCompetence;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notification_template_experience_id")
+    private NotificationTemplate notificationTemplateExperience;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -72,6 +84,15 @@ public class GamificationBehavior {
 
     public Integer getPointExperience() { return pointExperience; }
     public void setPointExperience(Integer pointExperience) { this.pointExperience = pointExperience; }
+
+    public NotificationTemplate getNotificationTemplateDiligence() { return notificationTemplateDiligence; }
+    public void setNotificationTemplateDiligence(NotificationTemplate notificationTemplateDiligence) { this.notificationTemplateDiligence = notificationTemplateDiligence; }
+
+    public NotificationTemplate getNotificationTemplateCompetence() { return notificationTemplateCompetence; }
+    public void setNotificationTemplateCompetence(NotificationTemplate notificationTemplateCompetence) { this.notificationTemplateCompetence = notificationTemplateCompetence; }
+
+    public NotificationTemplate getNotificationTemplateExperience() { return notificationTemplateExperience; }
+    public void setNotificationTemplateExperience(NotificationTemplate notificationTemplateExperience) { this.notificationTemplateExperience = notificationTemplateExperience; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

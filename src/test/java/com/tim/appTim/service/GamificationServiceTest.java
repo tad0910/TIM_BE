@@ -101,7 +101,7 @@ class GamificationServiceTest {
         verify(statsRepository).save(any(UserGamificationStats.class));
         verify(rankingService).updateRanking(1L);
         verify(notificationService).createNotification(anyLong(), any(), any(), anyString(), anyLong(), anyString(),
-                anyString());
+                anyString(), any());
     }
 
     @Test
@@ -165,7 +165,7 @@ class GamificationServiceTest {
         verify(achievementRepository).save(any(UserAchievement.class));
         // Verify 2 notifications: 1 for points, 1 for achievement
         verify(notificationService, times(2)).createNotification(anyLong(), any(), any(), anyString(), anyLong(),
-                anyString(), anyString());
+                anyString(), anyString(), any());
     }
 
     @Test
