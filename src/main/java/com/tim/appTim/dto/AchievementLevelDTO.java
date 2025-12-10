@@ -11,6 +11,7 @@ public class AchievementLevelDTO {
     private String requiredPointTypeEnum;
     private Integer minPointsRequired;
     private String imageUrl;
+    private Long notificationTemplateId;
     private LocalDateTime createdAt;
 
     public AchievementLevelDTO() {}
@@ -38,6 +39,9 @@ public class AchievementLevelDTO {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public Long getNotificationTemplateId() { return notificationTemplateId; }
+    public void setNotificationTemplateId(Long notificationTemplateId) { this.notificationTemplateId = notificationTemplateId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

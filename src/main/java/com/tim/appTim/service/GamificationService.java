@@ -12,8 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import com.tim.appTim.entity.User;
 
 @Service
 @Transactional
@@ -26,6 +29,8 @@ public class GamificationService {
     private final GamificationAchievementLevelRepository achievementLevelRepository;
     private final NotificationService notificationService;
     private final RankingService rankingService;
+    private final NotificationTemplateService notificationTemplateService;
+    private final UserService userService;
 
     public GamificationService(
             GamificationBehaviorRepository behaviorRepository,
@@ -34,7 +39,9 @@ public class GamificationService {
             UserAchievementRepository achievementRepository,
             GamificationAchievementLevelRepository achievementLevelRepository,
             NotificationService notificationService,
-            @Lazy RankingService rankingService) {
+            @Lazy RankingService rankingService,
+            NotificationTemplateService notificationTemplateService,
+            UserService userService) {
         this.behaviorRepository = behaviorRepository;
         this.pointLogRepository = pointLogRepository;
         this.statsRepository = statsRepository;
@@ -42,11 +49,17 @@ public class GamificationService {
         this.achievementLevelRepository = achievementLevelRepository;
         this.notificationService = notificationService;
         this.rankingService = rankingService;
+        this.notificationTemplateService = notificationTemplateService;
+        this.userService = userService;
     }
 
-    public AwardPointsResponse awardPoints(Long userId, String behaviorCode) {
-        GamificationBehavior behavior = behaviorRepository.findByCode(behaviorCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hành vi với mã: " + behaviorCode));
+    public AwardPointsResponse awardPoints(Long userId, Integer behaviorId) {
+        GamificationBehavior behavior = behaviorRepository.findById(behaviorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hành vi với id: " + behaviorId));
+        return awardPointsInternal(userId, behavior);
+    }
+
+    private AwardPointsResponse awardPointsInternal(Long userId, GamificationBehavior behavior) {
 
         if (!canAwardPoints(userId, behavior)) {
             throw new BadRequestException("Bạn đã đạt giới hạn điểm thưởng cho hành vi này trong khoảng thời gian hiện tại");
@@ -211,38 +224,156 @@ public class GamificationService {
 
     private void sendPointEarnedNotification(Long userId, GamificationBehavior behavior,
                                             Integer diligence, Integer competence, Integer experience) {
-        StringBuilder content = new StringBuilder("Bạn đã nhận được ");
-        List<String> points = new ArrayList<>();
+        Map<String, Object> variables = buildCommonVariables(userId, behavior);
         
-        if (diligence > 0) {
-            points.add(diligence + " điểm Chuyên cần");
-        }
-        if (competence > 0) {
-            points.add(competence + " điểm Năng lực");
-        }
-        if (experience > 0) {
-            points.add(experience + " điểm Kinh nghiệm");
+        // Send separate notifications for each point type if template is configured
+        if (diligence > 0 && behavior.getNotificationTemplateDiligence() != null) {
+            variables.put("point", diligence);
+            variables.put("point_type_name", "điểm Chuyên cần");
+            NotificationTemplateService.RenderedTemplate rendered = notificationTemplateService.renderById(
+                    behavior.getNotificationTemplateDiligence().getId(),
+                    variables
+            );
+            
+            String fallbackContent = String.format("Bạn đã nhận được %d điểm Chuyên cần từ hành vi: %s",
+                    diligence, behavior.getName());
+            
+            String title = rendered != null ? rendered.getTitle() : "Nhận điểm thưởng";
+            String content = rendered != null ? rendered.getContent() : fallbackContent;
+            
+            notificationService.createNotification(
+                    userId,
+                    null,
+                    Notification.NotificationType.GAMIFICATION_POINT_EARNED,
+                    "BEHAVIOR",
+                    behavior.getId().longValue(),
+                    title,
+                    content,
+                    rendered != null ? rendered.getIconUrl() : null
+            );
         }
         
-        content.append(String.join(", ", points));
-        content.append(" từ hành vi: ").append(behavior.getName());
-
-        notificationService.createNotification(
-                userId,
-                null,
-                Notification.NotificationType.GAMIFICATION_POINT_EARNED,
-                "BEHAVIOR",
-                behavior.getId().longValue(),
-                "Nhận điểm thưởng",
-                content.toString()
-        );
+        if (competence > 0 && behavior.getNotificationTemplateCompetence() != null) {
+            variables.put("point", competence);
+            variables.put("point_type_name", "điểm Năng lực");
+            NotificationTemplateService.RenderedTemplate rendered = notificationTemplateService.renderById(
+                    behavior.getNotificationTemplateCompetence().getId(),
+                    variables
+            );
+            
+            String fallbackContent = String.format("Bạn đã nhận được %d điểm Năng lực từ hành vi: %s",
+                    competence, behavior.getName());
+            
+            String title = rendered != null ? rendered.getTitle() : "Nhận điểm thưởng";
+            String content = rendered != null ? rendered.getContent() : fallbackContent;
+            
+            notificationService.createNotification(
+                    userId,
+                    null,
+                    Notification.NotificationType.GAMIFICATION_POINT_EARNED,
+                    "BEHAVIOR",
+                    behavior.getId().longValue(),
+                    title,
+                    content,
+                    rendered != null ? rendered.getIconUrl() : null
+            );
+        }
+        
+        if (experience > 0 && behavior.getNotificationTemplateExperience() != null) {
+            variables.put("point", experience);
+            variables.put("point_type_name", "điểm Kinh nghiệm");
+            NotificationTemplateService.RenderedTemplate rendered = notificationTemplateService.renderById(
+                    behavior.getNotificationTemplateExperience().getId(),
+                    variables
+            );
+            
+            String fallbackContent = String.format("Bạn đã nhận được %d điểm Kinh nghiệm từ hành vi: %s",
+                    experience, behavior.getName());
+            
+            String title = rendered != null ? rendered.getTitle() : "Nhận điểm thưởng";
+            String content = rendered != null ? rendered.getContent() : fallbackContent;
+            
+            notificationService.createNotification(
+                    userId,
+                    null,
+                    Notification.NotificationType.GAMIFICATION_POINT_EARNED,
+                    "BEHAVIOR",
+                    behavior.getId().longValue(),
+                    title,
+                    content,
+                    rendered != null ? rendered.getIconUrl() : null
+            );
+        }
+        
+        // Fallback: if no templates are configured, send one combined notification using default template
+        boolean hasAnyTemplate = (diligence > 0 && behavior.getNotificationTemplateDiligence() != null) ||
+                                 (competence > 0 && behavior.getNotificationTemplateCompetence() != null) ||
+                                 (experience > 0 && behavior.getNotificationTemplateExperience() != null);
+        
+        if (!hasAnyTemplate && (diligence > 0 || competence > 0 || experience > 0)) {
+            variables.put("point", diligence + competence + experience);
+            variables.put("point_type_name", "điểm thưởng");
+            
+            NotificationTemplateService.RenderedTemplate rendered = notificationTemplateService.render(
+                    "GAMIFICATION_POINT_EARNED",
+                    variables
+            );
+            
+            StringBuilder fallbackContent = new StringBuilder("Bạn đã nhận được ");
+            List<String> points = new ArrayList<>();
+            if (diligence > 0) points.add(diligence + " điểm Chuyên cần");
+            if (competence > 0) points.add(competence + " điểm Năng lực");
+            if (experience > 0) points.add(experience + " điểm Kinh nghiệm");
+            fallbackContent.append(String.join(", ", points));
+            fallbackContent.append(" từ hành vi: ").append(behavior.getName());
+            
+            String title = rendered != null ? rendered.getTitle() : "Nhận điểm thưởng";
+            String content = rendered != null ? rendered.getContent() : fallbackContent.toString();
+            
+            notificationService.createNotification(
+                    userId,
+                    null,
+                    Notification.NotificationType.GAMIFICATION_POINT_EARNED,
+                    "BEHAVIOR",
+                    behavior.getId().longValue(),
+                    title,
+                    content,
+                    rendered != null ? rendered.getIconUrl() : null
+            );
+        }
     }
 
     private void sendAchievementUnlockedNotification(Long userId, GamificationAchievementLevel level) {
-        String achievementName = level.getAchievement() != null ? 
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("user_fullname", getUserFullNameSafe(userId));
+        variables.put("achievement_name", level.getAchievement() != null ? level.getAchievement().getName() : "Thành tích");
+        variables.put("level_name", level.getLevelName());
+
+        NotificationTemplateService.RenderedTemplate rendered = null;
+        
+        // Use template from achievement level if configured
+        if (level.getNotificationTemplate() != null) {
+            rendered = notificationTemplateService.renderById(
+                    level.getNotificationTemplate().getId(),
+                    variables
+            );
+        }
+        
+        // Fallback to default template if no template is configured
+        if (rendered == null) {
+            rendered = notificationTemplateService.render(
+                    "GAMIFICATION_ACHIEVEMENT_UNLOCKED",
+                    variables
+            );
+        }
+
+        String achievementName = level.getAchievement() != null ?
                 level.getAchievement().getName() : "Thành tích";
-        String content = String.format("Chúc mừng! Bạn đã đạt được %s - %s", 
+        String fallbackContent = String.format("Chúc mừng! Bạn đã đạt được %s - %s",
                 achievementName, level.getLevelName());
+
+        String title = rendered != null ? rendered.getTitle() : "Đạt thành tích mới";
+        String content = rendered != null ? rendered.getContent() : fallbackContent;
 
         notificationService.createNotification(
                 userId,
@@ -250,9 +381,30 @@ public class GamificationService {
                 Notification.NotificationType.GAMIFICATION_ACHIEVEMENT_UNLOCKED,
                 "ACHIEVEMENT_LEVEL",
                 level.getId().longValue(),
-                "Đạt thành tích mới",
-                content
+                title,
+                content,
+                rendered != null ? rendered.getIconUrl() : null
         );
+    }
+
+    private Map<String, Object> buildCommonVariables(Long userId, GamificationBehavior behavior) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("user_fullname", getUserFullNameSafe(userId));
+        variables.put("activity_name", behavior != null ? behavior.getName() : "");
+        variables.put("behavior_name", behavior != null ? behavior.getName() : "");
+        return variables;
+    }
+
+    private String getUserFullNameSafe(Long userId) {
+        try {
+            User user = userService.findById(userId);
+            String first = user.getFirstName() != null ? user.getFirstName() : "";
+            String last = user.getLastName() != null ? user.getLastName() : "";
+            String full = (first + " " + last).trim();
+            return full.isEmpty() ? user.getUsername() : full;
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     @Transactional(readOnly = true)
@@ -285,7 +437,6 @@ public class GamificationService {
         dto.setUserId(log.getUserId());
         if (log.getBehavior() != null) {
             dto.setBehaviorId(log.getBehavior().getId());
-            dto.setBehaviorCode(log.getBehavior().getCode());
             dto.setBehaviorName(log.getBehavior().getName());
         }
         dto.setPointsDiligenceEarned(log.getPointsDiligenceEarned());

@@ -494,8 +494,7 @@ CREATE TABLE gamification_behavior_groups (
 CREATE TABLE gamification_behaviors (
     id INT AUTO_INCREMENT PRIMARY KEY,
     group_id INT NOT NULL,             
-    code VARCHAR(50) UNIQUE NOT NULL,   
-    name VARCHAR(255) NOT NULL,        
+    name VARCHAR(255) UNIQUE NOT NULL,        
 
     frequency_type ENUM('UNLIMITED', 'DAILY', 'WEEKLY', 'MONTHLY', 'ONCE') DEFAULT 'UNLIMITED',
     max_times_per_frequency INT DEFAULT 1, 

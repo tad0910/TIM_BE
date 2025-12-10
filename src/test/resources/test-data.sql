@@ -269,8 +269,12 @@ INSERT INTO attendance_records (marked_by, student_id, schedule_id, status, mark
 INSERT INTO gamification_behavior_groups (id, name, created_at) VALUES
 (1, 'Học tập', NOW());
 
-INSERT INTO gamification_behaviors (id, group_id, code, name, frequency_type, max_times_per_frequency, point_diligence, point_competence, point_experience, created_at) VALUES
-(1, 1, 'ATTEND_ON_TIME', 'Điểm danh đúng giờ', 'DAILY', 1, 10, 0, 5, NOW()),
-(2, 1, 'GIVING_SCORES', 'Chấm điểm cho học sinh', 'UNLIMITED', 1, 0, 5, 0, NOW()),
-(3, 1, 'HIGH_POINT_1', 'Đạt điểm cao (>=80%)', 'ONCE', 1, 0, 0, 20, NOW()),
-(4, 1, 'HIGH_POINT_2', 'Đạt điểm xuất sắc (>=95%)', 'ONCE', 1, 0, 0, 50, NOW());
+INSERT INTO gamification_behaviors (id, group_id, name, frequency_type, max_times_per_frequency, point_diligence, point_competence, point_experience, created_at) VALUES
+(1, 1, 'ATTEND_ON_TIME', 'DAILY', 1, 10, 0, 5, NOW()),
+(2, 1, 'GIVING_SCORES', 'UNLIMITED', 1, 0, 5, 0, NOW()),
+(3, 1, 'HIGH_POINT_1', 'ONCE', 1, 0, 0, 20, NOW()),
+(4, 1, 'HIGH_POINT_2', 'ONCE', 1, 0, 0, 50, NOW()),
+(5, 1, 'READ_BLOG', 'UNLIMITED', 1, 0, 0, 5, NOW()),
+(6, 1, 'FIRST_POST', 'ONCE', 1, 0, 0, 10, NOW()),
+(7, 1, 'POST_SHARE', 'UNLIMITED', 1, 0, 0, 5, NOW()),
+(8, 1, 'POST''S_LIKE', 'UNLIMITED', 1, 0, 0, 5, NOW());

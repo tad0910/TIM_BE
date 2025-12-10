@@ -53,6 +53,8 @@ class PostServiceTest {
     @Mock
     private GamificationService gamificationService;
     @Mock
+    private BehaviorLookupService behaviorLookupService;
+    @Mock
     private Authentication authentication;
 
     @InjectMocks
@@ -232,9 +234,10 @@ class PostServiceTest {
             return p;
         });
         when(postRepository.countByUserId(1L)).thenReturn(1L);
+        when(behaviorLookupService.getIdByName("FIRST_POST")).thenReturn(10);
 
         postService.createPostWithFiles(1L, "Content", Post.Privacy.open, null);
-        verify(gamificationService).awardPoints(1L, "FIRST_POST");
+        verify(gamificationService).awardPoints(1L, 10);
     }
 
     // --- getAllPosts ---

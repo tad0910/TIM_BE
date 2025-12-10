@@ -8,6 +8,8 @@ import com.tim.appTim.entity.*;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
+import com.tim.appTim.service.NotificationTemplateService;
+import com.tim.appTim.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,18 +47,22 @@ class GamificationServiceTest {
     private NotificationService notificationService;
     @Mock
     private RankingService rankingService;
+    @Mock
+    private NotificationTemplateService notificationTemplateService;
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private GamificationService gamificationService;
 
     private GamificationBehavior behavior;
     private UserGamificationStats stats;
+    private User user;
 
     @BeforeEach
     void setUp() {
         behavior = new GamificationBehavior();
         behavior.setId(1);
-        behavior.setCode("TEST_BEHAVIOR");
         behavior.setName("Test Behavior");
         behavior.setPointDiligence(10);
         behavior.setPointCompetence(5);
@@ -68,15 +74,24 @@ class GamificationServiceTest {
         stats.setTotalDiligence(0);
         stats.setTotalCompetence(0);
         stats.setTotalExperience(0);
+
+        user = new User();
+        user.setId(1L);
+        user.setFirstName("Test");
+        user.setLastName("User");
+        user.setUsername("testuser");
+
+        lenient().when(userService.findById(1L)).thenReturn(user);
+        lenient().when(notificationTemplateService.render(any(), any())).thenReturn(null);
     }
 
     @Test
     void awardPoints_Success_UnlimitedFrequency() {
-        when(behaviorRepository.findByCode("TEST_BEHAVIOR")).thenReturn(Optional.of(behavior));
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(statsRepository.findByUserId(1L)).thenReturn(Optional.of(stats));
         when(achievementLevelRepository.findAll()).thenReturn(Collections.emptyList());
 
-        AwardPointsResponse response = gamificationService.awardPoints(1L, "TEST_BEHAVIOR");
+        AwardPointsResponse response = gamificationService.awardPoints(1L, 1);
 
         assertThat(response).isNotNull();
         assertThat(response.getPointsDiligenceEarned()).isEqualTo(10);
@@ -86,14 +101,14 @@ class GamificationServiceTest {
         verify(statsRepository).save(any(UserGamificationStats.class));
         verify(rankingService).updateRanking(1L);
         verify(notificationService).createNotification(anyLong(), any(), any(), anyString(), anyLong(), anyString(),
-                anyString());
+                anyString(), any());
     }
 
     @Test
     void awardPoints_BehaviorNotFound_ShouldThrowException() {
-        when(behaviorRepository.findByCode("INVALID")).thenReturn(Optional.empty());
+        when(behaviorRepository.findById(999)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> gamificationService.awardPoints(1L, "INVALID"))
+        assertThatThrownBy(() -> gamificationService.awardPoints(1L, 999))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Không tìm thấy hành vi");
     }
@@ -103,11 +118,11 @@ class GamificationServiceTest {
         behavior.setFrequencyType(GamificationBehavior.FrequencyType.DAILY);
         behavior.setMaxTimesPerFrequency(1);
 
-        when(behaviorRepository.findByCode("TEST_BEHAVIOR")).thenReturn(Optional.of(behavior));
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(pointLogRepository.countByUserIdAndBehaviorIdAndDateRange(anyLong(), anyInt(), any(), any()))
                 .thenReturn(1L);
 
-        assertThatThrownBy(() -> gamificationService.awardPoints(1L, "TEST_BEHAVIOR"))
+        assertThatThrownBy(() -> gamificationService.awardPoints(1L, 1))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("đạt giới hạn điểm thưởng");
     }
@@ -118,10 +133,10 @@ class GamificationServiceTest {
         UserPointLog existingLog = new UserPointLog();
         existingLog.setBehavior(behavior);
 
-        when(behaviorRepository.findByCode("TEST_BEHAVIOR")).thenReturn(Optional.of(behavior));
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(pointLogRepository.findByUserIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(existingLog));
 
-        assertThatThrownBy(() -> gamificationService.awardPoints(1L, "TEST_BEHAVIOR"))
+        assertThatThrownBy(() -> gamificationService.awardPoints(1L, 1))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("đạt giới hạn điểm thưởng");
     }
@@ -137,12 +152,12 @@ class GamificationServiceTest {
         achievement.setName("Achievement 1");
         level.setAchievement(achievement);
 
-        when(behaviorRepository.findByCode("TEST_BEHAVIOR")).thenReturn(Optional.of(behavior));
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(statsRepository.findByUserId(1L)).thenReturn(Optional.of(stats));
         when(achievementLevelRepository.findAll()).thenReturn(List.of(level));
         when(achievementRepository.findByUserIdAndAchievementLevelId(1L, 1)).thenReturn(Collections.emptyList());
 
-        AwardPointsResponse response = gamificationService.awardPoints(1L, "TEST_BEHAVIOR");
+        AwardPointsResponse response = gamificationService.awardPoints(1L, 1);
 
         assertThat(response.getNewlyUnlockedAchievements()).hasSize(1);
         assertThat(response.getNewlyUnlockedAchievements().get(0).getLevelName()).isEqualTo("Level 1");
@@ -150,7 +165,7 @@ class GamificationServiceTest {
         verify(achievementRepository).save(any(UserAchievement.class));
         // Verify 2 notifications: 1 for points, 1 for achievement
         verify(notificationService, times(2)).createNotification(anyLong(), any(), any(), anyString(), anyLong(),
-                anyString(), anyString());
+                anyString(), anyString(), any());
     }
 
     @Test
@@ -186,7 +201,8 @@ class GamificationServiceTest {
         List<UserPointLogDTO> logs = gamificationService.getUserPointLogs(1L);
 
         assertThat(logs).hasSize(1);
-        assertThat(logs.get(0).getBehaviorCode()).isEqualTo("TEST_BEHAVIOR");
+        assertThat(logs.get(0).getBehaviorId()).isEqualTo(1);
+        assertThat(logs.get(0).getBehaviorName()).isEqualTo("Test Behavior");
     }
 
     @Test

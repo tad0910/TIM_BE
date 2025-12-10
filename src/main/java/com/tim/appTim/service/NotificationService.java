@@ -50,6 +50,14 @@ public class NotificationService {
                                               Notification.NotificationType notificationType,
                                               String targetType, Long targetId,
                                               String title, String content) {
+        return createNotification(receiverId, senderId, notificationType, targetType, targetId, title, content, null);
+    }
+
+    public NotificationDTO createNotification(Long receiverId, Long senderId,
+                                              Notification.NotificationType notificationType,
+                                              String targetType, Long targetId,
+                                              String title, String content,
+                                              String iconUrl) {
 
         boolean shouldCheckDuplicate =
                 senderId != null
@@ -63,7 +71,7 @@ public class NotificationService {
         }
 
         Notification notification = new Notification(receiverId, senderId, notificationType,
-                targetType, targetId, title, content);
+                targetType, targetId, title, content, iconUrl);
 
         Notification savedNotification = notificationRepository.save(notification);
         NotificationDTO notificationDTO = convertToDTO(savedNotification);
@@ -209,6 +217,7 @@ public class NotificationService {
                 notification.getTargetId(),
                 notification.getTitle(),
                 notification.getContent(),
+                notification.getIconUrl(),
                 notification.getIsRead(),
                 notification.getCreatedAt(),
                 notification.getReadAt(),
