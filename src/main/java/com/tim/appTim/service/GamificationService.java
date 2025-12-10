@@ -12,8 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import com.tim.appTim.entity.User;
 
 @Service
 @Transactional
@@ -26,6 +29,8 @@ public class GamificationService {
     private final GamificationAchievementLevelRepository achievementLevelRepository;
     private final NotificationService notificationService;
     private final RankingService rankingService;
+    private final NotificationTemplateService notificationTemplateService;
+    private final UserService userService;
 
     public GamificationService(
             GamificationBehaviorRepository behaviorRepository,
@@ -34,7 +39,9 @@ public class GamificationService {
             UserAchievementRepository achievementRepository,
             GamificationAchievementLevelRepository achievementLevelRepository,
             NotificationService notificationService,
-            @Lazy RankingService rankingService) {
+            @Lazy RankingService rankingService,
+            NotificationTemplateService notificationTemplateService,
+            UserService userService) {
         this.behaviorRepository = behaviorRepository;
         this.pointLogRepository = pointLogRepository;
         this.statsRepository = statsRepository;
@@ -42,6 +49,8 @@ public class GamificationService {
         this.achievementLevelRepository = achievementLevelRepository;
         this.notificationService = notificationService;
         this.rankingService = rankingService;
+        this.notificationTemplateService = notificationTemplateService;
+        this.userService = userService;
     }
 
     public AwardPointsResponse awardPoints(Long userId, Integer behaviorId) {
@@ -215,21 +224,25 @@ public class GamificationService {
 
     private void sendPointEarnedNotification(Long userId, GamificationBehavior behavior,
                                             Integer diligence, Integer competence, Integer experience) {
-        StringBuilder content = new StringBuilder("Bạn đã nhận được ");
+        Map<String, Object> variables = buildCommonVariables(userId, behavior);
+        variables.put("point", diligence + competence + experience);
+        variables.put("point_type_name", "điểm thưởng");
+
+        NotificationTemplateService.RenderedTemplate rendered = notificationTemplateService.render(
+                "GAMIFICATION_POINT_EARNED",
+                variables
+        );
+
+        StringBuilder fallbackContent = new StringBuilder("Bạn đã nhận được ");
         List<String> points = new ArrayList<>();
-        
-        if (diligence > 0) {
-            points.add(diligence + " điểm Chuyên cần");
-        }
-        if (competence > 0) {
-            points.add(competence + " điểm Năng lực");
-        }
-        if (experience > 0) {
-            points.add(experience + " điểm Kinh nghiệm");
-        }
-        
-        content.append(String.join(", ", points));
-        content.append(" từ hành vi: ").append(behavior.getName());
+        if (diligence > 0) points.add(diligence + " điểm Chuyên cần");
+        if (competence > 0) points.add(competence + " điểm Năng lực");
+        if (experience > 0) points.add(experience + " điểm Kinh nghiệm");
+        fallbackContent.append(String.join(", ", points));
+        fallbackContent.append(" từ hành vi: ").append(behavior.getName());
+
+        String title = rendered != null ? rendered.getTitle() : "Nhận điểm thưởng";
+        String content = rendered != null ? rendered.getContent() : fallbackContent.toString();
 
         notificationService.createNotification(
                 userId,
@@ -237,16 +250,29 @@ public class GamificationService {
                 Notification.NotificationType.GAMIFICATION_POINT_EARNED,
                 "BEHAVIOR",
                 behavior.getId().longValue(),
-                "Nhận điểm thưởng",
-                content.toString()
+                title,
+                content
         );
     }
 
     private void sendAchievementUnlockedNotification(Long userId, GamificationAchievementLevel level) {
-        String achievementName = level.getAchievement() != null ? 
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("user_fullname", getUserFullNameSafe(userId));
+        variables.put("achievement_name", level.getAchievement() != null ? level.getAchievement().getName() : "Thành tích");
+        variables.put("level_name", level.getLevelName());
+
+        NotificationTemplateService.RenderedTemplate rendered = notificationTemplateService.render(
+                "GAMIFICATION_ACHIEVEMENT_UNLOCKED",
+                variables
+        );
+
+        String achievementName = level.getAchievement() != null ?
                 level.getAchievement().getName() : "Thành tích";
-        String content = String.format("Chúc mừng! Bạn đã đạt được %s - %s", 
+        String fallbackContent = String.format("Chúc mừng! Bạn đã đạt được %s - %s",
                 achievementName, level.getLevelName());
+
+        String title = rendered != null ? rendered.getTitle() : "Đạt thành tích mới";
+        String content = rendered != null ? rendered.getContent() : fallbackContent;
 
         notificationService.createNotification(
                 userId,
@@ -254,9 +280,29 @@ public class GamificationService {
                 Notification.NotificationType.GAMIFICATION_ACHIEVEMENT_UNLOCKED,
                 "ACHIEVEMENT_LEVEL",
                 level.getId().longValue(),
-                "Đạt thành tích mới",
+                title,
                 content
         );
+    }
+
+    private Map<String, Object> buildCommonVariables(Long userId, GamificationBehavior behavior) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("user_fullname", getUserFullNameSafe(userId));
+        variables.put("activity_name", behavior != null ? behavior.getName() : "");
+        variables.put("behavior_name", behavior != null ? behavior.getName() : "");
+        return variables;
+    }
+
+    private String getUserFullNameSafe(Long userId) {
+        try {
+            User user = userService.findById(userId);
+            String first = user.getFirstName() != null ? user.getFirstName() : "";
+            String last = user.getLastName() != null ? user.getLastName() : "";
+            String full = (first + " " + last).trim();
+            return full.isEmpty() ? user.getUsername() : full;
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     @Transactional(readOnly = true)
