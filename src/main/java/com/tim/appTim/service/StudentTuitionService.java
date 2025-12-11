@@ -1,6 +1,7 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.dto.FeeAdjustmentDTO;
+import com.tim.appTim.dto.StudentPaymentScheduleHistoryDTO;
 import com.tim.appTim.entity.*;
 import com.tim.appTim.entity.TuitionInstallmentConfig;
 import com.tim.appTim.repository.*;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentTuitionService {
@@ -28,6 +30,8 @@ public class StudentTuitionService {
     private StudentTuitionRepository studentTuitionRepository;
     @Autowired
     private StudentPaymentScheduleRepository paymentScheduleRepository;
+    @Autowired
+    private StudentPaymentScheduleHistoryRepository scheduleHistoryRepository;
     @Autowired
     private TuitionRouteRepository tuitionRouteRepository;
     @Autowired
@@ -209,7 +213,7 @@ public class StudentTuitionService {
     }
 
     @Transactional
-    public void updateScheduleDueDate(Long scheduleId, LocalDate newDueDate, String reason) {
+    public void updateScheduleDueDate(Long scheduleId, LocalDate newDueDate, String reason, Long modifiedByUserId) {
 
         if (newDueDate == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày hạn mới không hợp lệ");
@@ -218,6 +222,8 @@ public class StudentTuitionService {
         StudentPaymentSchedule schedule = paymentScheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Không tìm thấy lịch thanh toán với ID: " + scheduleId));
+
+        LocalDate oldDueDate = schedule.getDueDate();
 
         StudentPaymentSchedule.PaymentStatus currentStatus = schedule.getStatus();
         if (currentStatus == StudentPaymentSchedule.PaymentStatus.PAID
@@ -248,6 +254,33 @@ public class StudentTuitionService {
         if (logger.isInfoEnabled()) {
             logger.info("Đã cập nhật hạn đóng cho schedule {} -> {}. Reason: {}", scheduleId, newDueDate, reason);
         }
+
+        StudentPaymentScheduleHistory history = new StudentPaymentScheduleHistory();
+        history.setSchedule(schedule);
+        history.setOldDueDate(oldDueDate);
+        history.setNewDueDate(newDueDate);
+        history.setReason(reason);
+        if (modifiedByUserId != null) {
+            userRepository.findById(modifiedByUserId).ifPresent(history::setModifiedBy);
+        }
+        scheduleHistoryRepository.save(history);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudentPaymentScheduleHistoryDTO> getScheduleHistory(Long scheduleId) {
+        return scheduleHistoryRepository.findByScheduleIdOrderByCreatedAtDesc(scheduleId)
+                .stream()
+                .map(history -> new StudentPaymentScheduleHistoryDTO(
+                        history.getId(),
+                        scheduleId,
+                        history.getOldDueDate(),
+                        history.getNewDueDate(),
+                        history.getReason(),
+                        history.getModifiedBy() != null ? history.getModifiedBy().getId() : null,
+                        history.getModifiedBy() != null ? history.getModifiedBy().getUsername() : null,
+                        history.getCreatedAt()
+                ))
+                .collect(Collectors.toList());
     }
 
     @Transactional
