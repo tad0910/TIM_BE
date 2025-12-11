@@ -29,6 +29,8 @@ class StudentTuitionServiceTest {
     @Mock
     private StudentPaymentScheduleRepository paymentScheduleRepository;
     @Mock
+    private StudentPaymentScheduleHistoryRepository scheduleHistoryRepository;
+    @Mock
     private TuitionRouteRepository tuitionRouteRepository;
     @Mock
     private UserRepository userRepository;
@@ -602,9 +604,12 @@ class StudentTuitionServiceTest {
         when(paymentScheduleRepository.findById(1L)).thenReturn(Optional.of(schedule));
         when(paymentScheduleRepository.save(any(StudentPaymentSchedule.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(scheduleHistoryRepository.save(any(StudentPaymentScheduleHistory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(student));
 
         LocalDate newDueDate = LocalDate.now().plusDays(10);
-        studentTuitionService.updateScheduleDueDate(1L, newDueDate, "Test reason");
+        studentTuitionService.updateScheduleDueDate(1L, newDueDate, "Test reason", 1L);
 
         assertEquals(newDueDate, schedule.getDueDate());
         verify(paymentScheduleRepository, times(1)).save(schedule);
@@ -613,7 +618,7 @@ class StudentTuitionServiceTest {
     @Test
     void testUpdateScheduleDueDate_NullDate() {
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> {
-            studentTuitionService.updateScheduleDueDate(1L, null, "Test reason");
+            studentTuitionService.updateScheduleDueDate(1L, null, "Test reason", 1L);
         });
     }
 
@@ -622,7 +627,7 @@ class StudentTuitionServiceTest {
         when(paymentScheduleRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> {
-            studentTuitionService.updateScheduleDueDate(999L, LocalDate.now().plusDays(10), "Test reason");
+            studentTuitionService.updateScheduleDueDate(999L, LocalDate.now().plusDays(10), "Test reason", 1L);
         });
     }
 
@@ -635,7 +640,7 @@ class StudentTuitionServiceTest {
         when(paymentScheduleRepository.findById(1L)).thenReturn(Optional.of(schedule));
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> {
-            studentTuitionService.updateScheduleDueDate(1L, LocalDate.now().plusDays(10), "Test reason");
+            studentTuitionService.updateScheduleDueDate(1L, LocalDate.now().plusDays(10), "Test reason", 1L);
         });
     }
 
@@ -648,7 +653,7 @@ class StudentTuitionServiceTest {
         when(paymentScheduleRepository.findById(1L)).thenReturn(Optional.of(schedule));
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> {
-            studentTuitionService.updateScheduleDueDate(1L, LocalDate.now().plusDays(10), "Test reason");
+            studentTuitionService.updateScheduleDueDate(1L, LocalDate.now().plusDays(10), "Test reason", 1L);
         });
     }
 
@@ -662,7 +667,7 @@ class StudentTuitionServiceTest {
         when(paymentScheduleRepository.findById(1L)).thenReturn(Optional.of(schedule));
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> {
-            studentTuitionService.updateScheduleDueDate(1L, LocalDate.now(), "Test reason");
+            studentTuitionService.updateScheduleDueDate(1L, LocalDate.now(), "Test reason", 1L);
         });
     }
 
@@ -677,9 +682,12 @@ class StudentTuitionServiceTest {
         when(paymentScheduleRepository.findById(1L)).thenReturn(Optional.of(schedule));
         when(paymentScheduleRepository.save(any(StudentPaymentSchedule.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(scheduleHistoryRepository.save(any(StudentPaymentScheduleHistory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(student));
 
         LocalDate newDueDate = LocalDate.now().plusDays(5);
-        studentTuitionService.updateScheduleDueDate(1L, newDueDate, "Test reason");
+        studentTuitionService.updateScheduleDueDate(1L, newDueDate, "Test reason", 1L);
 
         assertEquals(StudentPaymentSchedule.PaymentStatus.PENDING, schedule.getStatus());
     }
@@ -695,9 +703,12 @@ class StudentTuitionServiceTest {
         when(paymentScheduleRepository.findById(1L)).thenReturn(Optional.of(schedule));
         when(paymentScheduleRepository.save(any(StudentPaymentSchedule.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(scheduleHistoryRepository.save(any(StudentPaymentScheduleHistory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(student));
 
         LocalDate newDueDate = LocalDate.now().minusDays(1);
-        studentTuitionService.updateScheduleDueDate(1L, newDueDate, "Test reason");
+        studentTuitionService.updateScheduleDueDate(1L, newDueDate, "Test reason", 1L);
 
         assertEquals(StudentPaymentSchedule.PaymentStatus.OVERDUE, schedule.getStatus());
     }

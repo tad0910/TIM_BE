@@ -10,6 +10,8 @@ import com.tim.appTim.repository.NotificationTemplateRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,14 +23,17 @@ public class GamificationAchievementService {
     private final GamificationAchievementRepository achievementRepository;
     private final GamificationAchievementLevelRepository levelRepository;
     private final NotificationTemplateRepository notificationTemplateRepository;
+    private final com.tim.appTim.service.GamificationService gamificationService;
 
     public GamificationAchievementService(
             GamificationAchievementRepository achievementRepository,
             GamificationAchievementLevelRepository levelRepository,
-            NotificationTemplateRepository notificationTemplateRepository) {
+            NotificationTemplateRepository notificationTemplateRepository,
+            @org.springframework.context.annotation.Lazy com.tim.appTim.service.GamificationService gamificationService) {
         this.achievementRepository = achievementRepository;
         this.levelRepository = levelRepository;
         this.notificationTemplateRepository = notificationTemplateRepository;
+        this.gamificationService = gamificationService;
     }
 
     @Transactional(readOnly = true)
@@ -107,7 +112,35 @@ public class GamificationAchievementService {
         }
 
         GamificationAchievementLevel saved = levelRepository.save(level);
-        return mapToLevelDTO(saved);
+        AchievementLevelDTO result = mapToLevelDTO(saved);
+        
+        // Check achievements for all users after creating new level
+        // Execute after current transaction commits to ensure level is saved
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            gamificationService.checkAchievementsForAllUsers();
+                        } catch (Exception e) {
+                            System.err.println("Error checking achievements after creating level: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            );
+        } else {
+            // If no transaction, execute directly
+            try {
+                gamificationService.checkAchievementsForAllUsers();
+            } catch (Exception e) {
+                System.err.println("Error checking achievements after creating level: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+        return result;
     }
 
     public AchievementLevelDTO updateAchievementLevel(Integer id, AchievementLevelDTO dto) {
@@ -139,7 +172,35 @@ public class GamificationAchievementService {
         }
 
         GamificationAchievementLevel saved = levelRepository.save(level);
-        return mapToLevelDTO(saved);
+        AchievementLevelDTO result = mapToLevelDTO(saved);
+        
+        // Check achievements for all users after updating level
+        // Execute after current transaction commits to ensure level is saved
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            gamificationService.checkAchievementsForAllUsers();
+                        } catch (Exception e) {
+                            System.err.println("Error checking achievements after updating level: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            );
+        } else {
+            // If no transaction, execute directly
+            try {
+                gamificationService.checkAchievementsForAllUsers();
+            } catch (Exception e) {
+                System.err.println("Error checking achievements after updating level: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+        return result;
     }
 
     public void deleteAchievementLevel(Integer id) {
