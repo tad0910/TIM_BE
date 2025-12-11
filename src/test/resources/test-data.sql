@@ -245,6 +245,7 @@ INSERT INTO grades (id, class_module_id, student_id, theory_score, practice_scor
 
 
 DELETE FROM user_point_logs;
+DELETE FROM behavior_point_types;
 DELETE FROM gamification_behaviors;
 DELETE FROM gamification_behavior_groups;
 DELETE FROM attendance_records;

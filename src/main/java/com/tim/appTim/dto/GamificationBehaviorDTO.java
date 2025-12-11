@@ -1,6 +1,8 @@
 package com.tim.appTim.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
 
 public class GamificationBehaviorDTO {
     private Integer id;
@@ -15,6 +17,7 @@ public class GamificationBehaviorDTO {
     private Long notificationTemplateDiligenceId;
     private Long notificationTemplateCompetenceId;
     private Long notificationTemplateExperienceId;
+    private List<BehaviorPointTypeDTO> behaviorPointTypes = new ArrayList<>();
     private LocalDateTime createdAt;
 
     public GamificationBehaviorDTO() {}
@@ -54,6 +57,9 @@ public class GamificationBehaviorDTO {
 
     public Long getNotificationTemplateExperienceId() { return notificationTemplateExperienceId; }
     public void setNotificationTemplateExperienceId(Long notificationTemplateExperienceId) { this.notificationTemplateExperienceId = notificationTemplateExperienceId; }
+
+    public List<BehaviorPointTypeDTO> getBehaviorPointTypes() { return behaviorPointTypes; }
+    public void setBehaviorPointTypes(List<BehaviorPointTypeDTO> behaviorPointTypes) { this.behaviorPointTypes = behaviorPointTypes; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

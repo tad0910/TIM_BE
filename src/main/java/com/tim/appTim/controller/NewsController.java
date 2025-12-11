@@ -45,7 +45,7 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                Integer behaviorId = behaviorLookupService.getIdByName("READ_BLOG");
+                Integer behaviorId = behaviorLookupService.getIdByName("Đọc tin tức lần đầu");
                 gamificationService.awardPoints(userId, behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());
@@ -62,7 +62,7 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                Integer behaviorId = behaviorLookupService.getIdByName("READ_BLOG");
+                Integer behaviorId = behaviorLookupService.getIdByName("Đọc tin tức lần đầu");
                 gamificationService.awardPoints(userId, behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());
@@ -80,7 +80,7 @@ public class NewsController {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 Long userId = userService.findByUsernameOrEmail(authentication.getName()).getId();
-                Integer behaviorId = behaviorLookupService.getIdByName("READ_BLOG");
+                Integer behaviorId = behaviorLookupService.getIdByName("Đọc tin tức lần đầu");
                 gamificationService.awardPoints(userId, behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for reading blog: " + e.getMessage());

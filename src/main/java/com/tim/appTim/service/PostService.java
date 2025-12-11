@@ -159,7 +159,7 @@ public class PostService {
         try {
             long postCount = postRepository.countByUserId(userId);
             if (postCount == 1) {
-                Integer behaviorId = behaviorLookupService.getIdByName("FIRST_POST");
+                Integer behaviorId = behaviorLookupService.getIdByName("Đăng bài viết đầu tiên");
                 gamificationService.awardPoints(userId, behaviorId);
             }
         } catch (Exception e) {
@@ -168,7 +168,7 @@ public class PostService {
 
         if (savedPost.getLinkUrl() != null) {
             try {
-                Integer behaviorId = behaviorLookupService.getIdByName("POST_SHARE");
+                Integer behaviorId = behaviorLookupService.getIdByName("Chia sẻ kiến thức (Bài viết có link)");
                 gamificationService.awardPoints(userId, behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for post share: " + e.getMessage());

@@ -150,7 +150,7 @@ class ReactionServiceTest {
                 .thenReturn(Optional.empty());
         when(reactionRepository.save(any(Reaction.class))).thenReturn(reaction);
         when(reactionRepository.countByPostAndCommentIsNullAndReplyCommentIsNull(post)).thenReturn(10L); // >= 10
-        when(behaviorLookupService.getIdByName("POST'S_LIKE")).thenReturn(1);
+        when(behaviorLookupService.getIdByName("Bài viết được yêu thích (>10 likes)")).thenReturn(1);
 
         reactionService.createOrUpdateReaction(100L, 1L, Reaction.EmotionType.like);
 

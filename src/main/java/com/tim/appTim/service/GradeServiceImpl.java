@@ -167,7 +167,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
  
                     if (percentage >= 95.0) {
                         try {
-                            Integer behaviorId = behaviorLookupService.getIdByName("HIGH_POINT_2");
+                            Integer behaviorId = behaviorLookupService.getIdByName("Đạt điểm xuất sắc (>95%)");
                             gamificationService.awardPoints(studentId, behaviorId);
                         } catch (Exception e) {
                             logger.warn("Failed to award HIGH_POINT_2 for student {}: {}", studentId, e.getMessage());
@@ -175,7 +175,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
                     } else if (percentage >= 80.0) {
 
                         try {
-                            Integer behaviorId = behaviorLookupService.getIdByName("HIGH_POINT_1");
+                            Integer behaviorId = behaviorLookupService.getIdByName("Đạt điểm cao (>80%)");
                             gamificationService.awardPoints(studentId, behaviorId);
                         } catch (Exception e) {
                             logger.warn("Failed to award HIGH_POINT_1 for student {}: {}", studentId, e.getMessage());
@@ -206,7 +206,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
         if (perfectScoreCount > 0) {
             for (int i = 0; i < perfectScoreCount; i++) {
                 try {
-                    Integer behaviorId = behaviorLookupService.getIdByName("GIVING_SCORES");
+                    Integer behaviorId = behaviorLookupService.getIdByName("Giáo viên chấm điểm 10");
                     gamificationService.awardPoints(teacherId, behaviorId);
                 } catch (Exception e) {
                     logger.warn("Failed to award GIVING_SCORES for teacher {}: {}", teacherId, e.getMessage());

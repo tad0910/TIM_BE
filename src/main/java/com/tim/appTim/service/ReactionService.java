@@ -79,7 +79,7 @@ public class ReactionService {
 
         if (totalReactions >= 10) {
             try {
-                Integer behaviorId = behaviorLookupService.getIdByName("POST'S_LIKE");
+                Integer behaviorId = behaviorLookupService.getIdByName("Bài viết được yêu thích (>10 likes)");
                 gamificationService.awardPoints(post.getUser().getId(), behaviorId);
             } catch (Exception e) {
                 System.err.println("Failed to award points for post likes: " + e.getMessage());
