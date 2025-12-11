@@ -10,5 +10,6 @@ import java.util.List;
 public interface GamificationPointTypeRepository extends JpaRepository<GamificationPointType, Integer> {
     List<GamificationPointType> findByIsActiveTrue();
     List<GamificationPointType> findByShowOnDashboardTrueAndIsActiveTrue();
+    java.util.Optional<GamificationPointType> findByName(String name);
 }
 

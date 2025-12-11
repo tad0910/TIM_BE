@@ -499,12 +499,28 @@ CREATE TABLE gamification_behaviors (
     frequency_type ENUM('UNLIMITED', 'DAILY', 'WEEKLY', 'MONTHLY', 'ONCE') DEFAULT 'UNLIMITED',
     max_times_per_frequency INT DEFAULT 1, 
     
-    point_diligence INT DEFAULT 0,      
-    point_competence INT DEFAULT 0,     
-    point_experience INT DEFAULT 0,   
+    -- CÁC TRƯỜNG CŨ (DEPRECATED - Giữ lại để backward compatibility)
+    -- Khuyến nghị: Sử dụng bảng behavior_point_types thay vì các trường này
+    -- Các trường này vẫn hoạt động nhưng sẽ bị thay thế bởi behavior_point_types
+    point_diligence INT DEFAULT 0,      -- DEPRECATED: Dùng behavior_point_types thay thế
+    point_competence INT DEFAULT 0,     -- DEPRECATED: Dùng behavior_point_types thay thế
+    point_experience INT DEFAULT 0,     -- DEPRECATED: Dùng behavior_point_types thay thế
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (group_id) REFERENCES gamification_behavior_groups(id)
+);
+
+CREATE TABLE behavior_point_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    behavior_id INT NOT NULL,
+    point_type_id INT NOT NULL,
+    points INT NOT NULL DEFAULT 0,
+    notification_template_id BIGINT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (behavior_id) REFERENCES gamification_behaviors(id) ON DELETE CASCADE,
+    FOREIGN KEY (point_type_id) REFERENCES gamification_point_types(id),
+    FOREIGN KEY (notification_template_id) REFERENCES notification_templates(id),
+    UNIQUE KEY unique_behavior_point_type (behavior_id, point_type_id)
 );
 
 CREATE TABLE gamification_achievements (

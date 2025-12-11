@@ -234,7 +234,7 @@ class PostServiceTest {
             return p;
         });
         when(postRepository.countByUserId(1L)).thenReturn(1L);
-        when(behaviorLookupService.getIdByName("FIRST_POST")).thenReturn(10);
+        when(behaviorLookupService.getIdByName("Đăng bài viết đầu tiên")).thenReturn(10);
 
         postService.createPostWithFiles(1L, "Content", Post.Privacy.open, null);
         verify(gamificationService).awardPoints(1L, 10);

@@ -6,6 +6,9 @@ import com.tim.appTim.entity.GamificationBehaviorGroup;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.GamificationBehaviorRepository;
 import com.tim.appTim.repository.GamificationBehaviorGroupRepository;
+import com.tim.appTim.repository.BehaviorPointTypeRepository;
+import com.tim.appTim.repository.GamificationPointTypeRepository;
+import com.tim.appTim.repository.NotificationTemplateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +33,15 @@ class GamificationBehaviorServiceTest {
 
     @Mock
     private GamificationBehaviorGroupRepository groupRepository;
+
+    @Mock
+    private BehaviorPointTypeRepository behaviorPointTypeRepository;
+
+    @Mock
+    private GamificationPointTypeRepository pointTypeRepository;
+
+    @Mock
+    private NotificationTemplateRepository notificationTemplateRepository;
 
     @InjectMocks
     private GamificationBehaviorService behaviorService;
@@ -160,6 +172,8 @@ class GamificationBehaviorServiceTest {
             saved.setCreatedAt(LocalDateTime.now());
             return saved;
         });
+        doNothing().when(behaviorRepository).flush();
+        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         // Act
         GamificationBehaviorDTO result = behaviorService.createBehavior(behaviorDTO);
@@ -192,6 +206,9 @@ class GamificationBehaviorServiceTest {
         // Arrange
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
+        doNothing().when(behaviorRepository).flush();
+        doNothing().when(behaviorPointTypeRepository).deleteByBehaviorId(anyInt());
+        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
         updateDTO.setName("Updated Name");
@@ -232,6 +249,9 @@ class GamificationBehaviorServiceTest {
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(groupRepository.findById(2)).thenReturn(Optional.of(newGroup));
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
+        doNothing().when(behaviorRepository).flush();
+        doNothing().when(behaviorPointTypeRepository).deleteByBehaviorId(anyInt());
+        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
         updateDTO.setGroupId(2);
@@ -250,6 +270,9 @@ class GamificationBehaviorServiceTest {
         // Arrange
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
+        doNothing().when(behaviorRepository).flush();
+        doNothing().when(behaviorPointTypeRepository).deleteByBehaviorId(anyInt());
+        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
         // All fields are null
@@ -268,6 +291,9 @@ class GamificationBehaviorServiceTest {
         // Arrange
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
+        doNothing().when(behaviorRepository).flush();
+        doNothing().when(behaviorPointTypeRepository).deleteByBehaviorId(anyInt());
+        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
         updateDTO.setFrequencyType("WEEKLY");

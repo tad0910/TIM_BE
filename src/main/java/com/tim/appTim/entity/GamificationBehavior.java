@@ -2,6 +2,8 @@ package com.tim.appTim.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "gamification_behaviors")
@@ -44,6 +46,9 @@ public class GamificationBehavior {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notification_template_experience_id")
     private NotificationTemplate notificationTemplateExperience;
+
+    @OneToMany(mappedBy = "behavior", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<BehaviorPointType> behaviorPointTypes = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -93,6 +98,9 @@ public class GamificationBehavior {
 
     public NotificationTemplate getNotificationTemplateExperience() { return notificationTemplateExperience; }
     public void setNotificationTemplateExperience(NotificationTemplate notificationTemplateExperience) { this.notificationTemplateExperience = notificationTemplateExperience; }
+
+    public List<BehaviorPointType> getBehaviorPointTypes() { return behaviorPointTypes; }
+    public void setBehaviorPointTypes(List<BehaviorPointType> behaviorPointTypes) { this.behaviorPointTypes = behaviorPointTypes; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
