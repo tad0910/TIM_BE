@@ -78,17 +78,17 @@ INSERT INTO permissions (id, name) VALUES
 (39, 'form:delete');
 
 INSERT INTO users (id, username, password, email, deleted) VALUES
-(1, 'post_owner', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'owner@example.com', false),
-(2, 'another_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'another@example.com', false),
-(3, 'admin_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'admin@example.com', false),
-(4, 'stranger_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'stranger@example.com', false),
-(5, 'giaovien1', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv1@example.com', false),
-(6, 'giaovien2', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv2@example.com', false),
-(7, 'giaovien3', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv3@example.com', false),
-(8, 'form_student', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'form.student@example.com', false),
-(9, 'form_admin', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'form.admin@example.com', false),
-(10, 'giaovu_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'giaovu@example.com', false),
-(11, 'ketoan_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'ketoan@example.com', false);
+(1, 'post_owner', '{noop}password', 'owner@example.com', false),
+(2, 'another_user', '{noop}password', 'another@example.com', false),
+(3, 'admin_user', '{noop}password', 'admin@example.com', false),
+(4, 'stranger_user', '{noop}password', 'stranger@example.com', false),
+(5, 'giaovien1', '{noop}password', 'gv1@example.com', false),
+(6, 'giaovien2', '{noop}password', 'gv2@example.com', false),
+(7, 'giaovien3', '{noop}password', 'gv3@example.com', false),
+(8, 'form_student', '{noop}password', 'form.student@example.com', false),
+(9, 'form_admin', '{noop}password', 'form.admin@example.com', false),
+(10, 'giaovu_user', '{noop}password', 'giaovu@example.com', false),
+(11, 'ketoan_user', '{noop}password', 'ketoan@example.com', false);
 
 UPDATE users SET firstname = 'Owner', lastname = 'Post', so_dien_thoai = '0911000001' WHERE id = 1;
 UPDATE users SET firstname = 'Student', lastname = 'Form', so_dien_thoai = '0911000008' WHERE id = 8;

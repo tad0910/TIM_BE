@@ -2,6 +2,7 @@ package com.tim.appTim.integration;
 
 import com.tim.appTim.dto.JobActivityRequest;
 import com.tim.appTim.entity.JobActivity;
+import com.tim.appTim.entity.JobActivityType;
 import com.tim.appTim.entity.JobLead;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.JobActivityRepository;
@@ -64,7 +65,7 @@ public class JobActivityIntegrationTest {
 
         JobActivityRequest request = new JobActivityRequest();
         request.setJobLeadId(lead.getId());
-        request.setActivityType("INTERVIEWING");
+        request.setActivityType(JobActivityType.INTERVIEW.name());
         request.setContent("Interview Round 1");
         request.setHappenedAt(LocalDate.now());
 
@@ -75,7 +76,7 @@ public class JobActivityIntegrationTest {
                 .file(jsonPart))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("Interview Round 1"))
-                .andExpect(jsonPath("$.activityType").value("INTERVIEWING"));
+                .andExpect(jsonPath("$.activityType").value("INTERVIEW"));
     }
 
     @Test
@@ -93,7 +94,7 @@ public class JobActivityIntegrationTest {
         JobActivity activity = new JobActivity();
         activity.setJobLead(lead);
         activity.setContent("Existing Activity");
-        activity.setActivityType(JobLead.LeadStatus.NEW);
+        activity.setActivityType(JobActivityType.SEND_CV);
         activity.setHappenedAt(LocalDate.now());
         activity.setCreatedAt(LocalDateTime.now());
         jobActivityRepository.save(activity);
@@ -119,7 +120,7 @@ public class JobActivityIntegrationTest {
         JobActivity activity = new JobActivity();
         activity.setJobLead(lead);
         activity.setContent("Activity to update");
-        activity.setActivityType(JobLead.LeadStatus.NEW);
+        activity.setActivityType(JobActivityType.SEND_CV);
         activity.setHappenedAt(LocalDate.now());
         activity.setCreatedAt(LocalDateTime.now());
         activity = jobActivityRepository.save(activity);
@@ -138,7 +139,7 @@ public class JobActivityIntegrationTest {
     void testAddActivity_WhenJobLeadNotFound_ShouldReturn404() throws Exception {
         JobActivityRequest request = new JobActivityRequest();
         request.setJobLeadId(9999L);
-        request.setActivityType("INTERVIEWING");
+        request.setActivityType(JobActivityType.INTERVIEW.name());
         request.setContent("Content");
         request.setHappenedAt(LocalDate.now());
 
@@ -147,7 +148,7 @@ public class JobActivityIntegrationTest {
 
         mockMvc.perform(multipart("/api/student/job-activities")
                 .file(jsonPart))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -158,6 +159,6 @@ public class JobActivityIntegrationTest {
         mockMvc.perform(put("/api/student/job-activities/9999/note")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 }

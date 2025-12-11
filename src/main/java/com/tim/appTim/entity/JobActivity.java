@@ -1,5 +1,6 @@
 package com.tim.appTim.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,31 +16,26 @@ public class JobActivity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Liên kết với đầu mối việc làm (Cha)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_lead_id")
+    @JsonIgnoreProperties({"student", "hibernateLazyInitializer", "handler"})
     private JobLead jobLead;
 
-    // Loại hoạt động (Trùng với Status của JobLead)
-    // VD: SENT_CV, INTERVIEW, OFFER_RECEIVED...
-    @Enumerated(EnumType.STRING)
-    private JobLead.LeadStatus activityType;
+    @Column(name = "job_lead_id", insertable = false, updatable = false)
+    private Long jobLeadId;
 
-    // File đính kèm (Ảnh offer, Hợp đồng...)
+    @Enumerated(EnumType.STRING)
+    private JobActivityType activityType;
+
     private String fileUrl;
 
-    // Trường đa năng: Lưu "Mức offer" hoặc "Mức lương thử việc"
-    // Lưu String để linh hoạt (VD: "10 triệu gross" hoặc "10,000,000")
     private String salaryAmount;
 
-    // Thời gian diễn ra (Input ngày trên form)
     private LocalDate happenedAt;
 
-    // Nội dung chính (Mô tả lúc tạo mới)
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    // [MỚI] Ghi chú bổ sung (Dùng cho tính năng update note sau này)
     @Column(columnDefinition = "TEXT")
     private String note;
 

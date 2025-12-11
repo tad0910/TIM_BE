@@ -1,9 +1,12 @@
 package com.tim.appTim.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "job_leads")
@@ -25,17 +28,29 @@ public class JobLead {
     @Enumerated(EnumType.STRING)
     private LeadStatus status;
 
+    @Column(name = "job_interest", nullable = false)
+    private boolean jobInterest = true;
+
+    @Column(name = "created_by_admin", nullable = false)
+    private boolean createdByAdmin = false;
+
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     private User student;
 
+    @OneToMany(mappedBy = "jobLead", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<JobActivity> activities = new ArrayList<>();
+
     public enum LeadStatus {
         NEW("Mới tạo"),
         APPLIED("Đã ứng tuyển"),
         INTERVIEWING("Đang phỏng vấn"),
         OFFER("Nhận Offer"),
+        PROBATION("Thử việc"),
+        OFFICIAL("Chính thức"),
         FAILED("Trượt"),
         IGNORED("Bỏ qua");
 

@@ -13,6 +13,7 @@ import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
 import com.tim.appTim.entity.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +50,7 @@ public class JobLeadServiceImpl implements JobLeadService {
         lead.setShortName(dto.getShortName());
         lead.setAddress(dto.getAddress());
         lead.setWebsite(dto.getWebsite());
+        lead.setCreatedByAdmin(false);
 
         lead.setStatus(JobLead.LeadStatus.NEW);
         lead.setCreatedAt(LocalDateTime.now());
@@ -66,8 +68,10 @@ public class JobLeadServiceImpl implements JobLeadService {
                 saved.getShortName(),
                 saved.getAddress(),
                 saved.getWebsite(),
-                saved.getStatus().getDisplayName(),
-                false,
+                saved.getStatus() != null ? saved.getStatus().name() : null,
+                saved.getStatus() != null ? saved.getStatus().getDisplayName() : null,
+                saved.getStatus() != null ? saved.getStatus().getDisplayName() : null,
+                saved.isCreatedByAdmin(),
                 saved.getCreatedAt());
     }
 
@@ -83,8 +87,10 @@ public class JobLeadServiceImpl implements JobLeadService {
                     lead.getShortName(),
                     lead.getAddress(),
                     lead.getWebsite(),
-                    lead.getStatus().getDisplayName(),
-                    false,
+                    lead.getStatus() != null ? lead.getStatus().name() : null,
+                    lead.getStatus() != null ? lead.getStatus().getDisplayName() : null,
+                    lead.getStatus() != null ? lead.getStatus().getDisplayName() : null,
+                    lead.isCreatedByAdmin(),
                     lead.getCreatedAt()));
         }
 
@@ -97,7 +103,9 @@ public class JobLeadServiceImpl implements JobLeadService {
                     company.getShortName(),
                     company.getAddress(),
                     company.getWebsite(),
-                    app.getStatus().getDisplayName(),
+                    app.getStatus() != null ? app.getStatus().name() : null,
+                    app.getStatus() != null ? app.getStatus().getDisplayName() : null,
+                    app.getStatus() != null ? app.getStatus().getDisplayName() : null,
                     true,
                     app.getAppliedAt()));
         }
@@ -113,7 +121,11 @@ public class JobLeadServiceImpl implements JobLeadService {
                 .orElseThrow(() -> new ResourceNotFoundException("Đầu mối không tồn tại"));
 
         if (!lead.getStudent().getId().equals(studentId)) {
-            throw new RuntimeException("Bạn không có quyền xóa đầu mối này");
+            throw new AccessDeniedException("Bạn không có quyền xóa đầu mối này");
+        }
+
+        if (lead.isCreatedByAdmin()) {
+            throw new AccessDeniedException("Không thể xóa đầu mối do admin giới thiệu");
         }
 
         jobLeadRepository.delete(lead);

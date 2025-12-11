@@ -386,7 +386,6 @@ public class PostService {
         return parts[parts.length - 1];
     }
 
-    @Transactional(readOnly = true)
     public PostDTO getPostByIdForUser(Long requestingUserId, Long postId) {
         User requestingUser = userRepository.findById(requestingUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + requestingUserId));

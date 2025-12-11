@@ -4,12 +4,10 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "student_tuitions", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "student_id", "tuition_route_id" }) })
+@Table(name = "student_tuitions", uniqueConstraints = {@UniqueConstraint(columnNames = {"student_id", "tuition_route_id"})})
 @Data
 public class StudentTuition {
 
@@ -35,7 +33,7 @@ public class StudentTuition {
     private BigDecimal totalActualFee;
 
     @OneToMany(mappedBy = "studentTuition", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<StudentPaymentSchedule> paymentSchedules = new ArrayList<>();
+    private List<StudentPaymentSchedule> paymentSchedules;
 
     public enum TuitionStatus {
         PENDING,
@@ -45,3 +43,4 @@ public class StudentTuition {
         RESERVED
     }
 }
+
