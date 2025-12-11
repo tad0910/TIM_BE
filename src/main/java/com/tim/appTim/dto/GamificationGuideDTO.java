@@ -1,17 +1,13 @@
 package com.tim.appTim.dto;
 
-/**
- * DTO cho thông tin file hướng dẫn Gamification
- * Sử dụng File entity, nên chỉ cần các trường cơ bản
- */
+
 public class GamificationGuideDTO {
     private Integer id;
     private String fileUrl;
-    private String fileName; // Tên file gốc (đã bỏ prefix GAMIFICATION_GUIDE_)
+    private String fileName; 
     private Long fileSize;
-    private String fileType; // DOCUMENT, IMAGE, VIDEO
+    private String fileType; 
 
-    // Constructors
     public GamificationGuideDTO() {
     }
 
