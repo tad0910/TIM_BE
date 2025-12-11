@@ -27,6 +27,7 @@ public class GamificationService {
     private final UserGamificationStatsRepository statsRepository;
     private final UserAchievementRepository achievementRepository;
     private final GamificationAchievementLevelRepository achievementLevelRepository;
+    private final GamificationPointTypeRepository pointTypeRepository;
     private final NotificationService notificationService;
     private final RankingService rankingService;
     private final NotificationTemplateService notificationTemplateService;
@@ -38,6 +39,7 @@ public class GamificationService {
             UserGamificationStatsRepository statsRepository,
             UserAchievementRepository achievementRepository,
             GamificationAchievementLevelRepository achievementLevelRepository,
+            GamificationPointTypeRepository pointTypeRepository,
             NotificationService notificationService,
             @Lazy RankingService rankingService,
             NotificationTemplateService notificationTemplateService,
@@ -47,6 +49,7 @@ public class GamificationService {
         this.statsRepository = statsRepository;
         this.achievementRepository = achievementRepository;
         this.achievementLevelRepository = achievementLevelRepository;
+        this.pointTypeRepository = pointTypeRepository;
         this.notificationService = notificationService;
         this.rankingService = rankingService;
         this.notificationTemplateService = notificationTemplateService;
@@ -65,18 +68,53 @@ public class GamificationService {
             throw new BadRequestException("Bạn đã đạt giới hạn điểm thưởng cho hành vi này trong khoảng thời gian hiện tại");
         }
 
+        // Initialize point values - use new behaviorPointTypes if available, otherwise fall back to old fields
+        Integer pointsDiligence = 0;
+        Integer pointsCompetence = 0;
+        Integer pointsExperience = 0;
+
+        // Check if behavior has new point types structure
+        if (behavior.getBehaviorPointTypes() != null && !behavior.getBehaviorPointTypes().isEmpty()) {
+            // Use new behaviorPointTypes
+            for (com.tim.appTim.entity.BehaviorPointType bpt : behavior.getBehaviorPointTypes()) {
+                if (bpt.getPointType() != null && bpt.getPoints() != null && bpt.getPoints() > 0) {
+                    String pointTypeName = bpt.getPointType().getName().toLowerCase().trim();
+                    Integer points = bpt.getPoints();
+                    
+                    // Map point types to old structure for backward compatibility
+                    // Map dựa trên tên point type để lưu vào user_point_logs
+                    if (isDiligencePointType(pointTypeName)) {
+                        pointsDiligence += points;
+                    } else if (isCompetencePointType(pointTypeName)) {
+                        pointsCompetence += points;
+                    } else if (isExperiencePointType(pointTypeName)) {
+                        pointsExperience += points;
+                    } else {
+                        // For new point types that don't match old ones, we'll add to experience as default
+                        // Điều này đảm bảo điểm vẫn được trao và lưu vào user_point_logs
+                        pointsExperience += points;
+                    }
+                }
+            }
+        } else {
+            // Fall back to old fields for backward compatibility
+            pointsDiligence = behavior.getPointDiligence() != null ? behavior.getPointDiligence() : 0;
+            pointsCompetence = behavior.getPointCompetence() != null ? behavior.getPointCompetence() : 0;
+            pointsExperience = behavior.getPointExperience() != null ? behavior.getPointExperience() : 0;
+        }
+
         UserPointLog pointLog = new UserPointLog();
         pointLog.setUserId(userId);
         pointLog.setBehavior(behavior);
-        pointLog.setPointsDiligenceEarned(behavior.getPointDiligence());
-        pointLog.setPointsCompetenceEarned(behavior.getPointCompetence());
-        pointLog.setPointsExperienceEarned(behavior.getPointExperience());
+        pointLog.setPointsDiligenceEarned(pointsDiligence);
+        pointLog.setPointsCompetenceEarned(pointsCompetence);
+        pointLog.setPointsExperienceEarned(pointsExperience);
         pointLogRepository.save(pointLog);
 
         UserGamificationStats stats = getOrCreateUserStats(userId);
-        stats.setTotalDiligence(stats.getTotalDiligence() + behavior.getPointDiligence());
-        stats.setTotalCompetence(stats.getTotalCompetence() + behavior.getPointCompetence());
-        stats.setTotalExperience(stats.getTotalExperience() + behavior.getPointExperience());
+        stats.setTotalDiligence(stats.getTotalDiligence() + pointsDiligence);
+        stats.setTotalCompetence(stats.getTotalCompetence() + pointsCompetence);
+        stats.setTotalExperience(stats.getTotalExperience() + pointsExperience);
         statsRepository.save(stats);
 
         try {
@@ -89,15 +127,15 @@ public class GamificationService {
         List<UserAchievementDTO> newlyUnlocked = checkAndUnlockAchievements(userId, stats);
 
         sendPointEarnedNotification(userId, behavior, 
-                behavior.getPointDiligence(), 
-                behavior.getPointCompetence(), 
-                behavior.getPointExperience());
+                pointsDiligence, 
+                pointsCompetence, 
+                pointsExperience);
 
         AwardPointsResponse response = new AwardPointsResponse();
         response.setUserId(userId);
-        response.setPointsDiligenceEarned(behavior.getPointDiligence());
-        response.setPointsCompetenceEarned(behavior.getPointCompetence());
-        response.setPointsExperienceEarned(behavior.getPointExperience());
+        response.setPointsDiligenceEarned(pointsDiligence);
+        response.setPointsCompetenceEarned(pointsCompetence);
+        response.setPointsExperienceEarned(pointsExperience);
         response.setTotalDiligence(stats.getTotalDiligence());
         response.setTotalCompetence(stats.getTotalCompetence());
         response.setTotalExperience(stats.getTotalExperience());
@@ -175,6 +213,7 @@ public class GamificationService {
             Integer currentPoints = 0;
 
             if (level.getRequiredPointTypeEnum() != null) {
+                // Xử lý khi dùng enum (DILIGENCE, COMPETENCE, EXPERIENCE)
                 switch (level.getRequiredPointTypeEnum()) {
                     case DILIGENCE:
                         currentPoints = stats.getTotalDiligence();
@@ -187,7 +226,34 @@ public class GamificationService {
                         break;
                 }
             } else if (level.getRequiredPointTypeId() != null) {
-
+                // Xử lý khi dùng requiredPointTypeId (ID từ bảng gamification_point_types)
+                try {
+                    GamificationPointType pointType = pointTypeRepository.findById(level.getRequiredPointTypeId())
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "Không tìm thấy point type với ID: " + level.getRequiredPointTypeId()));
+                    
+                    // Map point type name sang các trường tương ứng trong stats
+                    String pointTypeName = pointType.getName().toLowerCase().trim();
+                    
+                    if (isDiligencePointType(pointTypeName)) {
+                        currentPoints = stats.getTotalDiligence();
+                    } else if (isCompetencePointType(pointTypeName)) {
+                        currentPoints = stats.getTotalCompetence();
+                    } else if (isExperiencePointType(pointTypeName)) {
+                        currentPoints = stats.getTotalExperience();
+                    } else {
+                        // Nếu không khớp với bất kỳ loại nào, mặc định dùng Experience
+                        // Hoặc có thể skip achievement này nếu muốn strict hơn
+                        currentPoints = stats.getTotalExperience();
+                    }
+                } catch (ResourceNotFoundException e) {
+                    // Nếu không tìm thấy point type, skip achievement này
+                    System.err.println("Warning: Achievement level " + level.getId() + 
+                            " references invalid point type ID: " + level.getRequiredPointTypeId());
+                    continue;
+                }
+            } else {
+                // Nếu không có cả enum và pointTypeId, skip achievement này
                 continue;
             }
 
@@ -226,7 +292,44 @@ public class GamificationService {
                                             Integer diligence, Integer competence, Integer experience) {
         Map<String, Object> variables = buildCommonVariables(userId, behavior);
         
-        // Send separate notifications for each point type if template is configured
+        // If behavior has new point types structure, send notifications for each
+        if (behavior.getBehaviorPointTypes() != null && !behavior.getBehaviorPointTypes().isEmpty()) {
+            for (com.tim.appTim.entity.BehaviorPointType bpt : behavior.getBehaviorPointTypes()) {
+                if (bpt.getPointType() != null && bpt.getPoints() != null && bpt.getPoints() > 0) {
+                    Map<String, Object> bptVariables = new HashMap<>(variables);
+                    bptVariables.put("point", bpt.getPoints());
+                    bptVariables.put("point_type_name", bpt.getPointType().getName());
+                    
+                    NotificationTemplate template = bpt.getNotificationTemplate();
+                    if (template != null) {
+                        NotificationTemplateService.RenderedTemplate rendered = notificationTemplateService.renderById(
+                                template.getId(),
+                                bptVariables
+                        );
+                        
+                        String fallbackContent = String.format("Bạn đã nhận được %d %s từ hành vi: %s",
+                                bpt.getPoints(), bpt.getPointType().getName(), behavior.getName());
+                        
+                        String title = rendered != null ? rendered.getTitle() : "Nhận điểm thưởng";
+                        String content = rendered != null ? rendered.getContent() : fallbackContent;
+                        
+                        notificationService.createNotification(
+                                userId,
+                                null,
+                                Notification.NotificationType.GAMIFICATION_POINT_EARNED,
+                                "BEHAVIOR",
+                                behavior.getId().longValue(),
+                                title,
+                                content,
+                                rendered != null ? rendered.getIconUrl() : null
+                        );
+                    }
+                }
+            }
+            return; // Exit early if using new structure
+        }
+        
+        // Send separate notifications for each point type if template is configured (old structure)
         if (diligence > 0 && behavior.getNotificationTemplateDiligence() != null) {
             variables.put("point", diligence);
             variables.put("point_type_name", "điểm Chuyên cần");
@@ -385,6 +488,36 @@ public class GamificationService {
                 content,
                 rendered != null ? rendered.getIconUrl() : null
         );
+    }
+
+    /**
+     * Kiểm tra xem point type có phải là "Chuyên cần" (Diligence) không
+     */
+    private boolean isDiligencePointType(String pointTypeName) {
+        return pointTypeName.equals("chuyên cần") || 
+               pointTypeName.equals("diligence") ||
+               pointTypeName.contains("chuyên cần") ||
+               pointTypeName.contains("diligence");
+    }
+
+    /**
+     * Kiểm tra xem point type có phải là "Năng lực" (Competence) không
+     */
+    private boolean isCompetencePointType(String pointTypeName) {
+        return pointTypeName.equals("năng lực") || 
+               pointTypeName.equals("competence") ||
+               pointTypeName.contains("năng lực") ||
+               pointTypeName.contains("competence");
+    }
+
+    /**
+     * Kiểm tra xem point type có phải là "Kinh nghiệm" (Experience) không
+     */
+    private boolean isExperiencePointType(String pointTypeName) {
+        return pointTypeName.equals("kinh nghiệm") || 
+               pointTypeName.equals("experience") ||
+               pointTypeName.contains("kinh nghiệm") ||
+               pointTypeName.contains("experience");
     }
 
     private Map<String, Object> buildCommonVariables(Long userId, GamificationBehavior behavior) {

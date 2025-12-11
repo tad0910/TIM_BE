@@ -220,7 +220,7 @@ public class AttendanceService {
             if (savedRecord.getStatus() == AttendanceRecord.AttendanceStatus.present && 
                 !session.getIsLate()) {
                 try {
-                    Integer behaviorId = behaviorLookupService.getIdByName("ATTEND_ON_TIME");
+                    Integer behaviorId = behaviorLookupService.getIdByName("Điểm danh đúng giờ");
                     gamificationService.awardPoints(savedRecord.getStudentId().longValue(), behaviorId);
                 } catch (Exception e) {
 

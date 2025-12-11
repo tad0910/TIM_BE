@@ -121,7 +121,7 @@ class AttendanceServiceTest {
         when(attendanceSessionRepository.findByScheduleId(1L)).thenReturn(Optional.of(session));
         // Mock authorization
         when(attendanceRecordRepository.countByScheduleIdAndMarkedBy(1L, 1)).thenReturn(1L);
-        when(behaviorLookupService.getIdByName("ATTEND_ON_TIME")).thenReturn(1);
+        when(behaviorLookupService.getIdByName("Điểm danh đúng giờ")).thenReturn(1);
 
         when(attendanceRecordRepository.save(any(AttendanceRecord.class))).thenAnswer(i -> {
             AttendanceRecord r = i.getArgument(0);
