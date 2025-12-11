@@ -472,11 +472,26 @@ public class GamificationService {
 
         String achievementName = level.getAchievement() != null ?
                 level.getAchievement().getName() : "Thành tích";
-        String fallbackContent = String.format("Chúc mừng! Bạn đã đạt được %s - %s",
-                achievementName, level.getLevelName());
+        String levelName = level.getLevelName() != null ? level.getLevelName() : "";
 
-        String title = rendered != null ? rendered.getTitle() : "Đạt thành tích mới";
-        String content = rendered != null ? rendered.getContent() : fallbackContent;
+        String fallbackContent = String.format("Chúc mừng! Bạn đã đạt được %s - %s",
+                achievementName, levelName);
+
+        String baseTitle = rendered != null ? rendered.getTitle() : "Đạt thành tích mới";
+        String baseContent = rendered != null ? rendered.getContent() : fallbackContent;
+
+        // Bảo đảm tiêu đề hiển thị rõ level đạt được
+        String title = baseTitle;
+        if (levelName != null && !levelName.isBlank() && !baseTitle.toLowerCase().contains(levelName.toLowerCase())) {
+            title = baseTitle + " - " + levelName;
+        }
+
+        // Nếu nội dung template không chứa level, bổ sung phần mô tả ngắn để phân biệt các cấp
+        String content = baseContent;
+        if (levelName != null && !levelName.isBlank()
+                && !baseContent.toLowerCase().contains(levelName.toLowerCase())) {
+            content = baseContent + " (" + achievementName + " - " + levelName + ")";
+        }
 
         notificationService.createNotification(
                 userId,
