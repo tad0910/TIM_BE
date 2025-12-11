@@ -7,7 +7,8 @@ import com.tim.appTim.entity.GamificationBehavior;
 import com.tim.appTim.entity.GamificationBehaviorGroup;
 import com.tim.appTim.entity.GamificationPointType;
 import com.tim.appTim.entity.NotificationTemplate;
-import com.tim.appTim.repository.BehaviorPointTypeRepository;
+import com.tim.appTim.exception.BadRequestException;
+import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.repository.GamificationBehaviorRepository;
 import com.tim.appTim.repository.GamificationBehaviorGroupRepository;
 import com.tim.appTim.repository.GamificationPointTypeRepository;
@@ -27,19 +28,16 @@ public class GamificationBehaviorService {
     private final GamificationBehaviorRepository behaviorRepository;
     private final GamificationBehaviorGroupRepository groupRepository;
     private final NotificationTemplateRepository notificationTemplateRepository;
-    private final BehaviorPointTypeRepository behaviorPointTypeRepository;
     private final GamificationPointTypeRepository pointTypeRepository;
 
     public GamificationBehaviorService(
             GamificationBehaviorRepository behaviorRepository,
             GamificationBehaviorGroupRepository groupRepository,
             NotificationTemplateRepository notificationTemplateRepository,
-            BehaviorPointTypeRepository behaviorPointTypeRepository,
             GamificationPointTypeRepository pointTypeRepository) {
         this.behaviorRepository = behaviorRepository;
         this.groupRepository = groupRepository;
         this.notificationTemplateRepository = notificationTemplateRepository;
-        this.behaviorPointTypeRepository = behaviorPointTypeRepository;
         this.pointTypeRepository = pointTypeRepository;
     }
 
@@ -66,13 +64,18 @@ public class GamificationBehaviorService {
 
     //@Transactional(readOnly = true)
     public GamificationBehaviorDTO createBehavior(GamificationBehaviorDTO dto) {
+        validateCreateRequest(dto);
+
+        behaviorRepository.findByName(dto.getName().trim())
+                .ifPresent(b -> { throw new ConflictException("Hành vi với tên '" + dto.getName() + "' đã tồn tại"); });
+
         GamificationBehaviorGroup group = groupRepository.findById(dto.getGroupId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhóm hành vi với ID: " + dto.getGroupId()));
 
         GamificationBehavior behavior = new GamificationBehavior();
         behavior.setGroup(group);
-        behavior.setName(dto.getName());
-        behavior.setFrequencyType(GamificationBehavior.FrequencyType.valueOf(dto.getFrequencyType()));
+        behavior.setName(dto.getName().trim());
+        behavior.setFrequencyType(GamificationBehavior.FrequencyType.valueOf(dto.getFrequencyType().trim()));
         behavior.setMaxTimesPerFrequency(dto.getMaxTimesPerFrequency());
         // Set point values only if provided, otherwise use default (0)
         behavior.setPointDiligence(dto.getPointDiligence() != null ? dto.getPointDiligence() : 0);
@@ -96,43 +99,34 @@ public class GamificationBehaviorService {
             behavior.setNotificationTemplateExperience(template);
         }
 
-        GamificationBehavior saved = behaviorRepository.save(behavior);
-        
-        // Handle behavior point types
+        // Handle behavior point types via owning collection to avoid orphan issues
         if (dto.getBehaviorPointTypes() != null && !dto.getBehaviorPointTypes().isEmpty()) {
+            List<BehaviorPointType> bpts = new ArrayList<>();
             for (BehaviorPointTypeDTO bptDto : dto.getBehaviorPointTypes()) {
                 if (bptDto.getPointTypeId() != null && bptDto.getPoints() != null) {
                     GamificationPointType pointType = pointTypeRepository.findById(bptDto.getPointTypeId())
                             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy loại điểm thưởng với ID: " + bptDto.getPointTypeId()));
-                    
+
                     BehaviorPointType behaviorPointType = new BehaviorPointType();
-                    behaviorPointType.setBehavior(saved);
+                    behaviorPointType.setBehavior(behavior);
                     behaviorPointType.setPointType(pointType);
                     behaviorPointType.setPoints(bptDto.getPoints());
-                    
+
                     if (bptDto.getNotificationTemplateId() != null) {
                         NotificationTemplate template = notificationTemplateRepository.findById(bptDto.getNotificationTemplateId())
                                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy notification template với ID: " + bptDto.getNotificationTemplateId()));
                         behaviorPointType.setNotificationTemplate(template);
                     }
-                    
-                    behaviorPointTypeRepository.save(behaviorPointType);
+                    bpts.add(behaviorPointType);
                 }
             }
+            behavior.getBehaviorPointTypes().clear();
+            behavior.getBehaviorPointTypes().addAll(bpts);
+        } else {
+            behavior.getBehaviorPointTypes().clear();
         }
-        
-        // Refresh behavior entity to load behaviorPointTypes
-        behaviorRepository.flush(); // Ensure all changes are persisted
-        
-        // Load behaviorPointTypes with all associations using JOIN FETCH
-        try {
-            List<BehaviorPointType> behaviorPointTypes = behaviorPointTypeRepository.findByBehaviorIdWithAssociations(saved.getId());
-            saved.setBehaviorPointTypes(behaviorPointTypes);
-        } catch (Exception e) {
-            // If loading behaviorPointTypes fails, set empty list to avoid null pointer
-            saved.setBehaviorPointTypes(new ArrayList<>());
-        }
-        
+
+        GamificationBehavior saved = behaviorRepository.save(behavior);
         return mapToDTO(saved);
     }
 
@@ -145,9 +139,25 @@ public class GamificationBehaviorService {
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhóm hành vi với ID: " + dto.getGroupId()));
             behavior.setGroup(group);
         }
-        if (dto.getName() != null) behavior.setName(dto.getName());
+        if (dto.getName() != null) {
+            String newName = dto.getName().trim();
+            if (newName.isEmpty()) {
+                throw new BadRequestException("Tên hành vi không được để trống");
+            }
+            behaviorRepository.findByName(newName)
+                    .ifPresent(existing -> {
+                        if (!existing.getId().equals(id)) {
+                            throw new ConflictException("Hành vi với tên '" + newName + "' đã tồn tại");
+                        }
+                    });
+            behavior.setName(newName);
+        }
         if (dto.getFrequencyType() != null) {
-            behavior.setFrequencyType(GamificationBehavior.FrequencyType.valueOf(dto.getFrequencyType()));
+            try {
+                behavior.setFrequencyType(GamificationBehavior.FrequencyType.valueOf(dto.getFrequencyType().trim()));
+            } catch (IllegalArgumentException ex) {
+                throw new BadRequestException("frequencyType không hợp lệ");
+            }
         }
         if (dto.getMaxTimesPerFrequency() != null) {
             behavior.setMaxTimesPerFrequency(dto.getMaxTimesPerFrequency());
@@ -180,51 +190,31 @@ public class GamificationBehaviorService {
             behavior.setNotificationTemplateExperience(null);
         }
 
-        // Handle behavior point types - delete existing and create new ones
+        // Handle behavior point types via owning collection (orphanRemoval)
         if (dto.getBehaviorPointTypes() != null) {
-            // Delete existing behavior point types
-            behaviorPointTypeRepository.deleteByBehaviorId(id);
-            
-            // Create new behavior point types
+            behavior.getBehaviorPointTypes().clear();
             for (BehaviorPointTypeDTO bptDto : dto.getBehaviorPointTypes()) {
                 if (bptDto.getPointTypeId() != null && bptDto.getPoints() != null) {
                     GamificationPointType pointType = pointTypeRepository.findById(bptDto.getPointTypeId())
                             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy loại điểm thưởng với ID: " + bptDto.getPointTypeId()));
-                    
+
                     BehaviorPointType behaviorPointType = new BehaviorPointType();
                     behaviorPointType.setBehavior(behavior);
                     behaviorPointType.setPointType(pointType);
                     behaviorPointType.setPoints(bptDto.getPoints());
-                    
+
                     if (bptDto.getNotificationTemplateId() != null) {
                         NotificationTemplate template = notificationTemplateRepository.findById(bptDto.getNotificationTemplateId())
                                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy notification template với ID: " + bptDto.getNotificationTemplateId()));
                         behaviorPointType.setNotificationTemplate(template);
                     }
-                    
-                    behaviorPointTypeRepository.save(behaviorPointType);
+
+                    behavior.getBehaviorPointTypes().add(behaviorPointType);
                 }
             }
         }
 
         GamificationBehavior saved = behaviorRepository.save(behavior);
-        behaviorRepository.flush(); // Ensure all changes are persisted
-        
-        // Load behaviorPointTypes only if we created/updated any in the DTO
-        // Otherwise, just set empty list to avoid query issues
-        if (dto.getBehaviorPointTypes() != null && saved.getId() != null) {
-            try {
-                List<BehaviorPointType> behaviorPointTypes = behaviorPointTypeRepository.findByBehaviorIdWithAssociations(saved.getId());
-                saved.setBehaviorPointTypes(behaviorPointTypes != null ? behaviorPointTypes : new ArrayList<>());
-            } catch (Exception e) {
-                // If loading fails, use empty list - this is safe and won't break the response
-                saved.setBehaviorPointTypes(new ArrayList<>());
-            }
-        } else {
-            // No behaviorPointTypes in DTO, set empty list
-            saved.setBehaviorPointTypes(new ArrayList<>());
-        }
-        
         return mapToDTO(saved);
     }
 
@@ -280,6 +270,32 @@ public class GamificationBehaviorService {
         
         dto.setCreatedAt(behavior.getCreatedAt());
         return dto;
+    }
+
+    private void validateCreateRequest(GamificationBehaviorDTO dto) {
+        if (dto.getGroupId() == null) {
+            throw new BadRequestException("groupId là bắt buộc");
+        }
+        if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+            throw new BadRequestException("name là bắt buộc");
+        }
+        if (dto.getFrequencyType() == null || dto.getFrequencyType().trim().isEmpty()) {
+            throw new BadRequestException("frequencyType là bắt buộc");
+        }
+        if (dto.getMaxTimesPerFrequency() == null) {
+            throw new BadRequestException("maxTimesPerFrequency là bắt buộc");
+        }
+        // Validate behaviorPointTypes entries if provided
+        if (dto.getBehaviorPointTypes() != null) {
+            dto.getBehaviorPointTypes().forEach(bpt -> {
+                if (bpt.getPointTypeId() == null) {
+                    throw new BadRequestException("behaviorPointTypes.pointTypeId là bắt buộc");
+                }
+                if (bpt.getPoints() == null) {
+                    throw new BadRequestException("behaviorPointTypes.points là bắt buộc");
+                }
+            });
+        }
     }
 }
 

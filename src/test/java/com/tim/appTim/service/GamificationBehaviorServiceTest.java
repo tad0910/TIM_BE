@@ -1,12 +1,16 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.dto.GamificationBehaviorDTO;
+import com.tim.appTim.dto.BehaviorPointTypeDTO;
 import com.tim.appTim.entity.GamificationBehavior;
 import com.tim.appTim.entity.GamificationBehaviorGroup;
+import com.tim.appTim.entity.GamificationPointType;
+import com.tim.appTim.entity.NotificationTemplate;
+import com.tim.appTim.exception.BadRequestException;
+import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.GamificationBehaviorRepository;
 import com.tim.appTim.repository.GamificationBehaviorGroupRepository;
-import com.tim.appTim.repository.BehaviorPointTypeRepository;
 import com.tim.appTim.repository.GamificationPointTypeRepository;
 import com.tim.appTim.repository.NotificationTemplateRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,9 +37,6 @@ class GamificationBehaviorServiceTest {
 
     @Mock
     private GamificationBehaviorGroupRepository groupRepository;
-
-    @Mock
-    private BehaviorPointTypeRepository behaviorPointTypeRepository;
 
     @Mock
     private GamificationPointTypeRepository pointTypeRepository;
@@ -166,14 +167,13 @@ class GamificationBehaviorServiceTest {
     void createBehavior_ShouldCreateAndReturnBehavior() {
         // Arrange
         when(groupRepository.findById(1)).thenReturn(Optional.of(group));
+        when(behaviorRepository.findByName(anyString())).thenReturn(Optional.empty());
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenAnswer(invocation -> {
             GamificationBehavior saved = invocation.getArgument(0);
             saved.setId(1);
             saved.setCreatedAt(LocalDateTime.now());
             return saved;
         });
-        doNothing().when(behaviorRepository).flush();
-        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         // Act
         GamificationBehaviorDTO result = behaviorService.createBehavior(behaviorDTO);
@@ -184,6 +184,75 @@ class GamificationBehaviorServiceTest {
         assertEquals(behaviorDTO.getName(), result.getName());
         verify(groupRepository).findById(1);
         verify(behaviorRepository).save(any(GamificationBehavior.class));
+    }
+
+    @Test
+    void createBehavior_WhenMissingRequiredFields_ShouldThrowBadRequest() {
+        GamificationBehaviorDTO invalid = new GamificationBehaviorDTO();
+
+        assertThrows(BadRequestException.class, () -> behaviorService.createBehavior(invalid));
+        verify(behaviorRepository, never()).save(any());
+    }
+
+    @Test
+    void createBehavior_WhenNameDuplicate_ShouldThrowConflict() {
+        when(behaviorRepository.findByName("Điểm danh đúng giờ")).thenReturn(Optional.of(behavior));
+
+        assertThrows(ConflictException.class, () -> behaviorService.createBehavior(behaviorDTO));
+        verify(behaviorRepository, never()).save(any());
+    }
+
+    @Test
+    void createBehavior_WithTemplatesAndPointTypes_ShouldPopulateRelations() {
+        NotificationTemplate tpl = new NotificationTemplate();
+        tpl.setId(9L);
+        GamificationPointType pt = new GamificationPointType();
+        pt.setId(5);
+        pt.setName("Competence");
+
+        BehaviorPointTypeDTO bptDto = new BehaviorPointTypeDTO();
+        bptDto.setPointTypeId(5);
+        bptDto.setPoints(7);
+        bptDto.setNotificationTemplateId(9L);
+        behaviorDTO.setBehaviorPointTypes(List.of(bptDto));
+        behaviorDTO.setNotificationTemplateCompetenceId(9L);
+
+        when(groupRepository.findById(1)).thenReturn(Optional.of(group));
+        when(behaviorRepository.findByName(anyString())).thenReturn(Optional.empty());
+        when(notificationTemplateRepository.findById(9L)).thenReturn(Optional.of(tpl));
+        when(pointTypeRepository.findById(5)).thenReturn(Optional.of(pt));
+        when(behaviorRepository.save(any(GamificationBehavior.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        GamificationBehaviorDTO result = behaviorService.createBehavior(behaviorDTO);
+
+        assertNotNull(result);
+        assertEquals(1, result.getBehaviorPointTypes().size());
+        assertEquals(5, result.getBehaviorPointTypes().get(0).getPointTypeId());
+        assertEquals(9L, result.getNotificationTemplateCompetenceId());
+    }
+
+    @Test
+    void createBehavior_WithInvalidPointType_ShouldThrow() {
+        BehaviorPointTypeDTO bptDto = new BehaviorPointTypeDTO();
+        bptDto.setPointTypeId(99);
+        bptDto.setPoints(7);
+        behaviorDTO.setBehaviorPointTypes(List.of(bptDto));
+
+        when(groupRepository.findById(1)).thenReturn(Optional.of(group));
+        when(behaviorRepository.findByName(anyString())).thenReturn(Optional.empty());
+        when(pointTypeRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> behaviorService.createBehavior(behaviorDTO));
+    }
+
+    @Test
+    void createBehavior_WithInvalidTemplate_ShouldThrow() {
+        behaviorDTO.setNotificationTemplateDiligenceId(100L);
+        when(groupRepository.findById(1)).thenReturn(Optional.of(group));
+        when(behaviorRepository.findByName(anyString())).thenReturn(Optional.empty());
+        when(notificationTemplateRepository.findById(100L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> behaviorService.createBehavior(behaviorDTO));
     }
 
     @Test
@@ -206,9 +275,6 @@ class GamificationBehaviorServiceTest {
         // Arrange
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
-        doNothing().when(behaviorRepository).flush();
-        doNothing().when(behaviorPointTypeRepository).deleteByBehaviorId(anyInt());
-        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
         updateDTO.setName("Updated Name");
@@ -249,9 +315,6 @@ class GamificationBehaviorServiceTest {
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(groupRepository.findById(2)).thenReturn(Optional.of(newGroup));
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
-        doNothing().when(behaviorRepository).flush();
-        doNothing().when(behaviorPointTypeRepository).deleteByBehaviorId(anyInt());
-        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
         updateDTO.setGroupId(2);
@@ -270,9 +333,6 @@ class GamificationBehaviorServiceTest {
         // Arrange
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
-        doNothing().when(behaviorRepository).flush();
-        doNothing().when(behaviorPointTypeRepository).deleteByBehaviorId(anyInt());
-        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
         // All fields are null
@@ -291,9 +351,6 @@ class GamificationBehaviorServiceTest {
         // Arrange
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
         when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
-        doNothing().when(behaviorRepository).flush();
-        doNothing().when(behaviorPointTypeRepository).deleteByBehaviorId(anyInt());
-        when(behaviorPointTypeRepository.findByBehaviorIdWithAssociations(anyInt())).thenReturn(new ArrayList<>());
 
         GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
         updateDTO.setFrequencyType("WEEKLY");
@@ -304,6 +361,87 @@ class GamificationBehaviorServiceTest {
         // Assert
         assertEquals(GamificationBehavior.FrequencyType.WEEKLY, behavior.getFrequencyType());
         verify(behaviorRepository).save(behavior);
+    }
+
+    @Test
+    void updateBehavior_WithInvalidFrequency_ShouldThrow() {
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
+        GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
+        updateDTO.setFrequencyType("INVALID");
+
+        assertThrows(BadRequestException.class, () -> behaviorService.updateBehavior(1, updateDTO));
+    }
+
+    @Test
+    void updateBehavior_WithDuplicateName_ShouldThrowConflict() {
+        GamificationBehavior other = new GamificationBehavior();
+        other.setId(2);
+        other.setName("Updated Name");
+
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
+        when(behaviorRepository.findByName("Updated Name")).thenReturn(Optional.of(other));
+
+        GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
+        updateDTO.setName("Updated Name");
+
+        assertThrows(ConflictException.class, () -> behaviorService.updateBehavior(1, updateDTO));
+    }
+
+    @Test
+    void updateBehavior_WithTemplatesAndPointTypes_ShouldUpdateRelations() {
+        NotificationTemplate tpl = new NotificationTemplate();
+        tpl.setId(3L);
+        GamificationPointType pt = new GamificationPointType();
+        pt.setId(4);
+        pt.setName("Diligence");
+
+        BehaviorPointTypeDTO bptDto = new BehaviorPointTypeDTO();
+        bptDto.setPointTypeId(4);
+        bptDto.setPoints(10);
+        bptDto.setNotificationTemplateId(3L);
+
+        GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
+        updateDTO.setNotificationTemplateDiligenceId(3L);
+        updateDTO.setBehaviorPointTypes(List.of(bptDto));
+
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
+        when(notificationTemplateRepository.findById(3L)).thenReturn(Optional.of(tpl));
+        when(pointTypeRepository.findById(4)).thenReturn(Optional.of(pt));
+        when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
+
+        behaviorService.updateBehavior(1, updateDTO);
+
+        assertEquals(1, behavior.getBehaviorPointTypes().size());
+        assertEquals(4, behavior.getBehaviorPointTypes().get(0).getPointType().getId());
+        assertEquals(3L, behavior.getNotificationTemplateDiligence().getId());
+    }
+
+    @Test
+    void updateBehavior_WithNullTemplates_ShouldClearExisting() {
+        NotificationTemplate tpl = new NotificationTemplate();
+        tpl.setId(7L);
+        behavior.setNotificationTemplateCompetence(tpl);
+
+        GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
+        updateDTO.setNotificationTemplateCompetenceId(null);
+
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
+        when(behaviorRepository.save(any(GamificationBehavior.class))).thenReturn(behavior);
+
+        behaviorService.updateBehavior(1, updateDTO);
+
+        assertNull(behavior.getNotificationTemplateCompetence());
+    }
+
+    @Test
+    void updateBehavior_WithInvalidTemplate_ShouldThrow() {
+        GamificationBehaviorDTO updateDTO = new GamificationBehaviorDTO();
+        updateDTO.setNotificationTemplateExperienceId(55L);
+
+        when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
+        when(notificationTemplateRepository.findById(55L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> behaviorService.updateBehavior(1, updateDTO));
     }
 
     @Test
