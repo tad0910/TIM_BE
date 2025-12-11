@@ -422,7 +422,17 @@ public class GamificationController {
             @RequestParam(required = false) String requiredPointTypeEnum,
             @RequestParam(required = false) Integer minPointsRequired,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
-            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(value = "notificationTemplateId", required = false) String notificationTemplateIdStr) {
+        Long notificationTemplateId = null;
+        if (notificationTemplateIdStr != null && !notificationTemplateIdStr.trim().isEmpty()) {
+            try {
+                notificationTemplateId = Long.parseLong(notificationTemplateIdStr);
+            } catch (NumberFormatException e) {
+                // Invalid format, treat as null (clear template)
+                notificationTemplateId = null;
+            }
+        }
         String finalImageUrl = imageUrl;
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
@@ -440,6 +450,7 @@ public class GamificationController {
         dto.setRequiredPointTypeEnum(requiredPointTypeEnum);
         dto.setMinPointsRequired(minPointsRequired);
         dto.setImageUrl(finalImageUrl);
+        dto.setNotificationTemplateId(notificationTemplateId);
         
         AchievementLevelDTO created = achievementService.createAchievementLevel(dto);
         return ResponseEntity.created(URI.create("/gamification/achievement-levels/" + created.getId()))
@@ -456,7 +467,17 @@ public class GamificationController {
             @RequestParam(required = false) String requiredPointTypeEnum,
             @RequestParam(required = false) Integer minPointsRequired,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
-            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(value = "notificationTemplateId", required = false) String notificationTemplateIdStr) {
+        Long notificationTemplateId = null;
+        if (notificationTemplateIdStr != null && !notificationTemplateIdStr.trim().isEmpty()) {
+            try {
+                notificationTemplateId = Long.parseLong(notificationTemplateIdStr);
+            } catch (NumberFormatException e) {
+                // Invalid format, treat as null (clear template)
+                notificationTemplateId = null;
+            }
+        }
         String finalImageUrl = imageUrl;
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
@@ -474,6 +495,7 @@ public class GamificationController {
         dto.setRequiredPointTypeEnum(requiredPointTypeEnum);
         dto.setMinPointsRequired(minPointsRequired);
         dto.setImageUrl(finalImageUrl);
+        dto.setNotificationTemplateId(notificationTemplateId);
         
         AchievementLevelDTO updated = achievementService.updateAchievementLevel(id, dto);
         return ResponseEntity.ok(updated);

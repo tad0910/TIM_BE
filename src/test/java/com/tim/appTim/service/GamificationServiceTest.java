@@ -147,6 +147,7 @@ class GamificationServiceTest {
         level.setMinPointsRequired(10);
         level.setRequiredPointTypeEnum(GamificationAchievementLevel.PointTypeEnum.DILIGENCE);
         GamificationAchievement achievement = new GamificationAchievement();
+        achievement.setId(1);
         achievement.setName("Achievement 1");
         level.setAchievement(achievement);
 
@@ -268,6 +269,7 @@ class GamificationServiceTest {
         level.setMinPointsRequired(5);
         level.setRequiredPointTypeId(5);
         GamificationAchievement achievement = new GamificationAchievement();
+        achievement.setId(1);
         achievement.setName("Ach");
         level.setAchievement(achievement);
 

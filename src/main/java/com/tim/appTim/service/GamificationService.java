@@ -198,6 +198,7 @@ public class GamificationService {
 
     private List<UserAchievementDTO> checkAndUnlockAchievements(Long userId, UserGamificationStats stats) {
         List<UserAchievementDTO> newlyUnlocked = new ArrayList<>();
+        Map<Integer, GamificationAchievementLevel> highestUnlockedByAchievement = new HashMap<>();
 
         List<GamificationAchievementLevel> allLevels = achievementLevelRepository.findAll();
 
@@ -281,8 +282,18 @@ public class GamificationService {
                 dto.setIsDisplayed(userAchievement.getIsDisplayed());
                 newlyUnlocked.add(dto);
 
-                sendAchievementUnlockedNotification(userId, level);
+                Integer achievementId = level.getAchievement() != null ? level.getAchievement().getId() : null;
+                if (achievementId != null) {
+                    GamificationAchievementLevel existingHighest = highestUnlockedByAchievement.get(achievementId);
+                    if (existingHighest == null || level.getMinPointsRequired() > existingHighest.getMinPointsRequired()) {
+                        highestUnlockedByAchievement.put(achievementId, level);
+                    }
+                }
             }
+        }
+
+        for (GamificationAchievementLevel highestLevel : highestUnlockedByAchievement.values()) {
+            sendAchievementUnlockedNotification(userId, highestLevel);
         }
 
         return newlyUnlocked;
@@ -472,11 +483,34 @@ public class GamificationService {
 
         String achievementName = level.getAchievement() != null ?
                 level.getAchievement().getName() : "Thành tích";
-        String fallbackContent = String.format("Chúc mừng! Bạn đã đạt được %s - %s",
-                achievementName, level.getLevelName());
+        String levelName = level.getLevelName() != null ? level.getLevelName() : "";
 
-        String title = rendered != null ? rendered.getTitle() : "Đạt thành tích mới";
-        String content = rendered != null ? rendered.getContent() : fallbackContent;
+        String fallbackContent = String.format("Chúc mừng! Bạn đã đạt được %s - %s",
+                achievementName, levelName);
+
+        String baseTitle = rendered != null ? rendered.getTitle() : "Đạt thành tích mới";
+        String baseContent = rendered != null ? rendered.getContent() : fallbackContent;
+
+        // Bảo đảm tiêu đề hiển thị rõ level đạt được
+        String title = baseTitle;
+        if (levelName != null && !levelName.isBlank() && !baseTitle.toLowerCase().contains(levelName.toLowerCase())) {
+            title = baseTitle + " - " + levelName;
+        }
+
+        // Nếu nội dung template không chứa level, bổ sung phần mô tả ngắn để phân biệt các cấp
+        String content = baseContent;
+        if (levelName != null && !levelName.isBlank()
+                && !baseContent.toLowerCase().contains(levelName.toLowerCase())) {
+            content = baseContent + " (" + achievementName + " - " + levelName + ")";
+        }
+
+        String iconUrl = level.getImageUrl();
+        if (iconUrl == null || iconUrl.isBlank()) {
+            iconUrl = rendered != null ? rendered.getIconUrl() : null;
+        }
+        if (iconUrl == null && level.getAchievement() != null && level.getAchievement().getImageUrl() != null) {
+            iconUrl = level.getAchievement().getImageUrl();
+        }
 
         notificationService.createNotification(
                 userId,
@@ -486,7 +520,7 @@ public class GamificationService {
                 level.getId().longValue(),
                 title,
                 content,
-                rendered != null ? rendered.getIconUrl() : null
+                iconUrl
         );
     }
 
@@ -562,6 +596,38 @@ public class GamificationService {
     public List<UserAchievementDTO> getUserAchievements(Long userId) {
         List<UserAchievement> achievements = achievementRepository.findByUserIdOrderByUnlockedAtDesc(userId);
         return achievements.stream().map(this::mapToAchievementDTO).collect(Collectors.toList());
+    }
+
+    /**
+     * Check and unlock achievements for all users after a new level is created/updated
+     * This is called when admin creates or updates an achievement level
+     */
+    @Transactional
+    public void checkAchievementsForAllUsers() {
+        System.out.println("=== Starting checkAchievementsForAllUsers ===");
+        List<UserGamificationStats> allStats = statsRepository.findAll();
+        System.out.println("Found " + allStats.size() + " users with stats");
+        
+        for (UserGamificationStats stats : allStats) {
+            try {
+                System.out.println("Checking achievements for user " + stats.getUserId() + 
+                    " (Diligence: " + stats.getTotalDiligence() + 
+                    ", Competence: " + stats.getTotalCompetence() + 
+                    ", Experience: " + stats.getTotalExperience() + ")");
+                List<UserAchievementDTO> unlocked = checkAndUnlockAchievements(stats.getUserId(), stats);
+                if (!unlocked.isEmpty()) {
+                    System.out.println("Unlocked " + unlocked.size() + " achievements for user " + stats.getUserId());
+                    for (UserAchievementDTO dto : unlocked) {
+                        System.out.println("  - " + dto.getAchievementName() + " - " + dto.getLevelName());
+                    }
+                }
+            } catch (Exception e) {
+                // Log error but continue processing other users
+                System.err.println("Error checking achievements for user " + stats.getUserId() + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        System.out.println("=== Finished checkAchievementsForAllUsers ===");
     }
 
     private UserPointLogDTO mapToPointLogDTO(UserPointLog log) {

@@ -40,12 +40,10 @@ public class GamificationDataLoader implements CommandLineRunner {
         GamificationBehaviorGroup interactionGroup = createGroupIfNotFound("Tương tác");
         GamificationBehaviorGroup activityGroup = createGroupIfNotFound("Hoạt động");
 
-        // Tìm hoặc tạo các point types (có thể tìm theo tên tiếng Việt hoặc tiếng Anh)
         GamificationPointType diligenceType = findOrCreatePointType("Chuyên cần", "Diligence");
         GamificationPointType competenceType = findOrCreatePointType("Năng lực", "Competence");
         GamificationPointType experienceType = findOrCreatePointType("Kinh nghiệm", "Experience");
 
-        // Tạo behaviors với tên mới (tiếng Việt) và dùng behavior_point_types
         createBehaviorWithPointTypes(studyGroup, "Điểm danh đúng giờ",
                 GamificationBehavior.FrequencyType.DAILY, 1,
                 new PointTypeConfig(diligenceType, 5));
@@ -99,26 +97,22 @@ public class GamificationDataLoader implements CommandLineRunner {
     }
 
     private GamificationPointType findOrCreatePointType(String vietnameseName, String englishName) {
-        // Tìm theo tên tiếng Việt chính xác trước
         Optional<GamificationPointType> byVietnamese = pointTypeRepository.findByName(vietnameseName);
         if (byVietnamese.isPresent()) {
             return byVietnamese.get();
         }
-        
-        // Nếu không tìm thấy, tìm theo tên tiếng Anh chính xác
+
         Optional<GamificationPointType> byEnglish = pointTypeRepository.findByName(englishName);
         if (byEnglish.isPresent()) {
             return byEnglish.get();
         }
-        
-        // Nếu vẫn không tìm thấy, tìm trong danh sách tất cả point types (case-insensitive, partial match)
+
         String vietnameseLower = vietnameseName.toLowerCase().trim();
         String englishLower = englishName.toLowerCase().trim();
         
         Optional<GamificationPointType> byPartialMatch = pointTypeRepository.findAll().stream()
                 .filter(pt -> {
                     String ptName = pt.getName().toLowerCase().trim();
-                    // Tìm theo tên chứa từ khóa (loại bỏ "Điểm " nếu có)
                     String vietnameseKey = vietnameseLower.replace("điểm ", "").trim();
                     return ptName.equals(vietnameseLower) || 
                            ptName.equals(englishLower) ||
@@ -130,8 +124,7 @@ public class GamificationDataLoader implements CommandLineRunner {
         if (byPartialMatch.isPresent()) {
             return byPartialMatch.get();
         }
-        
-        // Nếu không tìm thấy, tạo mới point type
+
         GamificationPointType newPointType = new GamificationPointType();
         newPointType.setName(vietnameseName);
         newPointType.setDescription("Điểm thưởng " + vietnameseName);
@@ -159,7 +152,6 @@ public class GamificationDataLoader implements CommandLineRunner {
             return;
         }
 
-        // Tạo behavior với các trường cũ set về 0
         GamificationBehavior behavior = new GamificationBehavior();
         behavior.setGroup(group);
         behavior.setName(name);
@@ -170,7 +162,6 @@ public class GamificationDataLoader implements CommandLineRunner {
         behavior.setPointExperience(0);
         GamificationBehavior saved = behaviorRepository.save(behavior);
 
-        // Tạo behavior_point_types
         for (PointTypeConfig config : pointTypeConfigs) {
             if (config.pointType != null && config.points != null && config.points > 0) {
                 BehaviorPointType behaviorPointType = new BehaviorPointType();
