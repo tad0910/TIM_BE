@@ -2,17 +2,20 @@ package com.tim.appTim.controller;
 
 import com.tim.appTim.dto.FeeAdjustmentDTO;
 import com.tim.appTim.dto.ScheduleDueDateUpdateDTO;
-
+import com.tim.appTim.dto.StudentPaymentScheduleHistoryDTO;
 import com.tim.appTim.entity.StudentTuition;
 import com.tim.appTim.service.StudentTuitionService;
+import com.tim.appTim.service.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/student-tuition")
@@ -63,14 +66,26 @@ public class StudentTuitionController {
     @PreAuthorize("hasAnyAuthority('tuition:update', 'ROLE_ADMIN')")
     public ResponseEntity<?> updateScheduleDueDate(
             @PathVariable Long scheduleId,
-            @RequestBody @Valid ScheduleDueDateUpdateDTO dto
+            @RequestBody @Valid ScheduleDueDateUpdateDTO dto,
+            Authentication authentication
     ) {
-        studentTuitionService.updateScheduleDueDate(scheduleId, dto.getDueDate(), dto.getReason());
+        Long modifiedByUserId = null;
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl userDetails) {
+            modifiedByUserId = userDetails.getUser().getId();
+        }
+
+        studentTuitionService.updateScheduleDueDate(scheduleId, dto.getDueDate(), dto.getReason(), modifiedByUserId);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Cập nhật hạn đóng thành công!",
                 "scheduleId", scheduleId,
                 "newDueDate", dto.getDueDate()
         ));
+    }
+
+    @GetMapping("/schedules/{scheduleId}/history")
+    @PreAuthorize("hasAnyAuthority('tuition:read_detail', 'ROLE_ADMIN', 'ROLE_GIAO_VIEN')")
+    public ResponseEntity<List<StudentPaymentScheduleHistoryDTO>> getScheduleHistory(@PathVariable Long scheduleId) {
+        return ResponseEntity.ok(studentTuitionService.getScheduleHistory(scheduleId));
     }
 }

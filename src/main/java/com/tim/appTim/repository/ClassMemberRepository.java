@@ -19,6 +19,7 @@ public interface ClassMemberRepository extends JpaRepository<ClassMember, Long> 
     List<ClassMember> findByUserId(Long userId);
     Optional<ClassMember> findByClassIdAndUserId(Long classId, Long userId);
     boolean existsByClassIdAndUserId(Long classId, Long userId);
+    boolean existsByClassIdAndUserIdAndRole(Long classId, Long userId, ClassMember.Role role);
     Page<ClassMember> findByClassIdAndRole(Long classId, ClassMember.Role role, Pageable pageable);
     @Query("SELECT cm.classId FROM ClassMember cm WHERE cm.userId = :userId AND cm.role = :role")
     List<Long> findClassIdsByUserIdAndRole(@Param("userId") Long userId, @Param("role") ClassMember.Role role);

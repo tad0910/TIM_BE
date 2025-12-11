@@ -1,23 +1,30 @@
 package com.tim.appTim.dto;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class JobLeadDTO {
+@AllArgsConstructor
+public class AdminJobLeadDTO {
+
     private Long id;
     private String companyName;
     private String shortName;
     private String address;
     private String website;
+
     private String statusCode;
     private String statusLabel;
-    private String status;
+    private boolean jobInterest;
+    private LocalDateTime createdAt;
+    private boolean fromAdmin;
 
-    private boolean isFromAdmin;
-    private LocalDateTime date;
+    private List<JobActivityDTO> activities;
 }

@@ -33,6 +33,8 @@ import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.Role;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
+import com.tim.appTim.entity.JobActivity;
+import com.tim.appTim.entity.JobLead;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.InternalServerErrorException;
@@ -48,6 +50,13 @@ import com.tim.appTim.repository.RoleRepository;
 import com.tim.appTim.repository.UserImageRepository;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.repository.FileRepository;
+import com.tim.appTim.repository.JobLeadRepository;
+import com.tim.appTim.repository.JobActivityRepository;
+import com.tim.appTim.repository.NotificationRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service("userService")
 public class UserService implements UserDetailsService {
@@ -66,6 +75,9 @@ public class UserService implements UserDetailsService {
     private final FileRepository fileRepository;
     private final RoleRepository roleRepository;
     private final PostService postService;
+    private final JobLeadRepository jobLeadRepository;
+    private final JobActivityRepository jobActivityRepository;
+    private final NotificationRepository notificationRepository;
 
     public UserService(UserRepository userRepository, PostRepository postRepository,
             CommentRepository commentRepository,
@@ -73,7 +85,8 @@ public class UserService implements UserDetailsService {
             UserImageRepository userImageRepository, ClassMemberRepository classMemberRepository,
             ProgramsRepository programsRepository, ProgramModuleRepository programModuleRepository,
             ClassRepository classRepository, @Lazy BCryptPasswordEncoder passwordEncoder, FileRepository fileRepository,
-            RoleRepository roleRepository, PostService postService) {
+            RoleRepository roleRepository, PostService postService, JobLeadRepository jobLeadRepository,
+            JobActivityRepository jobActivityRepository, NotificationRepository notificationRepository) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
@@ -88,6 +101,9 @@ public class UserService implements UserDetailsService {
         this.fileRepository = fileRepository;
         this.roleRepository = roleRepository;
         this.postService = postService;
+        this.jobLeadRepository = jobLeadRepository;
+        this.jobActivityRepository = jobActivityRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     public void register(User user) {
@@ -469,25 +485,47 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
+    public boolean ownsJobLead(Authentication authentication, Long jobLeadId) {
+        if (authentication == null || !authentication.isAuthenticated() || jobLeadId == null) {
+            return false;
+        }
+
+        final String currentUsername = extractUsername(authentication);
+        if (currentUsername == null) {
+            return false;
+        }
+
+        return jobLeadRepository.findById(jobLeadId)
+                .map(JobLead::getStudent)
+                .map(owner -> owner != null && currentUsername.equals(owner.getUsername()))
+                .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean ownsJobActivity(Authentication authentication, Long activityId) {
+        if (authentication == null || !authentication.isAuthenticated() || activityId == null) {
+            return false;
+        }
+
+        final String currentUsername = extractUsername(authentication);
+        if (currentUsername == null) {
+            return false;
+        }
+
+        return jobActivityRepository.findById(activityId)
+                .map(JobActivity::getJobLead)
+                .map(JobLead::getStudent)
+                .map(owner -> owner != null && currentUsername.equals(owner.getUsername()))
+                .orElse(false);
+    }
+
     public boolean isSelf(Authentication authentication, Long id) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
 
-        String currentUsername = "";
-        Object principal = authentication.getPrincipal();
-
-        if (principal instanceof UserDetails) {
-            currentUsername = ((UserDetails) principal).getUsername();
-        } else if (principal instanceof Jwt) {
-            currentUsername = ((Jwt) principal).getClaimAsString("preferred_username");
-            if (currentUsername == null) {
-                currentUsername = ((Jwt) principal).getSubject();
-            }
-        } else {
-            currentUsername = principal.toString();
-        }
-
+        final String currentUsername = extractUsername(authentication);
         if (currentUsername == null) {
             return false;
         }
@@ -500,10 +538,33 @@ public class UserService implements UserDetailsService {
                 return false;
             }
 
-            return user.getUsername().equals(currentUsername);
+            return currentUsername.equals(user.getUsername());
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private String extractUsername(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof UserDetails userDetails) {
+            return userDetails.getUsername();
+        }
+
+        if (principal instanceof Jwt jwt) {
+            String preferredUsername = jwt.getClaimAsString("preferred_username");
+            if (preferredUsername != null) {
+                return preferredUsername;
+            }
+            return jwt.getSubject();
+        }
+
+        String principalString = principal != null ? principal.toString() : null;
+        return (principalString != null && !principalString.trim().isEmpty()) ? principalString : null;
     }
 
     private String extractFileName(String fileUrl) {

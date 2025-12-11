@@ -2,6 +2,7 @@ package com.tim.appTim.util;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 
 public class NumberToWordsVietnamese {
 
@@ -88,7 +89,11 @@ public class NumberToWordsVietnamese {
 
     public static String formatMoney(BigDecimal amount) {
         if (amount == null) return "0";
-        DecimalFormat formatter = new DecimalFormat("#,###");
+
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setGroupingSeparator(',');
+
+        DecimalFormat formatter = new DecimalFormat("#,###", symbols);
         return formatter.format(amount);
     }
 }
