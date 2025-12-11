@@ -1,9 +1,11 @@
 package com.tim.appTim.service;
 
 import com.tim.appTim.dto.GamificationBehaviorDTO;
+import com.tim.appTim.dto.BehaviorPointTypeDTO;
 import com.tim.appTim.dto.GamificationBehaviorGroupDTO;
 import com.tim.appTim.entity.GamificationBehavior;
 import com.tim.appTim.entity.GamificationBehaviorGroup;
+import com.tim.appTim.entity.BehaviorPointType;
 import com.tim.appTim.repository.GamificationBehaviorGroupRepository;
 import com.tim.appTim.repository.GamificationBehaviorRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -106,8 +108,30 @@ public class GamificationBehaviorGroupService {
         if (behavior.getNotificationTemplateExperience() != null) {
             dto.setNotificationTemplateExperienceId(behavior.getNotificationTemplateExperience().getId());
         }
+        
+        // Map behavior point types (multi-point config)
+        if (behavior.getBehaviorPointTypes() != null && !behavior.getBehaviorPointTypes().isEmpty()) {
+            List<BehaviorPointTypeDTO> bptDtos = behavior.getBehaviorPointTypes().stream()
+                    .map(this::mapBehaviorPointTypeToDTO)
+                    .collect(Collectors.toList());
+            dto.setBehaviorPointTypes(bptDtos);
+        }
         dto.setCreatedAt(behavior.getCreatedAt());
         return dto;
+    }
+
+    private BehaviorPointTypeDTO mapBehaviorPointTypeToDTO(BehaviorPointType bpt) {
+        BehaviorPointTypeDTO bptDto = new BehaviorPointTypeDTO();
+        bptDto.setId(bpt.getId());
+        if (bpt.getPointType() != null) {
+            bptDto.setPointTypeId(bpt.getPointType().getId());
+            bptDto.setPointTypeName(bpt.getPointType().getName());
+        }
+        bptDto.setPoints(bpt.getPoints());
+        if (bpt.getNotificationTemplate() != null) {
+            bptDto.setNotificationTemplateId(bpt.getNotificationTemplate().getId());
+        }
+        return bptDto;
     }
 }
 
