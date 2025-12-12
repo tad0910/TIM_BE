@@ -19,7 +19,6 @@ public class GamificationGuideDTO {
         this.fileType = fileType;
     }
 
-    // Getters and Setters
     public Integer getId() {
         return id;
     }

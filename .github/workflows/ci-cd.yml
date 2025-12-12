@@ -38,7 +38,7 @@ jobs:
     name: 💾 Backup Database & Code
     needs: run-tests # Phải test xong mới làm
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Backup Placeholder
         run: |
@@ -55,7 +55,7 @@ jobs:
     name: 🚀 Build & Deploy
     needs: run-tests
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
