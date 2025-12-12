@@ -1,6 +1,5 @@
 name: CI/CD Pipeline (Test -> Backup -> Deploy -> Log)
 
-# 1. KÍCH HOẠT (TRIGGER) - GIỮ NGUYÊN NHƯ CŨ
 on:
   push:
     branches: [ "main", "develop", "feature/*" ]
