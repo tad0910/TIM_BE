@@ -2,6 +2,8 @@ package com.tim.appTim.service;
 
 import com.tim.appTim.entity.File;
 import com.tim.appTim.repository.FileRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -86,6 +88,13 @@ public class GamificationGuideService {
      */
     public List<File> getAllGuides() {
         return fileRepository.findGamificationGuideFiles();
+    }
+
+    /**
+     * Lấy tất cả file hướng dẫn với pagination - dành cho admin
+     */
+    public Page<File> getAllGuides(Pageable pageable) {
+        return fileRepository.findGamificationGuideFiles(pageable);
     }
 
     /**

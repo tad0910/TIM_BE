@@ -6,8 +6,10 @@ import com.tim.appTim.entity.GamificationAchievement;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -96,12 +98,14 @@ public class GamificationController {
      */
     @GetMapping("/my-point-logs")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<UserPointLogDTO>> getMyPointLogs(Authentication authentication) {
+    public ResponseEntity<Page<UserPointLogDTO>> getMyPointLogs(
+            Authentication authentication,
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
         User currentUser = userService.findByUsernameOrEmail(authentication.getName());
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        List<UserPointLogDTO> logs = gamificationService.getUserPointLogs(currentUser.getId());
+        Page<UserPointLogDTO> logs = gamificationService.getUserPointLogs(currentUser.getId(), pageable);
         return ResponseEntity.ok(logs);
     }
 
@@ -110,8 +114,10 @@ public class GamificationController {
      */
     @GetMapping("/users/{userId}/point-logs")
     @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
-    public ResponseEntity<List<UserPointLogDTO>> getUserPointLogs(@PathVariable Long userId) {
-        List<UserPointLogDTO> logs = gamificationService.getUserPointLogs(userId);
+    public ResponseEntity<Page<UserPointLogDTO>> getUserPointLogs(
+            @PathVariable Long userId,
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
+        Page<UserPointLogDTO> logs = gamificationService.getUserPointLogs(userId, pageable);
         return ResponseEntity.ok(logs);
     }
 
@@ -120,12 +126,14 @@ public class GamificationController {
      */
     @GetMapping("/my-achievements")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<UserAchievementDTO>> getMyAchievements(Authentication authentication) {
+    public ResponseEntity<Page<UserAchievementDTO>> getMyAchievements(
+            Authentication authentication,
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
         User currentUser = userService.findByUsernameOrEmail(authentication.getName());
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        List<UserAchievementDTO> achievements = gamificationService.getUserAchievements(currentUser.getId());
+        Page<UserAchievementDTO> achievements = gamificationService.getUserAchievements(currentUser.getId(), pageable);
         return ResponseEntity.ok(achievements);
     }
 
@@ -134,8 +142,10 @@ public class GamificationController {
      */
     @GetMapping("/users/{userId}/achievements")
     @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
-    public ResponseEntity<List<UserAchievementDTO>> getUserAchievements(@PathVariable Long userId) {
-        List<UserAchievementDTO> achievements = gamificationService.getUserAchievements(userId);
+    public ResponseEntity<Page<UserAchievementDTO>> getUserAchievements(
+            @PathVariable Long userId,
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
+        Page<UserAchievementDTO> achievements = gamificationService.getUserAchievements(userId, pageable);
         return ResponseEntity.ok(achievements);
     }
 
@@ -143,8 +153,9 @@ public class GamificationController {
 
     @GetMapping("/point-types")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GamificationPointTypeDTO>> getAllPointTypes() {
-        List<GamificationPointTypeDTO> pointTypes = pointTypeService.getAllActivePointTypes();
+    public ResponseEntity<Page<GamificationPointTypeDTO>> getAllPointTypes(
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
+        Page<GamificationPointTypeDTO> pointTypes = pointTypeService.getAllActivePointTypes(pageable);
         return ResponseEntity.ok(pointTypes);
     }
 
@@ -239,8 +250,9 @@ public class GamificationController {
 
     @GetMapping("/behaviors")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GamificationBehaviorDTO>> getAllBehaviors() {
-        List<GamificationBehaviorDTO> behaviors = behaviorService.getAllBehaviors();
+    public ResponseEntity<Page<GamificationBehaviorDTO>> getAllBehaviors(
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
+        Page<GamificationBehaviorDTO> behaviors = behaviorService.getAllBehaviors(pageable);
         return ResponseEntity.ok(behaviors);
     }
 
@@ -287,8 +299,9 @@ public class GamificationController {
 
     @GetMapping("/behavior-groups")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GamificationBehaviorGroupDTO>> getAllBehaviorGroups() {
-        List<GamificationBehaviorGroupDTO> groups = behaviorGroupService.getAllGroups();
+    public ResponseEntity<Page<GamificationBehaviorGroupDTO>> getAllBehaviorGroups(
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
+        Page<GamificationBehaviorGroupDTO> groups = behaviorGroupService.getAllGroups(pageable);
         return ResponseEntity.ok(groups);
     }
 
@@ -328,8 +341,9 @@ public class GamificationController {
 
     @GetMapping("/achievements")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GamificationAchievement>> getAllAchievements() {
-        List<GamificationAchievement> achievements = achievementService.getAllAchievements();
+    public ResponseEntity<Page<GamificationAchievement>> getAllAchievements(
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
+        Page<GamificationAchievement> achievements = achievementService.getAllAchievements(pageable);
         return ResponseEntity.ok(achievements);
     }
 
@@ -342,9 +356,10 @@ public class GamificationController {
 
     @GetMapping("/achievements/{achievementId}/levels")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<AchievementLevelDTO>> getAchievementLevels(
-            @PathVariable Integer achievementId) {
-        List<AchievementLevelDTO> levels = achievementService.getAchievementLevels(achievementId);
+    public ResponseEntity<Page<AchievementLevelDTO>> getAchievementLevels(
+            @PathVariable Integer achievementId,
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
+        Page<AchievementLevelDTO> levels = achievementService.getAchievementLevels(achievementId, pageable);
         return ResponseEntity.ok(levels);
     }
 
@@ -679,8 +694,9 @@ public class GamificationController {
 
     @GetMapping("/guide/all")
     @PreAuthorize("hasAuthority('gamification:read_all') or hasAnyRole('ROLE_ADMIN')")
-    public ResponseEntity<List<GamificationGuideDTO>> getAllGuides() {
-        List<GamificationGuideDTO> guides = guideService.getAllGuides().stream()
+    public ResponseEntity<Page<GamificationGuideDTO>> getAllGuides(
+            @PageableDefault(size = 10, page = 0) Pageable pageable) {
+        Page<GamificationGuideDTO> guides = guideService.getAllGuides(pageable)
                 .map(guideFile -> {
                     String originalFileName = guideService.getOriginalFileName(guideFile.getFileName());
                     return new GamificationGuideDTO(
@@ -690,8 +706,7 @@ public class GamificationController {
                         guideFile.getFileSize(),
                         guideFile.getFileType() != null ? guideFile.getFileType().name() : "DOCUMENT"
                     );
-                })
-                .collect(java.util.stream.Collectors.toList());
+                });
         return ResponseEntity.ok(guides);
     }
 

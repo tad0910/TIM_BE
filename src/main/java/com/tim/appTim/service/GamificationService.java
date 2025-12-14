@@ -6,6 +6,8 @@ import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -593,15 +595,24 @@ public class GamificationService {
     }
 
     @Transactional(readOnly = true)
+    public Page<UserPointLogDTO> getUserPointLogs(Long userId, Pageable pageable) {
+        return pointLogRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+                .map(this::mapToPointLogDTO);
+    }
+
+    @Transactional(readOnly = true)
     public List<UserAchievementDTO> getUserAchievements(Long userId) {
         List<UserAchievement> achievements = achievementRepository.findByUserIdOrderByUnlockedAtDesc(userId);
         return achievements.stream().map(this::mapToAchievementDTO).collect(Collectors.toList());
     }
 
-    /**
-     * Check and unlock achievements for all users after a new level is created/updated
-     * This is called when admin creates or updates an achievement level
-     */
+    @Transactional(readOnly = true)
+    public Page<UserAchievementDTO> getUserAchievements(Long userId, Pageable pageable) {
+        return achievementRepository.findByUserIdOrderByUnlockedAtDesc(userId, pageable)
+                .map(this::mapToAchievementDTO);
+    }
+
+
     @Transactional
     public void checkAchievementsForAllUsers() {
         System.out.println("=== Starting checkAchievementsForAllUsers ===");
@@ -622,7 +633,6 @@ public class GamificationService {
                     }
                 }
             } catch (Exception e) {
-                // Log error but continue processing other users
                 System.err.println("Error checking achievements for user " + stats.getUserId() + ": " + e.getMessage());
                 e.printStackTrace();
             }

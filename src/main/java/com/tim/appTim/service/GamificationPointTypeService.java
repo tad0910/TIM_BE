@@ -4,6 +4,8 @@ import com.tim.appTim.dto.GamificationPointTypeDTO;
 import com.tim.appTim.entity.GamificationPointType;
 import com.tim.appTim.repository.GamificationPointTypeRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,12 @@ public class GamificationPointTypeService {
         return pointTypeRepository.findByIsActiveTrue().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GamificationPointTypeDTO> getAllActivePointTypes(Pageable pageable) {
+        return pointTypeRepository.findByIsActiveTrue(pageable)
+                .map(this::mapToDTO);
     }
 
     @Transactional(readOnly = true)

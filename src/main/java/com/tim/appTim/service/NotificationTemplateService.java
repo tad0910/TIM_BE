@@ -3,6 +3,8 @@ package com.tim.appTim.service;
 import com.tim.appTim.entity.NotificationTemplate;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.NotificationTemplateRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,10 @@ public class NotificationTemplateService {
 
     public List<NotificationTemplate> getAll() {
         return templateRepository.findAll();
+    }
+
+    public Page<NotificationTemplate> getAll(Pageable pageable) {
+        return templateRepository.findAll(pageable);
     }
 
     public NotificationTemplate getById(Long id) {
