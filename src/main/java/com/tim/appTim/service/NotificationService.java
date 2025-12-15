@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.security.core.Authentication;
 
 import java.time.LocalDateTime;
@@ -53,16 +54,23 @@ public class NotificationService {
         return createNotification(receiverId, senderId, notificationType, targetType, targetId, title, content, null);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public NotificationDTO createNotification(Long receiverId, Long senderId,
                                               Notification.NotificationType notificationType,
                                               String targetType, Long targetId,
                                               String title, String content,
                                               String iconUrl) {
 
+        // For gamification notifications, don't check duplicates as users can earn the same achievement multiple times
+        // or earn points from the same behavior multiple times
         boolean shouldCheckDuplicate =
                 senderId != null
                         && notificationType != Notification.NotificationType.GRADE_NEW
-                        && notificationType != Notification.NotificationType.GRADE_UPDATED;
+                        && notificationType != Notification.NotificationType.GRADE_UPDATED
+                        && notificationType != Notification.NotificationType.GAMIFICATION_POINT_EARNED
+                        && notificationType != Notification.NotificationType.GAMIFICATION_ACHIEVEMENT_UNLOCKED
+                        && notificationType != Notification.NotificationType.GAMIFICATION_LEVEL_UP
+                        && notificationType != Notification.NotificationType.GAMIFICATION_RANKING_CHANGE;
 
         if (shouldCheckDuplicate
                 && notificationRepository.existsByReceiverIdAndSenderIdAndNotificationTypeAndTargetTypeAndTargetId(
@@ -73,8 +81,70 @@ public class NotificationService {
         Notification notification = new Notification(receiverId, senderId, notificationType,
                 targetType, targetId, title, content, iconUrl);
 
+        System.out.println(String.format(
+            "[NotificationService] Creating notification. ReceiverId: %s, Type: %s, Title: %s, TargetType: %s, TargetId: %s",
+            receiverId, notificationType, title, targetType, targetId));
+
         Notification savedNotification = notificationRepository.save(notification);
-        NotificationDTO notificationDTO = convertToDTO(savedNotification);
+        System.out.println(String.format(
+            "[NotificationService] Notification saved. ID before flush: %s", savedNotification.getId()));
+        
+        // Flush to ensure ID is generated immediately
+        notificationRepository.flush();
+        System.out.println(String.format(
+            "[NotificationService] After flush. ID: %s", savedNotification.getId()));
+        
+        // Get the ID after flush
+        Long tempId = savedNotification.getId();
+        if (tempId == null) {
+            // If still null after flush, try to get it from the entity manager
+            System.err.println(String.format(
+                "[NotificationService] WARNING: Notification ID is null after flush. Trying to refresh entity. ReceiverId: %s, Type: %s", 
+                receiverId, notificationType));
+            
+            // Force refresh from database
+            entityManager.refresh(savedNotification);
+            tempId = savedNotification.getId();
+            
+            if (tempId == null) {
+                throw new IllegalStateException(
+                    String.format("Notification was saved but ID is still null after refresh. ReceiverId: %s, Type: %s, Title: %s", 
+                        receiverId, notificationType, title));
+            }
+        }
+        
+        final Long notificationId = tempId;
+        
+        System.out.println(String.format(
+            "[NotificationService] Notification ID confirmed: %s", notificationId));
+        
+        // Reload to ensure all fields are properly set
+        Notification reloadedNotification = notificationRepository.findById(notificationId)
+            .orElseThrow(() -> new IllegalStateException(
+                String.format("Failed to reload notification after save. ID: %s", notificationId)));
+        
+        System.out.println(String.format(
+            "[NotificationService] Notification reloaded. ID: %s, IsRead: %s", 
+            reloadedNotification.getId(), reloadedNotification.getIsRead()));
+        
+        NotificationDTO notificationDTO = convertToDTO(reloadedNotification);
+        
+        System.out.println(String.format(
+            "[NotificationService] NotificationDTO created. ID: %s, Title: %s", 
+            notificationDTO != null ? notificationDTO.getId() : "NULL", title));
+        
+        // Validate DTO has ID before sending
+        if (notificationDTO == null) {
+            throw new IllegalStateException(
+                String.format("NotificationDTO is null after conversion. Notification ID: %s, ReceiverId: %s, Type: %s", 
+                    notificationId, receiverId, notificationType));
+        }
+        
+        if (notificationDTO.getId() == null) {
+            throw new IllegalStateException(
+                String.format("NotificationDTO has no ID. Notification ID: %s, ReceiverId: %s, Type: %s, DTO: %s", 
+                    notificationId, receiverId, notificationType, notificationDTO));
+        }
 
         sseService.sendNotification(receiverId, notificationDTO);
 

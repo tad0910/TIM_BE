@@ -6,6 +6,8 @@ import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.*;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -512,16 +514,43 @@ public class GamificationService {
             iconUrl = level.getAchievement().getImageUrl();
         }
 
-        notificationService.createNotification(
-                userId,
-                null,
-                Notification.NotificationType.GAMIFICATION_ACHIEVEMENT_UNLOCKED,
-                "ACHIEVEMENT_LEVEL",
-                level.getId().longValue(),
-                title,
-                content,
-                iconUrl
-        );
+        try {
+            NotificationDTO notificationDTO = notificationService.createNotification(
+                    userId,
+                    null,
+                    Notification.NotificationType.GAMIFICATION_ACHIEVEMENT_UNLOCKED,
+                    "ACHIEVEMENT_LEVEL",
+                    level.getId().longValue(),
+                    title,
+                    content,
+                    iconUrl
+            );
+            
+            // Validate notification was created successfully
+            if (notificationDTO == null) {
+                System.err.println(String.format(
+                    "[GamificationService] Failed to create achievement notification. UserId: %s, AchievementLevelId: %s, Title: %s", 
+                    userId, level.getId(), title));
+                return;
+            }
+            
+            if (notificationDTO.getId() == null) {
+                System.err.println(String.format(
+                    "[GamificationService] Achievement notification created but has no ID. UserId: %s, AchievementLevelId: %s, Title: %s, DTO: %s", 
+                    userId, level.getId(), title, notificationDTO));
+                return;
+            }
+            
+            System.out.println(String.format(
+                "[GamificationService] Successfully created achievement notification. ID: %s, UserId: %s, AchievementLevelId: %s, Title: %s", 
+                notificationDTO.getId(), userId, level.getId(), title));
+        } catch (Exception e) {
+            System.err.println(String.format(
+                "[GamificationService] Error creating achievement notification. UserId: %s, AchievementLevelId: %s, Title: %s, Error: %s", 
+                userId, level.getId(), title, e.getMessage()));
+            e.printStackTrace();
+            // Don't throw - we don't want notification failure to break achievement unlocking
+        }
     }
 
     /**
@@ -593,15 +622,24 @@ public class GamificationService {
     }
 
     @Transactional(readOnly = true)
+    public Page<UserPointLogDTO> getUserPointLogs(Long userId, Pageable pageable) {
+        return pointLogRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+                .map(this::mapToPointLogDTO);
+    }
+
+    @Transactional(readOnly = true)
     public List<UserAchievementDTO> getUserAchievements(Long userId) {
         List<UserAchievement> achievements = achievementRepository.findByUserIdOrderByUnlockedAtDesc(userId);
         return achievements.stream().map(this::mapToAchievementDTO).collect(Collectors.toList());
     }
 
-    /**
-     * Check and unlock achievements for all users after a new level is created/updated
-     * This is called when admin creates or updates an achievement level
-     */
+    @Transactional(readOnly = true)
+    public Page<UserAchievementDTO> getUserAchievements(Long userId, Pageable pageable) {
+        return achievementRepository.findByUserIdOrderByUnlockedAtDesc(userId, pageable)
+                .map(this::mapToAchievementDTO);
+    }
+
+
     @Transactional
     public void checkAchievementsForAllUsers() {
         System.out.println("=== Starting checkAchievementsForAllUsers ===");
@@ -622,7 +660,6 @@ public class GamificationService {
                     }
                 }
             } catch (Exception e) {
-                // Log error but continue processing other users
                 System.err.println("Error checking achievements for user " + stats.getUserId() + ": " + e.getMessage());
                 e.printStackTrace();
             }

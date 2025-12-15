@@ -1,6 +1,8 @@
 package com.tim.appTim.repository;
 
 import com.tim.appTim.entity.UserPointLog;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,8 @@ import java.util.List;
 @Repository
 public interface UserPointLogRepository extends JpaRepository<UserPointLog, Long> {
     List<UserPointLog> findByUserIdOrderByCreatedAtDesc(Long userId);
+    
+    Page<UserPointLog> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
     
     @Query("SELECT COUNT(upl) FROM UserPointLog upl WHERE upl.userId = :userId AND upl.behavior.id = :behaviorId " +
            "AND upl.createdAt >= :startDate AND upl.createdAt < :endDate")

@@ -8,17 +8,18 @@ import com.tim.appTim.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,6 +46,18 @@ class NotificationServiceTest {
     private Notification notification;
     private User sender;
     private LocalDateTime now;
+
+    private Authentication auth(String name, boolean authenticated) {
+        return new Authentication() {
+            @Override public Collection<? extends GrantedAuthority> getAuthorities() { return Collections.emptyList(); }
+            @Override public Object getCredentials() { return null; }
+            @Override public Object getDetails() { return null; }
+            @Override public Object getPrincipal() { return null; }
+            @Override public boolean isAuthenticated() { return authenticated; }
+            @Override public void setAuthenticated(boolean isAuthenticated) { }
+            @Override public String getName() { return name; }
+        };
+    }
 
     @BeforeEach
     void setUp() {
@@ -82,6 +95,17 @@ class NotificationServiceTest {
     @Test
     void createNotification_Success() {
         // Arrange
+        Notification savedNotification = new Notification();
+        savedNotification.setId(1L);
+        savedNotification.setReceiverId(1L);
+        savedNotification.setSenderId(2L);
+        savedNotification.setNotificationType(Notification.NotificationType.POST_REACTION);
+        savedNotification.setTargetType("POST");
+        savedNotification.setTargetId(10L);
+        savedNotification.setTitle("Title");
+        savedNotification.setContent("Content");
+        savedNotification.setCreatedAt(now);
+
         when(notificationRepository.existsByReceiverIdAndSenderIdAndNotificationTypeAndTargetTypeAndTargetId(
                 anyLong(), anyLong(), any(), anyString(), anyLong())).thenReturn(false);
         when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> {
@@ -90,6 +114,7 @@ class NotificationServiceTest {
             saved.setCreatedAt(now);
             return saved;
         });
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(savedNotification));
         doNothing().when(sseService).sendNotification(anyLong(), any(NotificationDTO.class));
 
         // Act
@@ -123,11 +148,22 @@ class NotificationServiceTest {
     @Test
     void createNotification_WhenSenderIdIsNull_ShouldNotCheckDuplicate() {
         // Arrange
+        Notification savedNotification = new Notification();
+        savedNotification.setId(1L);
+        savedNotification.setReceiverId(1L);
+        savedNotification.setSenderId(null);
+        savedNotification.setNotificationType(Notification.NotificationType.SYSTEM_ANNOUNCEMENT);
+        savedNotification.setTargetType("SYSTEM");
+        savedNotification.setTargetId(0L);
+        savedNotification.setTitle("Title");
+        savedNotification.setContent("Content");
+
         when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> {
             Notification saved = invocation.getArgument(0);
             saved.setId(1L);
             return saved;
         });
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(savedNotification));
         doNothing().when(sseService).sendNotification(anyLong(), any(NotificationDTO.class));
 
         // Act
@@ -144,11 +180,22 @@ class NotificationServiceTest {
     @Test
     void createNotification_WhenGradeNotification_ShouldNotCheckDuplicate() {
         // Arrange
+        Notification savedNotification = new Notification();
+        savedNotification.setId(1L);
+        savedNotification.setReceiverId(1L);
+        savedNotification.setSenderId(2L);
+        savedNotification.setNotificationType(Notification.NotificationType.GRADE_NEW);
+        savedNotification.setTargetType("GRADE");
+        savedNotification.setTargetId(10L);
+        savedNotification.setTitle("Title");
+        savedNotification.setContent("Content");
+
         when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> {
             Notification saved = invocation.getArgument(0);
             saved.setId(1L);
             return saved;
         });
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(savedNotification));
         doNothing().when(sseService).sendNotification(anyLong(), any(NotificationDTO.class));
 
         // Act
@@ -284,7 +331,7 @@ class NotificationServiceTest {
         notification.setReceiver(receiver);
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
         when(notificationRepository.save(any(Notification.class))).thenReturn(notification);
-        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
+        org.springframework.security.core.Authentication auth = auth("user", true);
 
         // Act
         notificationService.markAsRead(1L, 1L, auth);
@@ -299,7 +346,7 @@ class NotificationServiceTest {
     void markAsRead_Fail_NotFound() {
         // Arrange
         when(notificationRepository.findById(999L)).thenReturn(Optional.empty());
-        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
+        org.springframework.security.core.Authentication auth = auth("user", true);
 
         // Act & Assert
         assertThrows(com.tim.appTim.exception.ResourceNotFoundException.class, () -> {
@@ -314,7 +361,7 @@ class NotificationServiceTest {
         receiver.setId(1L);
         notification.setReceiver(receiver);
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
-        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
+        org.springframework.security.core.Authentication auth = auth("user", true);
 
         // Act & Assert
         assertThrows(com.tim.appTim.exception.ForbiddenException.class, () -> {
@@ -390,6 +437,16 @@ class NotificationServiceTest {
             saved.setId(1L);
             return saved;
         });
+        Notification savedNotification = new Notification();
+        savedNotification.setId(1L);
+        savedNotification.setReceiverId(1L);
+        savedNotification.setSenderId(2L);
+        savedNotification.setNotificationType(Notification.NotificationType.POST_REACTION);
+        savedNotification.setTargetType("POST");
+        savedNotification.setTargetId(10L);
+        savedNotification.setTitle("Bài viết của bạn được bày tỏ cảm xúc");
+        savedNotification.setContent("content");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(savedNotification));
         doNothing().when(sseService).sendNotification(anyLong(), any(NotificationDTO.class));
 
         // Act
@@ -416,6 +473,16 @@ class NotificationServiceTest {
             saved.setId(1L);
             return saved;
         });
+        Notification savedNotification = new Notification();
+        savedNotification.setId(1L);
+        savedNotification.setReceiverId(1L);
+        savedNotification.setSenderId(2L);
+        savedNotification.setNotificationType(Notification.NotificationType.COMMENT_REACTION);
+        savedNotification.setTargetType("COMMENT");
+        savedNotification.setTargetId(20L);
+        savedNotification.setTitle("Bình luận của bạn được bày tỏ cảm xúc");
+        savedNotification.setContent("content");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(savedNotification));
         doNothing().when(sseService).sendNotification(anyLong(), any(NotificationDTO.class));
 
         // Act
@@ -441,6 +508,16 @@ class NotificationServiceTest {
             saved.setId(1L);
             return saved;
         });
+        Notification savedNotification = new Notification();
+        savedNotification.setId(1L);
+        savedNotification.setReceiverId(1L);
+        savedNotification.setSenderId(2L);
+        savedNotification.setNotificationType(Notification.NotificationType.REPLY_REACTION);
+        savedNotification.setTargetType("REPLY");
+        savedNotification.setTargetId(30L);
+        savedNotification.setTitle("Phản hồi của bạn được bày tỏ cảm xúc");
+        savedNotification.setContent("content");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(savedNotification));
         doNothing().when(sseService).sendNotification(anyLong(), any(NotificationDTO.class));
 
         // Act
@@ -503,6 +580,16 @@ class NotificationServiceTest {
             saved.setId(1L);
             return saved;
         });
+        Notification savedNotification = new Notification();
+        savedNotification.setId(1L);
+        savedNotification.setReceiverId(1L);
+        savedNotification.setSenderId(2L);
+        savedNotification.setNotificationType(Notification.NotificationType.POST_COMMENT);
+        savedNotification.setTargetType("POST");
+        savedNotification.setTargetId(10L);
+        savedNotification.setTitle("Bài viết của bạn có bình luận mới");
+        savedNotification.setContent("content");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(savedNotification));
         doNothing().when(sseService).sendNotification(anyLong(), any(NotificationDTO.class));
 
         // Act
@@ -527,6 +614,16 @@ class NotificationServiceTest {
             saved.setId(1L);
             return saved;
         });
+        Notification savedNotification = new Notification();
+        savedNotification.setId(1L);
+        savedNotification.setReceiverId(1L);
+        savedNotification.setSenderId(2L);
+        savedNotification.setNotificationType(Notification.NotificationType.COMMENT_REPLY);
+        savedNotification.setTargetType("COMMENT");
+        savedNotification.setTargetId(20L);
+        savedNotification.setTitle("Bình luận của bạn có phản hồi mới");
+        savedNotification.setContent("content");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(savedNotification));
         doNothing().when(sseService).sendNotification(anyLong(), any(NotificationDTO.class));
 
         // Act
@@ -909,9 +1006,7 @@ class NotificationServiceTest {
         notification.setReceiver(receiver);
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
         when(userService.findByUsernameOrEmail("testuser")).thenReturn(receiver);
-        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(true);
-        when(auth.getName()).thenReturn("testuser");
+        org.springframework.security.core.Authentication auth = auth("testuser", true);
 
         // Act
         boolean result = notificationService.isReceiver(auth, 1L);
@@ -923,8 +1018,7 @@ class NotificationServiceTest {
     @Test
     void isReceiver_Fail_NotAuthenticated() {
         // Arrange
-        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(false);
+        org.springframework.security.core.Authentication auth = auth("any", false);
 
         // Act
         boolean result = notificationService.isReceiver(auth, 1L);
@@ -945,9 +1039,7 @@ class NotificationServiceTest {
     @Test
     void isReceiver_Fail_UserNotFound() {
         // Arrange
-        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(true);
-        when(auth.getName()).thenReturn("testuser");
+        org.springframework.security.core.Authentication auth = auth("testuser", true);
         when(userService.findByUsernameOrEmail("testuser")).thenReturn(null);
 
         // Act
@@ -984,9 +1076,7 @@ class NotificationServiceTest {
         notification.setReceiver(receiver);
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
         when(userService.findByUsernameOrEmail("otheruser")).thenReturn(otherUser);
-        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(true);
-        when(auth.getName()).thenReturn("otheruser");
+        org.springframework.security.core.Authentication auth = auth("otheruser", true);
 
         // Act
         boolean result = notificationService.isReceiver(auth, 1L);

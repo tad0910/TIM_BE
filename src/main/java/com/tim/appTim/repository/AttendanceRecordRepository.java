@@ -22,9 +22,9 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     List<Object[]> getAttendanceDetailsByScheduleId(Long scheduleId);
 
     @Query(value = "SELECT u.id AS student_id, CONCAT(u.firstname, ' ', u.lastname) AS student_name, "
-            + "SUM(CASE WHEN ar.status IN ('PRESENT', 'LATE') THEN 1 ELSE 0 END) AS attended_count, "
+            + "SUM(CASE WHEN ar.status IN ('present', 'late') THEN 1 ELSE 0 END) AS attended_count, "
             + "COUNT(cms.id) AS total_sessions, "
-            + "ROUND(SUM(CASE WHEN ar.status IN ('PRESENT', 'LATE') THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(cms.id), 0), 2) AS attendance_rate "
+            + "ROUND(SUM(CASE WHEN ar.status IN ('present', 'late') THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(cms.id), 0), 2) AS attendance_rate "
             + "FROM class_members cmem "
             + "JOIN users u ON cmem.nguoi_dung_id = u.id AND cmem.vai_tro = 'sinh_vien' "
             + "JOIN class_module_schedules cms ON cms.class_id = cmem.lop_id "

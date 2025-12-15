@@ -3,6 +3,10 @@ package com.tim.appTim.controller;
 import com.tim.appTim.entity.NotificationTemplate;
 import com.tim.appTim.service.NotificationTemplateService;
 import com.tim.appTim.service.FileUploadService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -10,8 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/notification-templates")
@@ -28,16 +30,25 @@ public class NotificationTemplateController {
 
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('notification:create_manual')")
-    public ResponseEntity<List<NotificationTemplate>> getAll(
-            @RequestParam(value = "name", required = false) String name) {
+    public ResponseEntity<Page<NotificationTemplate>> getAll(
+            @RequestParam(value = "name", required = false) String name,
+            @PageableDefault(size = 20, page = 0) Pageable pageable) {
         if (name == null || name.isBlank()) {
-            return ResponseEntity.ok(templateService.getAll());
+            return ResponseEntity.ok(templateService.getAll(pageable));
         }
-        return templateService.getAll().stream()
+        // If name filter is provided, return Page with filtered results
+        Page<NotificationTemplate> allTemplates = templateService.getAll(pageable);
+        java.util.List<NotificationTemplate> filtered = allTemplates.getContent().stream()
                 .filter(t -> name.equalsIgnoreCase(t.getName()))
-                .findFirst()
-                .map(t -> ResponseEntity.ok(java.util.List.of(t)))
-                .orElse(ResponseEntity.notFound().build());
+                .collect(java.util.stream.Collectors.toList());
+        
+        // Create a new Page with filtered content
+        Page<NotificationTemplate> filteredPage = new PageImpl<>(
+                filtered,
+                pageable,
+                filtered.size()
+        );
+        return ResponseEntity.ok(filteredPage);
     }
 
     @GetMapping("/{id}")

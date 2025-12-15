@@ -9,6 +9,8 @@ import com.tim.appTim.entity.BehaviorPointType;
 import com.tim.appTim.repository.GamificationBehaviorGroupRepository;
 import com.tim.appTim.repository.GamificationBehaviorRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,12 @@ public class GamificationBehaviorGroupService {
         return groupRepository.findAll().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GamificationBehaviorGroupDTO> getAllGroups(Pageable pageable) {
+        return groupRepository.findAll(pageable)
+                .map(this::mapToDTO);
     }
 
     @Transactional(readOnly = true)

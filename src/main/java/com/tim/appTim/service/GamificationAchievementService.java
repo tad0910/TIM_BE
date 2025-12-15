@@ -8,6 +8,8 @@ import com.tim.appTim.repository.GamificationAchievementRepository;
 import com.tim.appTim.repository.GamificationAchievementLevelRepository;
 import com.tim.appTim.repository.NotificationTemplateRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -42,6 +44,11 @@ public class GamificationAchievementService {
     }
 
     @Transactional(readOnly = true)
+    public Page<GamificationAchievement> getAllAchievements(Pageable pageable) {
+        return achievementRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
     public GamificationAchievement getAchievementById(Integer id) {
         return achievementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thành tích với ID: " + id));
@@ -51,6 +58,12 @@ public class GamificationAchievementService {
     public List<AchievementLevelDTO> getAchievementLevels(Integer achievementId) {
         List<GamificationAchievementLevel> levels = levelRepository.findByAchievementIdOrderByMinPointsRequiredAsc(achievementId);
         return levels.stream().map(this::mapToLevelDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AchievementLevelDTO> getAchievementLevels(Integer achievementId, Pageable pageable) {
+        return levelRepository.findByAchievementIdOrderByMinPointsRequiredAsc(achievementId, pageable)
+                .map(this::mapToLevelDTO);
     }
 
     @Transactional(readOnly = true)
