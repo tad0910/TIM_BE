@@ -5,6 +5,7 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.service.GradeService;
 import com.tim.appTim.service.UserService;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +32,7 @@ public class GradeController {
     @PostMapping("/batch")
     @PreAuthorize("hasAuthority('grade:create')")
     public ResponseEntity<Void> batchCreateOrUpdateGrades(
-            @RequestBody BatchGradeUpdateDTO batchDto, 
+            @RequestBody BatchGradeUpdateDTO batchDto,
             Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
@@ -54,8 +55,8 @@ public class GradeController {
     @GetMapping("/class-modules/{classModuleId}/my-grades")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GradeDTO> getMyGradesInModule(
-                                                         @PathVariable Long classModuleId,
-                                                         Authentication authentication) {
+            @PathVariable Long classModuleId,
+            Authentication authentication) {
 
         User currentUser = getUserFromAuthentication(authentication);
         GradeDTO grade = gradeService.getMyGrades(classModuleId, currentUser.getId());
@@ -64,12 +65,13 @@ public class GradeController {
 
     @GetMapping("/{gradeId}/history")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GradeHistoryDTO>> getGradeHistory(
+    public ResponseEntity<Page<GradeHistoryDTO>> getGradeHistory(
             @PathVariable Long gradeId,
-            Authentication authentication) {
+            Authentication authentication,
+            @PageableDefault(size = 20, sort = "changedAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
 
         User currentUser = getUserFromAuthentication(authentication);
-        List<GradeHistoryDTO> history = gradeService.getGradeHistory(gradeId, currentUser);
+        Page<GradeHistoryDTO> history = gradeService.getGradeHistory(gradeId, currentUser, pageable);
         return ResponseEntity.ok(history);
     }
 
