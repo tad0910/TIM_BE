@@ -62,8 +62,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # [ĐÃ SỬA LỖI TẠI ĐÂY]
-      # Gộp lệnh thành 1 dòng để tránh lỗi "Unexpected token" trên Windows PowerShell
+
       - name: Build JAR
         run: mvn -B clean package -DskipTests "-Dproject.build.sourceEncoding=UTF-8" --file pom.xml
 
