@@ -514,16 +514,43 @@ public class GamificationService {
             iconUrl = level.getAchievement().getImageUrl();
         }
 
-        notificationService.createNotification(
-                userId,
-                null,
-                Notification.NotificationType.GAMIFICATION_ACHIEVEMENT_UNLOCKED,
-                "ACHIEVEMENT_LEVEL",
-                level.getId().longValue(),
-                title,
-                content,
-                iconUrl
-        );
+        try {
+            NotificationDTO notificationDTO = notificationService.createNotification(
+                    userId,
+                    null,
+                    Notification.NotificationType.GAMIFICATION_ACHIEVEMENT_UNLOCKED,
+                    "ACHIEVEMENT_LEVEL",
+                    level.getId().longValue(),
+                    title,
+                    content,
+                    iconUrl
+            );
+            
+            // Validate notification was created successfully
+            if (notificationDTO == null) {
+                System.err.println(String.format(
+                    "[GamificationService] Failed to create achievement notification. UserId: %s, AchievementLevelId: %s, Title: %s", 
+                    userId, level.getId(), title));
+                return;
+            }
+            
+            if (notificationDTO.getId() == null) {
+                System.err.println(String.format(
+                    "[GamificationService] Achievement notification created but has no ID. UserId: %s, AchievementLevelId: %s, Title: %s, DTO: %s", 
+                    userId, level.getId(), title, notificationDTO));
+                return;
+            }
+            
+            System.out.println(String.format(
+                "[GamificationService] Successfully created achievement notification. ID: %s, UserId: %s, AchievementLevelId: %s, Title: %s", 
+                notificationDTO.getId(), userId, level.getId(), title));
+        } catch (Exception e) {
+            System.err.println(String.format(
+                "[GamificationService] Error creating achievement notification. UserId: %s, AchievementLevelId: %s, Title: %s, Error: %s", 
+                userId, level.getId(), title, e.getMessage()));
+            e.printStackTrace();
+            // Don't throw - we don't want notification failure to break achievement unlocking
+        }
     }
 
     /**
