@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "**" ]       # Chạy trên mọi nhánh khi push
   pull_request:
-      branches: [ "**" ]       # Chạy trên mọi nhánh khi tạo PR
+    branches: [ "**" ]       # Chạy trên mọi nhánh khi tạo PR
   workflow_dispatch:
 
 jobs:
