@@ -44,7 +44,7 @@ public class ReceiptIntegrationTest {
     private com.tim.appTim.repository.StudentTuitionRepository studentTuitionRepository;
 
     @Test
-    @WithMockUser(username = "admin_user")
+    @WithMockUser(username = "admin_user", authorities = { "ROLE_ADMIN" })
     void testDownloadReceipt_Success_ShouldReturnPdf() throws Exception {
         // Setup data: Create a transaction and receipt
         // 1. Create Route
@@ -88,7 +88,7 @@ public class ReceiptIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin_user")
+    @WithMockUser(username = "admin_user", authorities = { "ROLE_ADMIN" })
     void testDownloadReceipt_NotFound_ShouldReturn404() throws Exception {
         mockMvc.perform(get("/api/receipts/{id}/download", 9999L))
                 .andExpect(status().isNotFound());
