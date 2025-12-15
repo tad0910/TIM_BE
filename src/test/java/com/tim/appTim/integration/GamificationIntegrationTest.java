@@ -164,7 +164,7 @@ void getUserStats_WhenOtherUser_ShouldReturn403() throws Exception {
     void getMyPointLogs_WhenAuthenticated_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/my-point-logs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -172,7 +172,7 @@ void getUserStats_WhenOtherUser_ShouldReturn403() throws Exception {
     void getUserPointLogs_WhenAdmin_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/users/1/point-logs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -180,7 +180,7 @@ void getUserStats_WhenOtherUser_ShouldReturn403() throws Exception {
     void getMyAchievements_WhenAuthenticated_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/my-achievements"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -188,7 +188,7 @@ void getUserStats_WhenOtherUser_ShouldReturn403() throws Exception {
     void getUserAchievements_WhenAdmin_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/users/1/achievements"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -196,7 +196,7 @@ void getUserStats_WhenOtherUser_ShouldReturn403() throws Exception {
     void getAllPointTypes_WhenAuthenticated_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/point-types"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -346,7 +346,7 @@ dto.setShowOnDashboard(true);
     void getAllBehaviors_WhenAuthenticated_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/behaviors"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -464,7 +464,7 @@ dto.setShowOnDashboard(true);
     void getAllBehaviorGroups_WhenAuthenticated_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/behavior-groups"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -525,7 +525,7 @@ dto.setShowOnDashboard(true);
     void getAllAchievements_WhenAuthenticated_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/achievements"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -562,7 +562,7 @@ achievementService.createAchievementLevel(levelDto);
 
         mockMvc.perform(get(BASE_URL + "/achievements/" + achievement.getId() + "/levels"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -865,7 +865,7 @@ request.setMethod("PUT");
     void getAllGuides_WhenAdmin_ShouldReturn200() throws Exception {
         mockMvc.perform(get(BASE_URL + "/guide/all"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
