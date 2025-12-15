@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,11 +26,13 @@ public class ReceiptController {
         private com.tim.appTim.repository.TuitionReceiptRepository receiptRepository;
 
         @GetMapping("/{id}/download")
+        @PreAuthorize("@tuitionTransactionService.isReceiptOwner(authentication, #id) or hasAnyAuthority('tuition:read_all', 'ROLE_ADMIN')")
         @Transactional(readOnly = true)
         public ResponseEntity<byte[]> downloadReceipt(
                         @PathVariable Long id,
                         @RequestParam(required = false) String name,
-                        @RequestParam(required = false) String reason) {
+                        @RequestParam(required = false) String reason,
+                        org.springframework.security.core.Authentication authentication) {
 
                 com.tim.appTim.entity.TuitionReceipt receipt = receiptRepository.findById(id)
                                 .orElseThrow(() -> new com.tim.appTim.exception.ResourceNotFoundException(
