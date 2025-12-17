@@ -620,6 +620,20 @@ public class GamificationService {
         }
 
         try {
+            // Chống trùng: nếu đã có thông báo ACHIEVEMENT_UNLOCKED cho level này, bỏ qua
+            List<Notification> existing = notificationRepository.findByReceiverIdAndNotificationTypeAndTargetTypeAndTargetId(
+                    userId,
+                    Notification.NotificationType.GAMIFICATION_ACHIEVEMENT_UNLOCKED,
+                    "ACHIEVEMENT_LEVEL",
+                    level.getId().longValue()
+            );
+            if (!existing.isEmpty()) {
+                System.out.println(String.format(
+                        "[GamificationService] Skip duplicate achievement notification. UserId: %s, LevelId: %s",
+                        userId, level.getId()));
+                return;
+            }
+
             NotificationDTO notificationDTO = notificationService.createNotification(
                     userId,
                     null,
