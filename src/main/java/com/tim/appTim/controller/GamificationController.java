@@ -149,6 +149,34 @@ public class GamificationController {
         return ResponseEntity.ok(achievements);
     }
 
+    /**
+     * Lấy danh sách tất cả achievements với trạng thái unlock của user cụ thể.
+     * Bao gồm thông tin về progress, level đã unlock, level tiếp theo, và rarity.
+     * Dùng cho FE hiển thị danh sách huy hiệu (unlocked/locked) như trong ảnh.
+     */
+    @GetMapping("/users/{userId}/achievements-with-status")
+    @PreAuthorize("hasAuthority('gamification:read_all') or @userService.isSelf(authentication, #userId)")
+    public ResponseEntity<List<AchievementWithStatusDTO>> getAchievementsWithUserStatus(
+            @PathVariable Long userId) {
+        List<AchievementWithStatusDTO> achievements = gamificationService.getAllAchievementsWithUserStatus(userId);
+        return ResponseEntity.ok(achievements);
+    }
+
+    /**
+     * Lấy danh sách tất cả achievements với trạng thái unlock của user hiện tại.
+     */
+    @GetMapping("/my-achievements-with-status")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<AchievementWithStatusDTO>> getMyAchievementsWithStatus(
+            Authentication authentication) {
+        User currentUser = userService.findByUsernameOrEmail(authentication.getName());
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<AchievementWithStatusDTO> achievements = gamificationService.getAllAchievementsWithUserStatus(currentUser.getId());
+        return ResponseEntity.ok(achievements);
+    }
+
     // ========== POINT TYPES MANAGEMENT ==========
 
     @GetMapping("/point-types")
@@ -777,4 +805,3 @@ public class GamificationController {
         }
     }
 }
-
