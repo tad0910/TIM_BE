@@ -21,9 +21,15 @@ public interface UserAchievementRepository extends JpaRepository<UserAchievement
         @Param("userId") Long userId,
         @Param("achievementLevelId") Integer achievementLevelId
     );
+
+    boolean existsByUserIdAndAchievementLevelId(Long userId, Integer achievementLevelId);
     
     @Query("SELECT ua FROM UserAchievement ua WHERE ua.userId = :userId AND ua.isDisplayed = true " +
            "ORDER BY ua.unlockedAt DESC")
     List<UserAchievement> findDisplayedByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(DISTINCT ua.userId) FROM UserAchievement ua " +
+           "WHERE ua.achievementLevel.achievement.id = :achievementId AND ua.isDisplayed = true")
+    long countDistinctUsersByAchievementId(@Param("achievementId") Integer achievementId);
 }
 
