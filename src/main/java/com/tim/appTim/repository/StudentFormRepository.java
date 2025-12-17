@@ -11,4 +11,8 @@ public interface StudentFormRepository extends JpaRepository<StudentForm, Long> 
     List<StudentForm> findByStudentId(Long studentId);
     List<StudentForm> findByAcademicApproval(StudentForm.ApprovalStatus status);
     List<StudentForm> findByClassRoomIdIn(List<Long> classIds);
+
+    long countByStatus(StudentForm.FormStatus status);
+
+    List<StudentForm> findTop5ByStatusOrderByCreatedAtDesc(StudentForm.FormStatus status);
 }

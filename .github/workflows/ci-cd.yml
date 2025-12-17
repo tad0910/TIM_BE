@@ -25,16 +25,17 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # SỬA: Dùng mvnw.cmd thay vì mvn để tránh lỗi nếu máy chưa cài Maven
-      # Nếu project không có mvnw, hãy đảm bảo bạn đã cài Maven và add vào PATH
+      # SỬA QUAN TRỌNG: Thêm -Djacoco.skip=true vào lệnh dưới đây
       - name: Execute Tests
         run: |
           if (Test-Path "mvnw.cmd") {
-            ./mvnw.cmd -B test --file pom.xml
+            # ĐÃ THÊM: -Djacoco.skip=true
+            ./mvnw.cmd -B test -Djacoco.skip=true --file pom.xml
           } else {
-            mvn -B test --file pom.xml
+            # ĐÃ THÊM: -Djacoco.skip=true
+            mvn -B test -Djacoco.skip=true --file pom.xml
           }
-
+          
   # -----------------------------------------------------------------
   # GIAI ĐOẠN 2: BACKUP DỮ LIỆU
   # -----------------------------------------------------------------

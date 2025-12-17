@@ -48,6 +48,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.keycloakId = :keycloakId")
     Optional<User> findAnyByKeycloakId(String keycloakId);
 
+    @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r.name = :roleName AND u.deleted = false")
+    long countByRoleName(String roleName);
+
     @Query(value = "SELECT * FROM users WHERE deleted = 1",
             countQuery = "SELECT count(*) FROM users WHERE deleted = 1",
             nativeQuery = true)
