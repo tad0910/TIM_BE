@@ -35,4 +35,8 @@ public interface JobLeadRepository extends JpaRepository<JobLead, Long> {
      * @return a list of JobLeads for the given student IDs
      */
     List<JobLead> findByStudentIdIn(List<Long> studentIds);
+
+    long countByStatus(JobLead.LeadStatus status);
+
+    List<JobLead> findTop5ByOrderByCreatedAtDesc();
 }
