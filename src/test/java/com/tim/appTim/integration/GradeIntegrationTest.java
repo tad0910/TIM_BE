@@ -49,11 +49,13 @@ class GradeIntegrationTest {
     @SpyBean
     private GradeService gradeService;
 
-    // Dùng SpyBean cho UserService để lấy User thật từ DB (quan trọng để fix lỗi 500)
+    // Dùng SpyBean cho UserService để lấy User thật từ DB (quan trọng để fix lỗi
+    // 500)
     @SpyBean
     private UserService userService;
 
-    // Mock Notification vì đây là service bên ngoài (email/push), không cần test logic DB
+    // Mock Notification vì đây là service bên ngoài (email/push), không cần test
+    // logic DB
     @MockBean
     private NotificationService notificationService;
 
@@ -103,8 +105,8 @@ class GradeIntegrationTest {
     void getModuleGradebook_WhenTeacherIsAuthorized_ShouldReturn200() throws Exception {
         // giaovien1 (id=5) là giáo viên của module 500
         mockMvc.perform(get(BASE_URL + "/class-modules/500/gradebook")
-                        .param("page", "0")
-                        .param("size", "10"))
+                .param("page", "0")
+                .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.classModuleId").value(500))
                 .andExpect(jsonPath("$.students").isArray())
@@ -141,14 +143,13 @@ class GradeIntegrationTest {
         scoreEntry.setStudentId(1L); // post_owner
         scoreEntry.setComponents(Map.of(
                 "Điểm lý thuyết", new BigDecimal("9.5"),
-                "Điểm thực hành", new BigDecimal("10.0")
-        ));
+                "Điểm thực hành", new BigDecimal("10.0")));
 
         batchDTO.setScores(List.of(scoreEntry));
 
         mockMvc.perform(post(BASE_URL + "/batch")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(batchDTO)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(batchDTO)))
                 .andExpect(status().isOk());
     }
 
@@ -160,15 +161,16 @@ class GradeIntegrationTest {
         batchDTO.setScores(List.of());
 
         mockMvc.perform(post(BASE_URL + "/batch")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(batchDTO)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(batchDTO)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
     void batchUpdateGrades_WhenStudentNotFound_ShouldLogWarningButReturn200() throws Exception {
-        // Logic service hiện tại log warn và bỏ qua student không tồn tại, không throw error
+        // Logic service hiện tại log warn và bỏ qua student không tồn tại, không throw
+        // error
         BatchGradeUpdateDTO batchDTO = new BatchGradeUpdateDTO();
         batchDTO.setClassModuleId(500L);
 
@@ -178,8 +180,8 @@ class GradeIntegrationTest {
         batchDTO.setScores(List.of(scoreEntry));
 
         mockMvc.perform(post(BASE_URL + "/batch")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(batchDTO)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(batchDTO)))
                 .andExpect(status().isOk());
     }
 
@@ -187,8 +189,8 @@ class GradeIntegrationTest {
     void batchUpdateGrades_WhenUnauthenticated_ShouldReturn401() throws Exception {
         BatchGradeUpdateDTO batchDTO = new BatchGradeUpdateDTO();
         mockMvc.perform(post(BASE_URL + "/batch")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(batchDTO)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(batchDTO)))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -200,7 +202,7 @@ class GradeIntegrationTest {
         // Grade ID 1 thuộc về post_owner
         mockMvc.perform(get(BASE_URL + "/1/history"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", instanceOf(List.class)));
+                .andExpect(jsonPath("$.content", instanceOf(List.class)));
     }
 
     @Test
@@ -208,7 +210,8 @@ class GradeIntegrationTest {
     void getGradeHistory_WhenAuthorizedTeacher_ShouldReturn200() throws Exception {
         // Giáo viên dạy lớp đó được xem history
         mockMvc.perform(get(BASE_URL + "/1/history"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", instanceOf(List.class)));
     }
 
     @Test

@@ -249,4 +249,46 @@ public class TuitionTransactionService {
         return transactionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Giao dịch không tồn tại"));
     }
+
+    @Transactional(readOnly = true)
+    public boolean isReceiptOwner(org.springframework.security.core.Authentication authentication, Long receiptId) {
+        if (authentication == null || !authentication.isAuthenticated() || receiptId == null) {
+            return false;
+        }
+
+        final String currentUsername = extractUsername(authentication);
+        if (currentUsername == null) {
+            return false;
+        }
+
+        return receiptRepository.findById(receiptId)
+                .map(TuitionReceipt::getTransaction)
+                .map(TuitionTransaction::getStudentTuition)
+                .map(StudentTuition::getStudent)
+                .map(owner -> owner != null && currentUsername.equals(owner.getUsername()))
+                .orElse(false);
+    }
+
+    private String extractUsername(org.springframework.security.core.Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
+            return userDetails.getUsername();
+        }
+
+        if (principal instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            String preferredUsername = jwt.getClaimAsString("preferred_username");
+            if (preferredUsername != null) {
+                return preferredUsername;
+            }
+            return jwt.getSubject();
+        }
+
+        String principalString = principal != null ? principal.toString() : null;
+        return (principalString != null && !principalString.trim().isEmpty()) ? principalString : null;
+    }
 }

@@ -398,7 +398,7 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
     }
 
     @Override
-    public List<GradeHistoryDTO> getGradeHistory(Long gradeId, User currentUser) {
+    public Page<GradeHistoryDTO> getGradeHistory(Long gradeId, User currentUser, Pageable pageable) {
 
         Grade grade = gradeRepository.findById(gradeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Grade record not found (or deleted): " + gradeId));
@@ -428,11 +428,9 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
             throw new ForbiddenException("Access Denied: You do not have permission to view this grade history.");
         }
 
-        List<GradeHistory> historyList = gradeHistoryRepository.findByGradeIdOrderByChangedAtDesc(gradeId);
+        Page<GradeHistory> historyPage = gradeHistoryRepository.findByGradeId(gradeId, pageable);
 
-        return historyList.stream()
-                .map(GradeHistoryDTO::new)
-                .toList();
+        return historyPage.map(GradeHistoryDTO::new);
     }
 
     @Override
