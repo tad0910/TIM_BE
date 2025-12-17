@@ -32,7 +32,7 @@ jobs:
           if (Test-Path "mvnw.cmd") {
             ./mvnw.cmd -B test --file pom.xml
           } else {
-            mvn -B test --file pom.xml
+            mvn -B test -Djacoco.skip=true --file pom.xml
           }
 
   # -----------------------------------------------------------------
