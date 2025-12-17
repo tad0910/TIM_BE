@@ -60,10 +60,6 @@ public class CompanyServiceImpl implements CompanyService {
     public Company update(Long id, CompanyRequestDTO request, MultipartFile logo) {
         Company existingCompany = findById(id);
 
-        System.out.println("--- UPDATE COMPANY DEBUG ---");
-        System.out.println("Request Address: " + request.getAddress());
-
-
         mapDtoToEntity(existingCompany, request);
 
         if (logo != null && !logo.isEmpty()) {
@@ -112,5 +108,8 @@ public class CompanyServiceImpl implements CompanyService {
         company.setSize(request.getSize());
         company.setAddress(request.getAddress());
         company.setProducts(request.getProducts());
+        company.setProfileUrl(request.getProfileUrl());
+        company.setBenefits(request.getBenefits());
+        company.setFoundingDate(request.getFoundingDate());
     }
 }
