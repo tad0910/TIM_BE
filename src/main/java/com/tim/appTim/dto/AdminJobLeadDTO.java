@@ -22,7 +22,6 @@ public class AdminJobLeadDTO {
 
     private String statusCode;
     private String statusLabel;
-    private boolean jobInterest;
     private LocalDateTime createdAt;
     private boolean fromAdmin;
 

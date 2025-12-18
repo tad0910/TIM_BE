@@ -82,6 +82,9 @@ public class User {
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false;
 
+    @Column(name = "job_interest_enabled", nullable = false)
+    private boolean jobInterestEnabled = false;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }
@@ -136,4 +139,11 @@ public class User {
         this.deleted = deleted;
     }
 
+    public boolean isJobInterestEnabled() {
+        return jobInterestEnabled;
+    }
+
+    public void setJobInterestEnabled(boolean jobInterestEnabled) {
+        this.jobInterestEnabled = jobInterestEnabled;
+    }
 }
