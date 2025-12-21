@@ -267,9 +267,8 @@ class JobTrackingAdminServiceImplTest {
         when(classRepository.findById(1L)).thenReturn(Optional.of(classEntity));
         when(classMemberRepository.findByClassIdAndUserId(1L, 1L)).thenReturn(Optional.of(studentMember));
         when(jobLeadRepository.findTopByStudentIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.of(jobLead));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(student));
         when(userRepository.save(any(User.class))).thenReturn(student);
-        when(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
+        lenient().when(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
 
         JobTrackingRowDTO result = jobTrackingAdminService.updateJobInterest(1L, 1L, request);
 
@@ -307,7 +306,6 @@ class JobTrackingAdminServiceImplTest {
         when(classRepository.findById(1L)).thenReturn(Optional.of(classEntity));
         when(classMemberRepository.findByClassIdAndUserId(1L, 1L)).thenReturn(Optional.of(studentMember));
         when(jobLeadRepository.findTopByStudentIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.empty());
-        when(userRepository.findById(1L)).thenReturn(Optional.of(student));
         when(userRepository.save(any(User.class))).thenReturn(student);
         lenient().when(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(anyLong())).thenReturn(Collections.emptyList());
 

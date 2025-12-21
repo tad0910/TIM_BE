@@ -1098,6 +1098,7 @@ class GamificationServiceTest {
 
         Notification recentNotification = new Notification();
         recentNotification.setTitle("Bạn không còn đủ điều kiện cho huy hiệu");
+        recentNotification.setContent("Điểm hiện tại của bạn cho loại điểm này là 5, nhỏ hơn mức yêu cầu mới 20 để đạt huy hiệu Test Achievement - Gold");
         recentNotification.setCreatedAt(LocalDateTime.now().minusMinutes(30));
 
         when(behaviorRepository.findById(1)).thenReturn(Optional.of(behavior));
