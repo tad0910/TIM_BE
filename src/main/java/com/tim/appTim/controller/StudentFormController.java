@@ -47,7 +47,7 @@ public class StudentFormController {
     }
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('form:approve')")
+    @PreAuthorize("hasAuthority('form:approve') and hasAnyAuthority('ROLE_ADMIN','ROLE_GIAO_VIEN','ROLE_GIAO_VU','ROLE_KE_TOAN')")
     public ResponseEntity<StudentFormResponseDTO> approveForm(
             @PathVariable Long id,
             @RequestBody ApprovalRequestDTO request,
