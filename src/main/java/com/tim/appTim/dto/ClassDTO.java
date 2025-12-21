@@ -10,16 +10,25 @@ public class ClassDTO {
     private List<MemberDTO> members;
     private Integer programId;
     private ProgramsDTO program;
+    private boolean jobsEnabled;
     
+    public ClassDTO() {
+    }
 
     public ClassDTO(Long id, String className, String description, List<MemberDTO> members, Integer programId, ProgramsDTO program) {
+        this(id, className, description, members, programId, program, false);
+    }
+
+    public ClassDTO(Long id, String className, String description, List<MemberDTO> members, Integer programId, ProgramsDTO program, boolean jobsEnabled) {
         this.id = id;
         this.className = className;
         this.description = description;
         this.members = members;
         this.programId = programId;
         this.program = program;
+        this.jobsEnabled = jobsEnabled;
     }
+
 
     
     public Long getId() { return id; }
@@ -39,6 +48,9 @@ public class ClassDTO {
     
     public ProgramsDTO getProgram() { return program; }
     public void setProgram(ProgramsDTO program) { this.program = program; }
+
+    public boolean isJobsEnabled() { return jobsEnabled; }
+    public void setJobsEnabled(boolean jobsEnabled) { this.jobsEnabled = jobsEnabled; }
 
     public static class MemberDTO {
         private Long userId;
