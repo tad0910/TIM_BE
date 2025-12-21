@@ -107,6 +107,53 @@ class StudentFormIntegrationTest {
     }
 
     @Test
+    @DisplayName("PUT /forms/{id}/approve trả 403 khi GV duyệt đơn không thuộc lớp mình")
+    @WithUserDetails(value = "giaovien1", userDetailsServiceBeanName = "userService")
+    void approveForm_ShouldReturn403_WhenTeacherApprovesOtherClassForm() throws Exception {
+        ApprovalRequestDTO request = new ApprovalRequestDTO();
+        request.setDecision(StudentForm.ApprovalStatus.APPROVED);
+        request.setNote("Không được phép");
+
+        mockMvc.perform(put("/forms/2001/approve")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PUT /forms/{id}/approve trả 403 khi non-admin cố duyệt/note thay role khác")
+    @WithUserDetails(value = "giaovu_user", userDetailsServiceBeanName = "userService")
+    void approveForm_ShouldReturn403_WhenNonAdminUsesDifferentTargetRole() throws Exception {
+        ApprovalRequestDTO request = new ApprovalRequestDTO();
+        request.setDecision(StudentForm.ApprovalStatus.APPROVED);
+        request.setNote("Cố tình duyệt thay");
+        request.setTargetRole("ROLE_ADMIN");
+
+        mockMvc.perform(put("/forms/2000/approve")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PUT /forms/{id}/approve cho phép Admin duyệt/note thay ROLE_GIAO_VIEN")
+    @WithUserDetails(value = "form_admin", userDetailsServiceBeanName = "userService")
+    void approveForm_ShouldAllowAdminApproveOnBehalfOfTeacher() throws Exception {
+        ApprovalRequestDTO request = new ApprovalRequestDTO();
+        request.setDecision(StudentForm.ApprovalStatus.APPROVED);
+        request.setNote("Admin duyệt thay GV");
+        request.setTargetRole("ROLE_GIAO_VIEN");
+
+        mockMvc.perform(put("/forms/2000/approve")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2000))
+                .andExpect(jsonPath("$.coachApproval").value("APPROVED"))
+                .andExpect(jsonPath("$.coachNote").value("Admin duyệt thay GV"));
+    }
+
+    @Test
     @DisplayName("PUT /forms/{id}/approve trả 403 khi user không có quyền")
     @WithUserDetails(value = "form_student", userDetailsServiceBeanName = "userService")
     void approveForm_ShouldReturn403_WhenUserLacksPermission() throws Exception {

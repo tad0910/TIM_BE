@@ -51,7 +51,19 @@ public class StudentFormService {
         
         StudentForm form = formRepo.findById(formId)
                 .orElseThrow(() -> new ResourceNotFoundException("Form not found"));
-       
+
+        String currentUserRole = getUserRole(currentUser);
+        if ("ROLE_GIAO_VIEN".equals(currentUserRole)) {
+            Long classId = form.getClassRoom() == null ? null : form.getClassRoom().getId();
+            if (classId == null || !classMemberRepo.existsByClassIdAndUserIdAndRole(
+                    classId,
+                    currentUser.getId(),
+                    ClassMember.Role.giao_vien
+            )) {
+                throw new ForbiddenException("Bạn không có quyền duyệt đơn của lớp này.");
+            }
+        }
+
         String targetRole = determineTargetSection(currentUser, request.getTargetRole());
 
         switch (targetRole) { 
@@ -92,10 +104,7 @@ public class StudentFormService {
 
 
     private String determineTargetSection(User user, String requestedTarget) {
-        String userRole = user.getRoles().stream()
-                .findFirst()
-                .map(role -> role.getName())
-                .orElseThrow(() -> new ForbiddenException("User chưa được gán quyền hạn (Role)"));
+        String userRole = getUserRole(user);
 
         if ("ROLE_ADMIN".equals(userRole)) {
 
@@ -113,6 +122,10 @@ public class StudentFormService {
             throw new BadRequestException("Target Role không hợp lệ. Admin chỉ được chọn: " + validTargets);
         }
 
+        if (requestedTarget != null && !requestedTarget.isBlank() && !requestedTarget.equalsIgnoreCase(userRole)) {
+            throw new ForbiddenException("Bạn không có quyền duyệt/note thay role khác.");
+        }
+
         if (userRole.equals("ROLE_GIAO_VIEN")) return "ROLE_GIAO_VIEN";
         if (userRole.equals("ROLE_GIAO_VU"))   return "ROLE_GIAO_VU";
         if (userRole.equals("ROLE_KE_TOAN"))   return "ROLE_KE_TOAN";
@@ -120,7 +133,12 @@ public class StudentFormService {
         throw new ForbiddenException("Tài khoản của bạn (" + userRole + ") không có quyền duyệt đơn này.");
     }
 
-    
+    private String getUserRole(User user) {
+        return user.getRoles().stream()
+                .findFirst()
+                .map(role -> role.getName())
+                .orElseThrow(() -> new ForbiddenException("User chưa được gán quyền hạn (Role)"));
+    }
 
     @Transactional
     public StudentFormResponseDTO createForm(StudentFormCreateDTO dto, User creator) {
