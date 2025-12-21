@@ -28,9 +28,6 @@ public class JobLead {
     @Enumerated(EnumType.STRING)
     private LeadStatus status;
 
-    @Column(name = "job_interest", nullable = false)
-    private boolean jobInterest = true;
-
     @Column(name = "created_by_admin", nullable = false)
     private boolean createdByAdmin = false;
 

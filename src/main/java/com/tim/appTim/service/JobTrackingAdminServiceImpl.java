@@ -87,16 +87,17 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
         ClassMember member = classMemberRepository.findByClassIdAndUserId(classId, studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Học viên không thuộc lớp này"));
 
+        User student = Optional.ofNullable(member.getUser())
+                .orElseGet(() -> userRepository.findById(member.getUserId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin học viên")));
+
+        student.setJobInterestEnabled(request.isJobInterest());
+        userRepository.save(student);
+
         JobLead lead = jobLeadRepository.findTopByStudentIdOrderByCreatedAtDesc(studentId)
-                .orElseGet(() -> createPlaceholderLead(member));
+                .orElse(null);
 
-        lead.setJobInterest(request.isJobInterest());
-        jobLeadRepository.save(lead);
-
-        return buildRowDTO(
-                member,
-                lead,
-                null);
+        return buildRowDTO(member, lead, null);
     }
 
     private Map<Long, JobLead> collectLatestLeads(List<Long> studentIds) {
@@ -160,14 +161,13 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
         String officialSalary = "-";
         String statusCode = "NONE";
         String statusLabel = "Chưa có đầu mối";
-        boolean jobInterest = true;
+        boolean jobInterest = student != null && student.isJobInterestEnabled();
         LocalDateTime lastUpdated = null;
 
         if (lead != null) {
             companyName = defaultString(lead.getCompanyName(), "-");
             statusCode = lead.getStatus() != null ? lead.getStatus().name() : statusCode;
             statusLabel = lead.getStatus() != null ? lead.getStatus().getDisplayName() : statusLabel;
-            jobInterest = lead.isJobInterest();
             lastUpdated = lead.getCreatedAt();
         }
 
@@ -237,20 +237,6 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
                 .jobInterest(jobInterest)
                 .lastUpdated(lastUpdated)
                 .build();
-    }
-
-    private JobLead createPlaceholderLead(ClassMember member) {
-        User student = Optional.ofNullable(member.getUser())
-                .orElseGet(() -> userRepository.findById(member.getUserId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin học viên")));
-
-        JobLead lead = new JobLead();
-        lead.setStudent(student);
-        lead.setCompanyName("Chưa xác định");
-        lead.setStatus(JobLead.LeadStatus.NEW);
-        lead.setCreatedAt(LocalDateTime.now());
-        lead.setJobInterest(true);
-        return jobLeadRepository.save(lead);
     }
 
     private boolean isAfter(LocalDateTime current, LocalDateTime previous) {
@@ -380,7 +366,6 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
                         .website(lead.getWebsite())
                         .statusCode(lead.getStatus() != null ? lead.getStatus().name() : null)
                         .statusLabel(lead.getStatus() != null ? lead.getStatus().getDisplayName() : "Chưa có trạng thái")
-                        .jobInterest(lead.isJobInterest())
                         .createdAt(lead.getCreatedAt())
                         .fromAdmin(lead.isCreatedByAdmin())
                         .activities(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(lead.getId()).stream()
@@ -424,7 +409,6 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
         lead.setAddress(address);
         lead.setWebsite(website);
         lead.setStatus(JobLead.LeadStatus.NEW);
-        lead.setJobInterest(true);
         lead.setCreatedByAdmin(true);
         lead.setCreatedAt(LocalDateTime.now());
 
@@ -438,7 +422,6 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
                 .website(savedLead.getWebsite())
                 .statusCode(savedLead.getStatus().name())
                 .statusLabel(savedLead.getStatus().getDisplayName())
-                .jobInterest(savedLead.isJobInterest())
                 .createdAt(savedLead.getCreatedAt())
                 .fromAdmin(true)
                 .activities(Collections.emptyList())

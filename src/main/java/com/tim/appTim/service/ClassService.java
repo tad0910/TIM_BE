@@ -71,7 +71,9 @@ public class ClassService {
                     .map(Class::getId)
                     .toList();
 
-            List<ClassMember> allMembers = classMemberRepository.findAllById(classIds);
+            List<ClassMember> allMembers = classIds.isEmpty()
+                    ? List.of()
+                    : classMemberRepository.findByClassIdIn(classIds);
 
             Map<Long, List<ClassMember>> membersByClassId = allMembers.stream()
                     .filter(m -> m != null && m.getClassId() != null)
@@ -101,7 +103,8 @@ public class ClassService {
                             classEntity.getDescription() != null ? classEntity.getDescription() : "",
                             memberDTOs,
                             classEntity.getProgramId(),
-                            programDTO
+                            programDTO,
+                            classEntity.isJobsEnabled()
                     );
                 } catch (Exception e) {
                     System.err.println("Error processing class " + classEntity.getId() + ": " + e.getMessage());
@@ -111,7 +114,8 @@ public class ClassService {
                             "",
                             new ArrayList<>(),
                             classEntity.getProgramId(),
-                            null
+                            null,
+                            classEntity.isJobsEnabled()
                     );
                 }
             });
@@ -199,7 +203,8 @@ public class ClassService {
                 savedClass.getDescription(),
                 List.of(), 
                 classDTO.getProgramId(),
-                programDTO
+                programDTO,
+                savedClass.isJobsEnabled()
         );
     }
 
@@ -249,7 +254,8 @@ public class ClassService {
                 saved.getDescription(),
                 memberDTOs,
                 saved.getProgramId(),
-                null
+                null,
+                saved.isJobsEnabled()
         );
     }
 
@@ -280,7 +286,8 @@ public class ClassService {
                 saved.getDescription(),
                 memberDTOs,
                 programId,
-                programDTO
+                programDTO,
+                saved.isJobsEnabled()
         );
     }
 
@@ -448,8 +455,17 @@ public class ClassService {
                 classInfo.getDescription(),
                 memberDTOs,
                 classInfo.getProgramId(),
-                programDTO
+                programDTO,
+                classInfo.isJobsEnabled()
         );
     }
 
+    @Transactional
+    public ClassDTO updateJobsEnabled(Long classId, boolean jobsEnabled) {
+        Class existingClass = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + classId));
+        existingClass.setJobsEnabled(jobsEnabled);
+        classRepository.save(existingClass);
+        return getClassDTOById(classId);
+    }
 }

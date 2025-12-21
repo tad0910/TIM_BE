@@ -18,7 +18,9 @@ import com.tim.appTim.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -217,6 +219,37 @@ public class ClassModuleService {
         teacher.setRole(newRole);
         ClassModuleTeacher updated = classModuleTeacherRepository.save(teacher);
         return convertTeacherToDTO(updated);
+    }
+
+    @Transactional
+    public void syncClassModules(Long classId, List<Integer> desiredModuleIds) {
+        Class classEntity = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + classId));
+
+        LinkedHashSet<Integer> desiredIds = desiredModuleIds == null
+                ? new LinkedHashSet<>()
+                : desiredModuleIds.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<ClassModule> existingModules = classModuleRepository.findByClassId(classId);
+
+        for (ClassModule classModule : existingModules) {
+            Integer moduleId = classModule.getModuleId();
+            if (desiredIds.isEmpty() || moduleId == null || !desiredIds.contains(moduleId)) {
+                classModuleRepository.delete(classModule);
+            }
+        }
+
+        for (Integer moduleId : desiredIds) {
+            if (!classModuleRepository.existsByClassIdAndModuleId(classId, moduleId)) {
+                ClassModule classModule = new ClassModule();
+                classModule.setClassId(classId);
+                classModule.setModuleId(moduleId);
+                classModule.setScheduleType(ClassModule.ScheduleType.fixed);
+                classModuleRepository.save(classModule);
+            }
+        }
     }
 
     private ClassModuleDTO convertToDTO(ClassModule classModule) {
