@@ -71,7 +71,9 @@ public class ClassService {
                     .map(Class::getId)
                     .toList();
 
-            List<ClassMember> allMembers = classMemberRepository.findAllById(classIds);
+            List<ClassMember> allMembers = classIds.isEmpty()
+                    ? List.of()
+                    : classMemberRepository.findByClassIdIn(classIds);
 
             Map<Long, List<ClassMember>> membersByClassId = allMembers.stream()
                     .filter(m -> m != null && m.getClassId() != null)

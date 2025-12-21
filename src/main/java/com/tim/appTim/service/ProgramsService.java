@@ -6,16 +6,21 @@ import com.tim.appTim.dto.ProgramsDTO;
 import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.entity.ProgramModule;
 import com.tim.appTim.entity.Programs;
+import com.tim.appTim.entity.Class;
 import com.tim.appTim.exception.ConflictException;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.UnprocessableException;
 import com.tim.appTim.repository.*;
 import org.springframework.stereotype.Service;
+
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,17 +30,20 @@ public class ProgramsService {
     private final ProgramsRepository programsRepository;
     private final ProgramModuleRepository programModuleRepository;
     private final ModuleSessionRepository moduleSessionRepository;
+    private final ClassModuleService classModuleService;
 
     public ProgramsService(ProgramsRepository programsRepository,
                            ProgramModuleRepository programModuleRepository,
                            ModuleSessionRepository moduleSessionRepository,
                            ModuleRepository moduleRepository,
-                           ClassRepository classRepository) {
+                           ClassRepository classRepository,
+                           ClassModuleService classModuleService) {
         this.programsRepository = programsRepository;
         this.programModuleRepository = programModuleRepository;
         this.moduleSessionRepository = moduleSessionRepository;
         this.moduleRepository = moduleRepository;
         this.classRepository = classRepository;
+        this.classModuleService = classModuleService;
     }
 
     @Transactional(readOnly = true)
@@ -101,42 +109,46 @@ public class ProgramsService {
 
         List<ProgramModule> currentList = programModuleRepository.findByProgramIdOrderByPositionAsc(programId);
 
-        java.util.LinkedHashSet<Integer> desiredModuleIds = moduleIds == null
-                ? new java.util.LinkedHashSet<>()
-                : new java.util.LinkedHashSet<>(moduleIds);
+        LinkedHashSet<Integer> desiredModuleIds = moduleIds == null
+                ? new LinkedHashSet<>()
+                : moduleIds.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        if (moduleIds == null || moduleIds.isEmpty()) {
-
+        if (desiredModuleIds.isEmpty()) {
             for (ProgramModule pm : currentList) {
                 programModuleRepository.delete(pm);
             }
-            return toDTO(program);
+        } else {
+
+            for (ProgramModule pm : currentList) {
+                Integer moduleId = pm.getModule() != null ? pm.getModule().getId() : null;
+                if (moduleId != null && !desiredModuleIds.contains(moduleId)) {
+                    programModuleRepository.delete(pm);
+                }
+            }
+
+            int position = 1;
+            for (Integer moduleId : desiredModuleIds) {
+                ProgramModule.ProgramModuleId pmId = new ProgramModule.ProgramModuleId(programId, moduleId);
+                ProgramModule pm = programModuleRepository.findById(pmId).orElse(null);
+                if (pm == null) {
+                    com.tim.appTim.entity.Module module = moduleRepository.findById(moduleId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy module với id = " + moduleId));
+                    pm = new ProgramModule();
+                    pm.setId(pmId);
+                    pm.setProgram(program);
+                    pm.setModule(module);
+                }
+                pm.setPosition(position++);
+                programModuleRepository.save(pm);
+            }
         }
 
-        for (ProgramModule pm : currentList) {
-            Integer moduleId = pm.getModule() != null ? pm.getModule().getId() : null;
-            if (moduleId != null && !desiredModuleIds.contains(moduleId)) {
-                programModuleRepository.delete(pm);
-            }
-        }
-
-        int position = 1;
-        for (Integer moduleId : desiredModuleIds) {
-            if (moduleId == null) {
-                continue;
-            }
-            ProgramModule.ProgramModuleId pmId = new ProgramModule.ProgramModuleId(programId, moduleId);
-            ProgramModule pm = programModuleRepository.findById(pmId).orElse(null);
-            if (pm == null) {
-                com.tim.appTim.entity.Module module = moduleRepository.findById(moduleId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy module với id = " + moduleId));
-                pm = new ProgramModule();
-                pm.setId(pmId);
-                pm.setProgram(program);
-                pm.setModule(module);
-            }
-            pm.setPosition(position++);
-            programModuleRepository.save(pm);
+        List<Class> affectedClasses = classRepository.findByProgramId(programId);
+        List<Integer> desiredList = new ArrayList<>(desiredModuleIds);
+        for (Class clazz : affectedClasses) {
+            classModuleService.syncClassModules(clazz.getId(), desiredList);
         }
 
         return toDTO(programsRepository.findById(programId).orElseThrow());

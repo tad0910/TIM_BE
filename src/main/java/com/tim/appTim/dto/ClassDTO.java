@@ -12,6 +12,8 @@ public class ClassDTO {
     private ProgramsDTO program;
     private boolean jobsEnabled;
     
+    public ClassDTO() {
+    }
 
     public ClassDTO(Long id, String className, String description, List<MemberDTO> members, Integer programId, ProgramsDTO program) {
         this(id, className, description, members, programId, program, false);
