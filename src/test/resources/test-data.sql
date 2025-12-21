@@ -77,18 +77,18 @@ INSERT INTO permissions (id, name) VALUES
 (38, 'form:approve'),
 (39, 'form:delete');
 
-INSERT INTO users (id, username, password, email, deleted) VALUES
-(1, 'post_owner', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'owner@example.com', false),
-(2, 'another_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'another@example.com', false),
-(3, 'admin_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'admin@example.com', false),
-(4, 'stranger_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'stranger@example.com', false),
-(5, 'giaovien1', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv1@example.com', false),
-(6, 'giaovien2', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv2@example.com', false),
-(7, 'giaovien3', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv3@example.com', false),
-(8, 'form_student', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'form.student@example.com', false),
-(9, 'form_admin', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'form.admin@example.com', false),
-(10, 'giaovu_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'giaovu@example.com', false),
-(11, 'ketoan_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'ketoan@example.com', false);
+INSERT INTO users (id, username, password, email, deleted, job_interest_enabled) VALUES
+(1, 'post_owner', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'owner@example.com', false, false),
+(2, 'another_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'another@example.com', false, false),
+(3, 'admin_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'admin@example.com', false, false),
+(4, 'stranger_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'stranger@example.com', false, false),
+(5, 'giaovien1', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv1@example.com', false, false),
+(6, 'giaovien2', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv2@example.com', false, false),
+(7, 'giaovien3', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'gv3@example.com', false, false),
+(8, 'form_student', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'form.student@example.com', false, false),
+(9, 'form_admin', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'form.admin@example.com', false, false),
+(10, 'giaovu_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'giaovu@example.com', false, false),
+(11, 'ketoan_user', '$2a$10$wPHxwfsfTnOJAdgYcerBt.utdAvC24B/DWfuXfzKBSDHO0etB1ica', 'ketoan@example.com', false, false);
 
 UPDATE users SET firstname = 'Owner', lastname = 'Post', so_dien_thoai = '0911000001' WHERE id = 1;
 UPDATE users SET firstname = 'Student', lastname = 'Form', so_dien_thoai = '0911000008' WHERE id = 8;
@@ -171,11 +171,11 @@ INSERT INTO module_sessions (id, module_id, session_number, title, content) VALU
 (302, 201, 1, 'Buổi 1: Giới thiệu Security', 'Nội dung buổi 1 Security'),
 (303, 202, 1, 'Buổi 1: Module Test Mới', 'Nội dung buổi 1 Module Test Mới');
 
-INSERT INTO classes (id, name, description, program_id) VALUES
-(10, 'BE Class K10', 'Lớp học Test A', 100),
-(11, 'FE Class K11', 'Lớp học Test B', 100),
-(12, 'Form Class K12', 'Lớp học Test C', 100),
-(13, 'Form Class K13', 'Lớp học Test D', 100);
+INSERT INTO classes (id, name, description, program_id, jobs_enabled) VALUES
+(10, 'BE Class K10', 'Lớp học Test A', 100, false),
+(11, 'FE Class K11', 'Lớp học Test B', 100, false),
+(12, 'Form Class K12', 'Lớp học Test C', 100, false),
+(13, 'Form Class K13', 'Lớp học Test D', 100, false);
 
 INSERT INTO class_module (id, class_id, module_id, schedule_type) VALUES
 (500, 10, 200, 'fixed');
