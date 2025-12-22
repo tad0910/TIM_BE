@@ -3,15 +3,10 @@ package com.tim.appTim.service;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.repository.GamificationBehaviorRepository;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Helper service to resolve behavior ID by name and cache the result.
- * Dùng khi caller muốn trao điểm theo tên nhưng GamificationService nhận id.
- */
 @Service
 public class BehaviorLookupService {
 
