@@ -5,12 +5,15 @@ import com.tim.appTim.dto.TuitionTransactionDTO;
 import com.tim.appTim.dto.StudentPaymentScheduleDTO;
 import com.tim.appTim.service.TuitionTransactionService;
 import com.tim.appTim.service.UserDetailsImpl;
+import com.tim.appTim.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -19,9 +22,11 @@ import java.util.List;
 public class TuitionOverviewController {
 
     private final TuitionTransactionService transactionService;
+    private final UserService userService;
 
-    public TuitionOverviewController(TuitionTransactionService transactionService) {
+    public TuitionOverviewController(TuitionTransactionService transactionService, UserService userService) {
         this.transactionService = transactionService;
+        this.userService = userService;
     }
 
     @GetMapping("/admin")
@@ -34,9 +39,10 @@ public class TuitionOverviewController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<TuitionOverviewDTO> getMyOverview(Authentication authentication) {
 
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
-        Long currentStudentId = userDetails.getUser().getId();
+        Long currentStudentId = extractCurrentStudentId(authentication);
+        if (currentStudentId == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         return ResponseEntity.ok(transactionService.getStudentOverview(currentStudentId));
     }
@@ -59,8 +65,10 @@ public class TuitionOverviewController {
             Authentication authentication,
             @PageableDefault(size = 10, page = 0) Pageable pageable) {
 
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Long currentStudentId = userDetails.getUser().getId();
+        Long currentStudentId = extractCurrentStudentId(authentication);
+        if (currentStudentId == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(transactionService.getTransactionHistory(currentStudentId, pageable));
     }
 
@@ -78,5 +86,42 @@ public class TuitionOverviewController {
     public ResponseEntity<Page<TuitionTransactionDTO>> getAllTransactions(
             @PageableDefault(size = 10, page = 0) Pageable pageable) {
         return ResponseEntity.ok(transactionService.getAllTransactions(pageable));
+    }
+
+    private Long extractCurrentStudentId(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal == null) {
+            return null;
+        }
+
+        if (principal instanceof UserDetailsImpl userDetailsImpl) {
+            return userDetailsImpl.getUser() != null ? userDetailsImpl.getUser().getId() : null;
+        }
+
+        String usernameOrEmail = null;
+        if (principal instanceof UserDetails userDetails) {
+            usernameOrEmail = userDetails.getUsername();
+        } else if (principal instanceof Jwt jwt) {
+            String preferredUsername = jwt.getClaimAsString("preferred_username");
+            usernameOrEmail = preferredUsername != null ? preferredUsername : jwt.getSubject();
+        } else {
+            String s = principal.toString();
+            usernameOrEmail = (s != null && !s.trim().isEmpty()) ? s : null;
+        }
+
+        if (usernameOrEmail == null) {
+            return null;
+        }
+
+        Object loaded = userService.loadUserByUsername(usernameOrEmail);
+        if (loaded instanceof UserDetailsImpl userDetailsImpl) {
+            return userDetailsImpl.getUser() != null ? userDetailsImpl.getUser().getId() : null;
+        }
+
+        return null;
     }
 }
