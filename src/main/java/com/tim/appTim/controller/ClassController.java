@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import com.tim.appTim.dto.AddMemberDTO;
 import com.tim.appTim.dto.AddMembersBatchRequest;
 import com.tim.appTim.dto.ClassDTO;
+import com.tim.appTim.dto.UpdateClassJobsSettingsRequest;
 import com.tim.appTim.dto.UpdateMemberRequest;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.service.ClassService;
@@ -71,6 +72,17 @@ public class ClassController {
     @PreAuthorize("hasAuthority('class:update_all') or @classService.isClassTeacher(authentication, #classId)")
     public ResponseEntity<ClassDTO> updateClassProgram(@PathVariable Long classId, @RequestBody Integer programId) {
         ClassDTO updated = classService.updateClassProgram(classId, programId);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PatchMapping("/{classId}/jobs-settings")
+    @PreAuthorize("hasAuthority('class:update_all') or @classService.isClassTeacher(authentication, #classId)")
+    public ResponseEntity<ClassDTO> updateJobsSettings(
+            @PathVariable Long classId,
+            @RequestBody UpdateClassJobsSettingsRequest request,
+            Authentication authentication
+    ) {
+        ClassDTO updated = classService.updateJobsEnabled(classId, request.isJobsEnabled());
         return ResponseEntity.ok(updated);
     }
 

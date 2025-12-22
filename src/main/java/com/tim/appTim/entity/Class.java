@@ -20,6 +20,9 @@ public class Class {
     @Column(name = "program_id")
     private Integer programId;
 
+    @Column(name = "jobs_enabled", nullable = false)
+    private boolean jobsEnabled = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "program_id", insertable = false, updatable = false)
     private Programs program;
@@ -38,7 +41,7 @@ public class Class {
     public void setDescription(String description) { this.description = description; }
     public List<ClassModuleSchedule> getSchedules() { return schedules; }
     public void setSchedules(List<ClassModuleSchedule> schedules) { this.schedules = schedules;}
-    
+
     public Integer getProgramId() {
         return programId;
     }
@@ -61,5 +64,13 @@ public class Class {
 
     public void setClassModules(List<ClassModule> classModules) {
         this.classModules = classModules;
+    }
+
+    public boolean isJobsEnabled() {
+        return jobsEnabled;
+    }
+
+    public void setJobsEnabled(boolean jobsEnabled) {
+        this.jobsEnabled = jobsEnabled;
     }
 }

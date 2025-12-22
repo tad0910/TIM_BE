@@ -82,6 +82,7 @@ class JobTrackingAdminServiceImplTest {
         student.setUsername("student1");
         student.setFirstName("John");
         student.setLastName("Doe");
+        student.setJobInterestEnabled(true);
 
         teacher = new User();
         teacher.setId(2L);
@@ -105,7 +106,6 @@ class JobTrackingAdminServiceImplTest {
         jobLead.setStudent(student);
         jobLead.setCompanyName("Test Company");
         jobLead.setStatus(JobLead.LeadStatus.NEW);
-        jobLead.setJobInterest(true);
         jobLead.setCreatedAt(LocalDateTime.now().minusDays(5));
         jobLead.setCreatedByAdmin(false);
 
@@ -267,14 +267,14 @@ class JobTrackingAdminServiceImplTest {
         when(classRepository.findById(1L)).thenReturn(Optional.of(classEntity));
         when(classMemberRepository.findByClassIdAndUserId(1L, 1L)).thenReturn(Optional.of(studentMember));
         when(jobLeadRepository.findTopByStudentIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.of(jobLead));
-        when(jobLeadRepository.save(any(JobLead.class))).thenReturn(jobLead);
-        when(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
+        when(userRepository.save(any(User.class))).thenReturn(student);
+        lenient().when(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
 
         JobTrackingRowDTO result = jobTrackingAdminService.updateJobInterest(1L, 1L, request);
 
         assertThat(result).isNotNull();
         assertThat(result.isJobInterest()).isFalse();
-        verify(jobLeadRepository).save(any(JobLead.class));
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
@@ -299,40 +299,22 @@ class JobTrackingAdminServiceImplTest {
     }
 
     @Test
-    void updateJobInterest_CreatesPlaceholderLead() {
+    void updateJobInterest_NoLead_Success() {
         JobTrackingUpdateRequest request = new JobTrackingUpdateRequest();
         request.setJobInterest(true);
 
         when(classRepository.findById(1L)).thenReturn(Optional.of(classEntity));
         when(classMemberRepository.findByClassIdAndUserId(1L, 1L)).thenReturn(Optional.of(studentMember));
         when(jobLeadRepository.findTopByStudentIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.empty());
-        lenient().when(userRepository.findById(1L)).thenReturn(Optional.of(student));
-        when(jobLeadRepository.save(any(JobLead.class))).thenAnswer(invocation -> {
-            JobLead lead = invocation.getArgument(0);
-            lead.setId(2L);
-            return lead;
-        });
+        when(userRepository.save(any(User.class))).thenReturn(student);
         lenient().when(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(anyLong())).thenReturn(Collections.emptyList());
 
         JobTrackingRowDTO result = jobTrackingAdminService.updateJobInterest(1L, 1L, request);
 
         assertThat(result).isNotNull();
-        // save is called twice: once in createPlaceholderLead, once in updateJobInterest
-        verify(jobLeadRepository, times(2)).save(any(JobLead.class));
-    }
-
-    @Test
-    void updateJobInterest_PlaceholderLead_StudentNotFound_ShouldThrowException() {
-        JobTrackingUpdateRequest request = new JobTrackingUpdateRequest();
-        studentMember.setUser(null);
-        when(classRepository.findById(1L)).thenReturn(Optional.of(classEntity));
-        when(classMemberRepository.findByClassIdAndUserId(1L, 1L)).thenReturn(Optional.of(studentMember));
-        when(jobLeadRepository.findTopByStudentIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.empty());
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> jobTrackingAdminService.updateJobInterest(1L, 1L, request))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Không tìm thấy thông tin học viên");
+        assertThat(result.isJobInterest()).isTrue();
+        verify(userRepository).save(any(User.class));
+        verify(jobLeadRepository, never()).save(any(JobLead.class));
     }
 
     @Test
@@ -554,7 +536,6 @@ class JobTrackingAdminServiceImplTest {
         assertThat(result.getAddress()).isEqualTo("Address");
         assertThat(result.getWebsite()).isEqualTo("Website");
         assertThat(result.getStatusCode()).isEqualTo("NEW");
-        assertThat(result.isJobInterest()).isTrue();
         assertThat(result.isFromAdmin()).isTrue();
         verify(jobLeadRepository).save(any(JobLead.class));
     }

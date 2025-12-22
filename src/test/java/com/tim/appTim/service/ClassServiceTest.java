@@ -95,7 +95,7 @@ class ClassServiceTest {
     void getAllClasses_Success() {
         Page<Class> page = new PageImpl<>(Collections.singletonList(classEntity));
         when(classRepository.findAll(any(Pageable.class))).thenReturn(page);
-        when(classMemberRepository.findAllById(anyList())).thenReturn(Collections.singletonList(classMember));
+        when(classMemberRepository.findByClassIdIn(anyList())).thenReturn(Collections.singletonList(classMember));
 
         Page<ClassDTO> result = classService.getAllClasses(PageRequest.of(0, 10));
         assertThat(result).isNotEmpty();
@@ -107,7 +107,7 @@ class ClassServiceTest {
     void getAllClasses_ExceptionInProcessing() {
         Page<Class> page = new PageImpl<>(Collections.singletonList(classEntity));
         when(classRepository.findAll(any(Pageable.class))).thenReturn(page);
-        when(classMemberRepository.findAllById(anyList())).thenThrow(new RuntimeException("Processing Error"));
+        when(classMemberRepository.findByClassIdIn(anyList())).thenThrow(new RuntimeException("Processing Error"));
 
         assertThatThrownBy(() -> classService.getAllClasses(PageRequest.of(0, 10)))
                 .isInstanceOf(InternalServerErrorException.class);

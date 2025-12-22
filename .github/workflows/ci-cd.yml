@@ -25,15 +25,13 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # SỬA QUAN TRỌNG: Thêm -Djacoco.skip=true vào lệnh dưới đây
+      # SỬA LỖI: Viết chính xác -Djacoco.skip=true (KHÔNG CÓ DẤU CÁCH Ở GIỮA)
       - name: Execute Tests
         run: |
           if (Test-Path "mvnw.cmd") {
-            # ĐÃ THÊM: -Djacoco.skip=true
-            ./mvnw.cmd -B test -Djacoco.skip=true --file pom.xml
+            ./mvnw.cmd -B test "-Djacoco.skip=true" --file pom.xml
           } else {
-            # ĐÃ THÊM: -Djacoco.skip=true
-            mvn -B test -Djacoco.skip=true --file pom.xml
+            mvn -B test "-Djacoco.skip=true" --file pom.xml
           }
           
   # -----------------------------------------------------------------
