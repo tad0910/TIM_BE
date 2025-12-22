@@ -173,21 +173,18 @@ public class GradeServiceImpl implements GradeService, ApplicationContextAware {
 
                     BigDecimal averageScore = theoryScore.add(practiceScore).divide(new BigDecimal("2"), 2,
                             RoundingMode.HALF_UP);
-                    BigDecimal percentageScore = averageScore;
-                    if (averageScore.compareTo(new BigDecimal("10")) <= 0) {
-                        percentageScore = averageScore.multiply(new BigDecimal("10"));
-                    }
 
                     Long studentId = grade.getStudent().getId();
 
-                    if (percentageScore.compareTo(new BigDecimal("95.0")) >= 0) {
+                    // Kiểm tra trên thang điểm 10: >= 9.5 là xuất sắc, >= 8.0 là điểm cao
+                    if (averageScore.compareTo(new BigDecimal("9.5")) >= 0) {
                         try {
                             Integer behaviorId = behaviorLookupService.getIdByName("Đạt điểm xuất sắc (>95%)");
                             gamificationService.awardPoints(studentId, behaviorId);
                         } catch (Exception e) {
                             logger.warn("Failed to award HIGH_POINT_2 for student {}: {}", studentId, e.getMessage());
                         }
-                    } else if (percentageScore.compareTo(new BigDecimal("80.0")) >= 0) {
+                    } else if (averageScore.compareTo(new BigDecimal("8.0")) >= 0) {
 
                         try {
                             Integer behaviorId = behaviorLookupService.getIdByName("Đạt điểm cao (>80%)");
