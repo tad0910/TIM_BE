@@ -183,7 +183,7 @@ public class GamificationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<GamificationPointTypeDTO>> getAllPointTypes(
             @PageableDefault(size = 20, page = 0) Pageable pageable) {
-        Page<GamificationPointTypeDTO> pointTypes = pointTypeService.getAllActivePointTypes(pageable);
+        Page<GamificationPointTypeDTO> pointTypes = pointTypeService.getAllPointTypes(pageable);
         return ResponseEntity.ok(pointTypes);
     }
 

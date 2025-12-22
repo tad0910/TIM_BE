@@ -30,8 +30,8 @@ public class GamificationPointTypeService {
     }
 
     @Transactional(readOnly = true)
-    public Page<GamificationPointTypeDTO> getAllActivePointTypes(Pageable pageable) {
-        return pointTypeRepository.findByIsActiveTrue(pageable)
+    public Page<GamificationPointTypeDTO> getAllPointTypes(Pageable pageable) {
+        return pointTypeRepository.findAll(pageable)
                 .map(this::mapToDTO);
     }
 
