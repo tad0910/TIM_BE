@@ -5,6 +5,8 @@ import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.NotificationRepository;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.repository.CommentRepository;
+import com.tim.appTim.repository.ReplyCommentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +43,12 @@ class NotificationServiceTest {
     @Mock
     private SseService sseService;
 
+    @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
+    private ReplyCommentRepository replyCommentRepository;
+
     private NotificationService notificationService;
 
     private Notification notification;
@@ -62,7 +70,7 @@ class NotificationServiceTest {
     @BeforeEach
     void setUp() {
         notificationService = new NotificationService(
-                notificationRepository, userService, userRepository, sseService);
+                notificationRepository, userService, userRepository, sseService, commentRepository, replyCommentRepository);
         
         now = LocalDateTime.now();
         
@@ -798,8 +806,8 @@ class NotificationServiceTest {
 
         // Assert
         assertNotNull(result);
-        // getPostIdFromComment returns null, so URL will be "/posts/null"
-        assertTrue(result.getContent().get(0).getActionUrl().contains("/posts/"));
+        // getPostIdFromComment returns null, so URL will be "/"
+        assertEquals("/", result.getContent().get(0).getActionUrl());
     }
 
     @Test
@@ -817,7 +825,8 @@ class NotificationServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertTrue(result.getContent().get(0).getActionUrl().contains("/posts/"));
+        // getPostIdFromComment returns null, so URL will be "/"
+        assertEquals("/", result.getContent().get(0).getActionUrl());
     }
 
     @Test
@@ -835,7 +844,8 @@ class NotificationServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertTrue(result.getContent().get(0).getActionUrl().contains("/posts/"));
+        // getPostIdFromReply returns null, so URL will be "/"
+        assertEquals("/", result.getContent().get(0).getActionUrl());
     }
 
     @Test
@@ -1029,29 +1039,20 @@ class NotificationServiceTest {
 
     @Test
     void isReceiver_Fail_AuthNull() {
-        // Act
         boolean result = notificationService.isReceiver(null, 1L);
-
-        // Assert
         assertFalse(result);
     }
 
     @Test
     void isReceiver_Fail_UserNotFound() {
-        // Arrange
         org.springframework.security.core.Authentication auth = auth("testuser", true);
         when(userService.findByUsernameOrEmail("testuser")).thenReturn(null);
-
-        // Act
         boolean result = notificationService.isReceiver(auth, 1L);
-
-        // Assert
         assertFalse(result);
     }
 
     @Test
     void isReceiver_Fail_NotificationNotFound() {
-        // Arrange
         User receiver = new User();
         receiver.setId(1L);
         when(notificationRepository.findById(999L)).thenReturn(Optional.empty());
@@ -1059,8 +1060,6 @@ class NotificationServiceTest {
         org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
         when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("testuser");
-
-        // Act & Assert
         assertThrows(java.util.NoSuchElementException.class, () -> {
             notificationService.isReceiver(auth, 999L);
         });
@@ -1068,7 +1067,6 @@ class NotificationServiceTest {
 
     @Test
     void isReceiver_Fail_NotReceiver() {
-        // Arrange
         User receiver = new User();
         receiver.setId(1L);
         User otherUser = new User();
@@ -1077,55 +1075,39 @@ class NotificationServiceTest {
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
         when(userService.findByUsernameOrEmail("otheruser")).thenReturn(otherUser);
         org.springframework.security.core.Authentication auth = auth("otheruser", true);
-
-        // Act
         boolean result = notificationService.isReceiver(auth, 1L);
-
-        // Assert
         assertFalse(result);
     }
 
     @Test
     void createReactionNotification_POST_MENTION_ShouldNotCreate() {
-        // Act
         notificationService.createReactionNotification(
                 1L, null, null, 2L, "sender_user",
                 Notification.NotificationType.POST_MENTION, "POST", 10L);
-
-        // Assert
         verify(notificationRepository, never()).save(any());
     }
 
     @Test
     void createReactionNotification_COMMENT_MENTION_ShouldNotCreate() {
-        // Act
         notificationService.createReactionNotification(
                 null, 1L, null, 2L, "sender_user",
                 Notification.NotificationType.COMMENT_MENTION, "COMMENT", 20L);
-
-        // Assert
         verify(notificationRepository, never()).save(any());
     }
 
     @Test
     void createReactionNotification_USER_FOLLOW_ShouldNotCreate() {
-        // Act
         notificationService.createReactionNotification(
                 1L, null, null, 2L, "sender_user",
                 Notification.NotificationType.USER_FOLLOW, "USER", 2L);
-
-        // Assert
         verify(notificationRepository, never()).save(any());
     }
 
     @Test
     void createReactionNotification_SYSTEM_ANNOUNCEMENT_ShouldNotCreate() {
-        // Act
         notificationService.createReactionNotification(
                 1L, null, null, 2L, "sender_user",
                 Notification.NotificationType.SYSTEM_ANNOUNCEMENT, "SYSTEM", 0L);
-
-        // Assert
         verify(notificationRepository, never()).save(any());
     }
 }
