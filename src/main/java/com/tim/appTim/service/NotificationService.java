@@ -8,6 +8,8 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.AttendanceSessionRepository;
 import com.tim.appTim.repository.NotificationRepository;
 import com.tim.appTim.repository.UserRepository;
+import com.tim.appTim.repository.CommentRepository;
+import com.tim.appTim.repository.ReplyCommentRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -33,6 +35,8 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final SseService sseService;
+    private final CommentRepository commentRepository;
+    private final ReplyCommentRepository replyCommentRepository;
 
     @Autowired
     private AttendanceSessionRepository sessionRepository;
@@ -40,11 +44,18 @@ public class NotificationService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public NotificationService(NotificationRepository notificationRepository, UserService userService, UserRepository userRepository, SseService sseService) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               UserService userService,
+                               UserRepository userRepository,
+                               SseService sseService,
+                               CommentRepository commentRepository,
+                               ReplyCommentRepository replyCommentRepository) {
         this.notificationRepository = notificationRepository;
         this.userService = userService;
         this.userRepository = userRepository;
         this.sseService = sseService;
+        this.commentRepository = commentRepository;
+        this.replyCommentRepository = replyCommentRepository;
     }
 
     public NotificationDTO createNotification(Long receiverId, Long senderId,
@@ -61,8 +72,6 @@ public class NotificationService {
                                               String title, String content,
                                               String iconUrl) {
 
-        // For gamification notifications, don't check duplicates as users can earn the same achievement multiple times
-        // or earn points from the same behavior multiple times
         boolean shouldCheckDuplicate =
                 senderId != null
                         && notificationType != Notification.NotificationType.GRADE_NEW
@@ -88,21 +97,17 @@ public class NotificationService {
         Notification savedNotification = notificationRepository.save(notification);
         System.out.println(String.format(
             "[NotificationService] Notification saved. ID before flush: %s", savedNotification.getId()));
-        
-        // Flush to ensure ID is generated immediately
+
         notificationRepository.flush();
         System.out.println(String.format(
             "[NotificationService] After flush. ID: %s", savedNotification.getId()));
-        
-        // Get the ID after flush
+
         Long tempId = savedNotification.getId();
         if (tempId == null) {
-            // If still null after flush, try to get it from the entity manager
             System.err.println(String.format(
                 "[NotificationService] WARNING: Notification ID is null after flush. Trying to refresh entity. ReceiverId: %s, Type: %s", 
                 receiverId, notificationType));
-            
-            // Force refresh from database
+
             entityManager.refresh(savedNotification);
             tempId = savedNotification.getId();
             
@@ -117,8 +122,7 @@ public class NotificationService {
         
         System.out.println(String.format(
             "[NotificationService] Notification ID confirmed: %s", notificationId));
-        
-        // Reload to ensure all fields are properly set
+
         Notification reloadedNotification = notificationRepository.findById(notificationId)
             .orElseThrow(() -> new IllegalStateException(
                 String.format("Failed to reload notification after save. ID: %s", notificationId)));
@@ -132,8 +136,7 @@ public class NotificationService {
         System.out.println(String.format(
             "[NotificationService] NotificationDTO created. ID: %s, Title: %s", 
             notificationDTO != null ? notificationDTO.getId() : "NULL", title));
-        
-        // Validate DTO has ID before sending
+
         if (notificationDTO == null) {
             throw new IllegalStateException(
                 String.format("NotificationDTO is null after conversion. Notification ID: %s, ReceiverId: %s, Type: %s", 
@@ -385,13 +388,19 @@ public class NotificationService {
 
         switch (notification.getNotificationType()) {
             case POST_REACTION:
-            case POST_COMMENT:
-                return baseUrl + "posts/" + notification.getTargetId();
+            case POST_COMMENT: {
+                Long targetPostId = notification.getTargetId();
+                return targetPostId != null ? baseUrl + "posts/" + targetPostId : baseUrl;
+            }
             case COMMENT_REACTION:
-            case COMMENT_REPLY:
-                return baseUrl + "posts/" + getPostIdFromComment(notification.getTargetId());
-            case REPLY_REACTION:
-                return baseUrl + "posts/" + getPostIdFromReply(notification.getTargetId());
+            case COMMENT_REPLY: {
+                Long postIdFromComment = getPostIdFromComment(notification.getTargetId());
+                return postIdFromComment != null ? baseUrl + "posts/" + postIdFromComment : baseUrl;
+            }
+            case REPLY_REACTION: {
+                Long postIdFromReply = getPostIdFromReply(notification.getTargetId());
+                return postIdFromReply != null ? baseUrl + "posts/" + postIdFromReply : baseUrl;
+            }
             case USER_FOLLOW:
                 return baseUrl + "users/" + notification.getSenderId();
             case LATE_ATTENDANCE_OPENED:
@@ -415,11 +424,28 @@ public class NotificationService {
     }
 
     private Long getPostIdFromComment(Long commentId) {
-        return null;
+        if (commentId == null) {
+            return null;
+        }
+
+        return commentRepository.findById(commentId)
+                .map(comment -> comment.getPost() != null ? comment.getPost().getId() : null)
+                .orElse(null);
     }
 
     private Long getPostIdFromReply(Long replyId) {
-        return null;
+        if (replyId == null) {
+            return null;
+        }
+
+        return replyCommentRepository.findById(replyId)
+                .map(reply -> {
+                    if (reply.getComment() == null || reply.getComment().getPost() == null) {
+                        return null;
+                    }
+                    return reply.getComment().getPost().getId();
+                })
+                .orElse(null);
     }
 
     public boolean isReceiver(Authentication authentication, Long notificationId) {
