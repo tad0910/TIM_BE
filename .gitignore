@@ -49,3 +49,7 @@ uploads/
 
 # Bỏ qua file biến môi trường
 .env
+
+# Thư mục lưu dữ liệu database local và file test
+db_data/
+test-uploads/

@@ -128,7 +128,8 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
         Map<Long, JobApplication> result = new HashMap<>();
         for (Map.Entry<Long, List<JobApplication>> entry : grouped.entrySet()) {
             JobApplication best = entry.getValue().stream()
-                    .max(Comparator.comparing(JobApplication::getAppliedAt, Comparator.nullsLast(LocalDateTime::compareTo)))
+                    .max(Comparator.comparing(JobApplication::getAppliedAt,
+                            Comparator.nullsLast(LocalDateTime::compareTo)))
                     .orElse(null);
             if (best != null) {
                 result.put(entry.getKey(), best);
@@ -146,10 +147,9 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
 
         JobActivity latestActivity = null;
 
-        String studentName = student != null ?
-                List.of(student.getFirstName(), student.getLastName()).stream()
-                        .filter(part -> part != null && !part.isBlank())
-                        .collect(Collectors.joining(" "))
+        String studentName = student != null ? java.util.stream.Stream.of(student.getFirstName(), student.getLastName())
+                .filter(part -> part != null && !part.isBlank())
+                .collect(Collectors.joining(" "))
                 : "";
         if (studentName.isBlank() && student != null) {
             studentName = student.getUsername();
@@ -367,7 +367,8 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
                         .address(lead.getAddress())
                         .website(lead.getWebsite())
                         .statusCode(lead.getStatus() != null ? lead.getStatus().name() : null)
-                        .statusLabel(lead.getStatus() != null ? lead.getStatus().getDisplayName() : "Chưa có trạng thái")
+                        .statusLabel(
+                                lead.getStatus() != null ? lead.getStatus().getDisplayName() : "Chưa có trạng thái")
                         .createdAt(lead.getCreatedAt())
                         .fromAdmin(lead.isCreatedByAdmin())
                         .activities(jobActivityRepository.findByJobLeadIdOrderByCreatedAtDesc(lead.getId()).stream()
@@ -387,13 +388,13 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
                 activity.getCreatedAt(),
                 activity.getSalaryAmount(),
                 activity.getNote(),
-                activity.getFileUrl()
-        );
+                activity.getFileUrl());
     }
 
     @Override
     @Transactional
-    public AdminJobLeadDTO createJobLead(Long classId, Long studentId, String companyName, String shortName, String address, String website) {
+    public AdminJobLeadDTO createJobLead(Long classId, Long studentId, String companyName, String shortName,
+            String address, String website) {
         classRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với ID: " + classId));
 
