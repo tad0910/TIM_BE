@@ -1,239 +1,61 @@
-# ALM-Team-Tim-BE
+# AppTim Backend 🚀
 
-POST: http://localhost:8081/auth/register
-{
-"username": "updateduser5",
-"password": "123",
-"email": "abc5@gmail.com"
-}
+![Java](https://img.shields.io/badge/Java-21-orange.svg)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.6-brightgreen.svg)
+![MariaDB](https://img.shields.io/badge/MariaDB-Supported-blue.svg)
 
-POST :http://localhost:8081/auth/login
-{
-"usernameOrEmail": "updateduser5",
-"password": "123"
-}
+AppTim is a robust backend system designed to handle Social Media features and Learning Management System (LMS) operations. Built with **Spring Boot 3** and **Java 21**, the system provides high performance, security, and scalability.
 
-GET: http://localhost:8081/users
+## 🌟 Key Features
 
-GET: http://localhost:8081/users/{id}
+*   **Identity & Access Management**: Secure authentication and authorization using **Keycloak** & **JWT**. Includes OTP verification via email and password recovery.
+*   **Education & Schedule Management**: Comprehensive management of Academic Programs, Modules, Classes, and Instructor assignments (Lecturer, Supporter, Observer roles).
+*   **Gamification & Ranking**: Behavior point tracking and dynamic monthly ranking system for users.
+*   **Real-time Interactions**: Live notifications powered by **Server-Sent Events (SSE)**.
+*   **Media Management**: Seamless image uploads and management integrated with **Cloudinary**.
+*   **Automated Services**: RSS News Feed processing, automatic tuition payment reminders via Email, and PDF report generation.
 
-<!-- GET: http://localhost:8081/users/{email} -->
+## 🛠️ Tech Stack
 
-PUT:http://localhost:8081/users/{id}
-{
-"username": "user5",
-"password": "123",
-"email": "abc6@gmail.com",
-"phoneNumber": 123456789,
-"profileImage": null,
-"role": null,
-"createdAt": "2025-09-29T17:08:15",
-"passwordChangedAt": null
-}
+*   **Core**: Java 21, Spring Boot 3.3.6
+*   **Database**: MariaDB (Production), H2 (Testing)
+*   **Security**: Spring Security, Keycloak Admin Client, JJWT
+*   **Caching & Optimization**: Caffeine Cache
+*   **Utilities**: Lombok, Jsoup (HTML Parser), Rome (RSS), Flying Saucer (PDF generation)
+*   **Code Quality**: SonarQube, Jacoco
 
-GET http://localhost:8081/profile/users/{id}
+## 🚀 Getting Started
 
-# NGười dùng quên mk và yêu cầu reset mk
+### Prerequisites
+*   JDK 21 or higher
+*   Maven 3.8+
+*   MariaDB Server
+*   Keycloak Server (for authentication)
 
-POST http://localhost:8081/auth/forgot-password
+### Installation & Setup
 
-{
-"email": "lehbac05@gmail.com",
-}
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/tad0910/TIM_BE.git
+   cd TIM_BE
+   ```
 
-POST http://localhost:8081/auth/verify-otp
+2. **Configure Environment Variables**
+   Update the `.env` file or `application.properties` with your database credentials, Keycloak server details, and Cloudinary API keys.
 
-{
-"email": "lehbac05@gmail.com",
-"otp": "654713"
-}
+3. **Database Initialization**
+   The database schema, gamification structure, and sample data can be found in the `DB/` directory. Execute these scripts on your MariaDB instance to initialize the database.
 
-POST http://localhost:8081/auth//reset-password
+4. **Run the Application**
+   ```bash
+   mvn spring-boot:run
+   ```
+   The server will start on port `8081` (default).
 
-{
-"email": "lehbac05@gmail.com",
-"reset_token": "HgYvhHNDAm1f9nawYxKYrontS2_VbH7fMuZS4ey48go",
-"newPassword": "123456"
-}
+## 📚 API Documentation
 
-1. Upload image (POST /api/users/{userId}/image)
+A complete Postman collection is included in the project for easy API testing and exploration.
+*   Import `postman_collection.json` (located in the project root) into your Postman workspace to see all available endpoints and payloads.
 
-Method: POST
-URL: http://localhost:8081/api/users/1/image (thay 1 bằng userId hợp lệ).
-Headers:
-
-Content-Type: multipart/form-data
-
-Body:
-
-Chọn form-data.
-Key: file, Type: File, Value: Chọn file ảnh (ví dụ: image.jpg).
-
-Kỳ vọng:
-
-Status: 200 OK
-Response: "Image uploaded successfully: <uniqueFilename>"
-
-Lưu ý: Nếu user không tồn tại, file sẽ bị xóa và trả về 404. Image chỉ được lưu vào database, không tự động cập nhật profile image.
-
-2. Lấy Image (GET /api/users/{userId}/image)
-
-Method: GET
-URL: http://localhost:8081/api/users/1/image
-Headers: Không cần (trừ auth).
-Kỳ vọng:
-
-Status: 200 OK
-Response: "/uploads/<uniqueFilename>"
-Status: 404 nếu không có image.
-
-3. Lấy Danh sách Ảnh (GET /api/users/{userId}/images) - COMMENTED OUT
-
-Method: GET
-URL: http://localhost:8081/api/users/1/images
-Headers: Không cần (trừ auth).
-Kỳ vọng:
-
-Status: 200 OK
-Response: JSON array (ví dụ: [{"id": 1, "userId": 1, "imageUrl": "/uploads/xxx.jpg", "createdAt": "2025-10-02T15:00:00"}])
-Status: 404 nếu không có ảnh.
-
-Lưu ý: API này hiện tại đã được comment out trong code.
-
-4. Xóa Image (DELETE /api/users/{userId}/image)
-
-Method: DELETE
-URL: http://localhost:8081/api/users/1/image
-Headers: Thêm Authorization nếu yêu cầu auth.
-Kỳ vọng:
-
-Status: 200 OK
-Response: "Image deleted successfully"
-Status: 404 nếu không có image.
-
-
-CREATE TABLE `programs` (
-	`id` INT NOT NULL AUTO_INCREMENT,
-	`name` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	`description` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	PRIMARY KEY (`id`) USING BTREE
-)
-COLLATE='utf8mb4_0900_ai_ci'
-ENGINE=InnoDB
-AUTO_INCREMENT=12
-;
-
-
-CREATE TABLE `modules` (
-	`id` INT NOT NULL AUTO_INCREMENT,
-	`name` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	`description` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	PRIMARY KEY (`id`) USING BTREE
-)
-COLLATE='utf8mb4_0900_ai_ci'
-ENGINE=InnoDB
-AUTO_INCREMENT=4
-;
-
-
-CREATE TABLE `module_sessions` (
-	`id` BIGINT NOT NULL AUTO_INCREMENT,
-	`module_id` INT NOT NULL,
-	`session_number` INT NOT NULL,
-	`title` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	`content` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	`scheduled_at` DATETIME NULL DEFAULT NULL,
-	PRIMARY KEY (`id`) USING BTREE,
-	INDEX `fk_ms_module` (`module_id`) USING BTREE,
-	CONSTRAINT `fk_ms_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
-)
-COLLATE='utf8mb4_0900_ai_ci'
-ENGINE=InnoDB
-;
-
-CREATE TABLE `program_modules` (
-	`program_id` INT NOT NULL,
-	`module_id` INT NOT NULL,
-	`position` INT NULL DEFAULT NULL,
-	PRIMARY KEY (`program_id`, `module_id`) USING BTREE,
-	INDEX `fk_pm_module` (`module_id`) USING BTREE,
-	CONSTRAINT `fk_pm_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT `fk_pm_program` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
-)
-COLLATE='utf8mb4_0900_ai_ci'
-ENGINE=InnoDB
-;
-
-CREATE TABLE `classes` (
-	`id` INT NOT NULL AUTO_INCREMENT,
-	`name` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	`description` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	`program_id` INT NULL DEFAULT NULL,
-	`ten_lop` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	`mo_ta` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	PRIMARY KEY (`id`) USING BTREE,
-	INDEX `fk_classes_program` (`program_id`) USING BTREE,
-	CONSTRAINT `fk_classes_program` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON UPDATE CASCADE ON DELETE SET NULL
-)
-COLLATE='utf8mb4_0900_ai_ci'
-ENGINE=InnoDB
-AUTO_INCREMENT=20
-;
-
-CREATE TABLE `class_module_schedules` (
-	`id` BIGINT NOT NULL AUTO_INCREMENT,
-	`class_id` INT NOT NULL,
-	`module_id` INT NOT NULL,
-	`start_date` DATE NULL DEFAULT NULL,
-	`instructor_id` INT NULL DEFAULT NULL,
-	`notes` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
-	PRIMARY KEY (`id`) USING BTREE,
-	INDEX `fk_cms_class` (`class_id`) USING BTREE,
-	INDEX `fk_cms_module` (`module_id`) USING BTREE,
-	INDEX `fk_cms_instructor` (`instructor_id`) USING BTREE,
-	CONSTRAINT `fk_cms_class` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT `fk_cms_instructor` FOREIGN KEY (`instructor_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE ON DELETE SET NULL,
-	CONSTRAINT `fk_cms_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
-)
-COLLATE='utf8mb4_0900_ai_ci'
-ENGINE=InnoDB
-AUTO_INCREMENT=10
-;
-
-
-ALTER TABLE class_module_schedules
-ADD COLUMN end_date DATE NULL DEFAULT NULL AFTER start_date,
-ADD COLUMN status ENUM('planned','ongoing','completed') NOT NULL DEFAULT 'planned' AFTER end_date;
-
-ALTER TABLE module_sessions
-ADD COLUMN end_date DATETIME NULL DEFAULT NULL AFTER scheduled_at,
-ADD COLUMN status ENUM('planned','ongoing','completed') NOT NULL DEFAULT 'planned' AFTER end_date;
-
-## Class Module Scheduling & Instructor Assignment
-
-### Luồng gán giảng viên cho Module
-- **Endpoint**: `POST /schedules`
-- **Payload tối thiểu**:
-  ```json
-  {
-    "classId": 1,
-    "moduleId": 5,
-    "instructorId": 10,
-    "startDate": "2024-01-01",
-    "endDate": "2024-01-31"
-  }
-  ```
-### Gán giáo viên cho từng buổi học (ClassModuleScheduleTeacher)
-- **Endpoint chính**: `POST /schedules/{scheduleId}/teachers`
-  ```json
-  {
-    "userId": 45,
-    "role": "LECTURER"
-  }
-  ```
-  - Thêm một giáo viên vào buổi học (schedule cụ thể).
-  - `role` nhận một trong các giá trị enum: `LECTURER`, `SUPPORTER`, `OBSERVER`.
-- **GET /schedules/{scheduleId}/teachers** – danh sách giáo viên của buổi.
-- **DELETE /schedules/{scheduleId}/teachers/{userId}** – xoá giáo viên khỏi buổi.
-- **PUT /schedules/{scheduleId}/teachers/{userId}/role** – cập nhật vai trò giáo viên trong buổi.
-
+---
+*Developed by ALM-Team-Tim*
