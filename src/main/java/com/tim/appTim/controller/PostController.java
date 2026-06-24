@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.tim.appTim.dto.PostDTO;
+import com.tim.appTim.dto.common.PostDTO;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Post;
 import com.tim.appTim.service.PostService;
@@ -190,4 +190,5 @@ public class PostController {
         return ResponseEntity.ok("Post with id " + postId + " deleted successfully.");
     }
 }
+
 

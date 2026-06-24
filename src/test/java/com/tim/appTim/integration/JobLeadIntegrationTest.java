@@ -1,6 +1,9 @@
 package com.tim.appTim.integration;
 
-import com.tim.appTim.dto.JobLeadDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.service.JobLeadService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -126,3 +129,4 @@ public class JobLeadIntegrationTest {
                                 .andExpect(status().isNotFound());
         }
 }
+

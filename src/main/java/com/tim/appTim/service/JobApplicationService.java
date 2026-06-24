@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.StudentJobTrackingDTO;
+import com.tim.appTim.dto.common.StudentJobTrackingDTO;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 

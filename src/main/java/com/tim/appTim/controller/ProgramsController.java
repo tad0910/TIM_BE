@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.ProgramsDTO;
+import com.tim.appTim.dto.common.ProgramsDTO;
 import com.tim.appTim.entity.Programs;
 import com.tim.appTim.service.ProgramsService;
 import org.springframework.http.ResponseEntity;
@@ -57,3 +57,4 @@ public class ProgramsController {
         return ResponseEntity.noContent().build();
     }
 }
+

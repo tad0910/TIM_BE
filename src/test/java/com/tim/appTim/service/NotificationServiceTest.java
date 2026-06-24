@@ -1,6 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.NotificationDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.NotificationRepository;
@@ -1111,4 +1114,5 @@ class NotificationServiceTest {
         verify(notificationRepository, never()).save(any());
     }
 }
+
 

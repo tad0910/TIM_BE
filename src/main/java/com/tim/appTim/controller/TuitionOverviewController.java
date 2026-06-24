@@ -1,8 +1,8 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.TuitionOverviewDTO;
-import com.tim.appTim.dto.TuitionTransactionDTO;
-import com.tim.appTim.dto.StudentPaymentScheduleDTO;
+import com.tim.appTim.dto.response.TuitionOverviewDTO;
+import com.tim.appTim.dto.common.TuitionTransactionDTO;
+import com.tim.appTim.dto.common.StudentPaymentScheduleDTO;
 import com.tim.appTim.service.TuitionTransactionService;
 import com.tim.appTim.service.UserDetailsImpl;
 import com.tim.appTim.service.UserService;

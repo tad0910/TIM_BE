@@ -1,8 +1,8 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.CreateModuleSessionRequest;
-import com.tim.appTim.dto.ModuleSessionDTO;
-import com.tim.appTim.dto.UpdateModuleSessionRequest;
+import com.tim.appTim.dto.request.CreateModuleSessionRequest;
+import com.tim.appTim.dto.common.ModuleSessionDTO;
+import com.tim.appTim.dto.request.UpdateModuleSessionRequest;
 import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.BadRequestException;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
-import com.tim.appTim.dto.ModuleDTO;
+import com.tim.appTim.dto.common.ModuleDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -152,3 +152,4 @@ public class ModuleSessionService {
         return dto;
     }
 }
+

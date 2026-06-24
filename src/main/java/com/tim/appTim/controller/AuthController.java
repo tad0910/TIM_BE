@@ -17,14 +17,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import com.tim.appTim.dto.LoginRequest;
+import com.tim.appTim.dto.request.LoginRequest;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.PasswordResetService;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.util.JwtUtil;
 import com.tim.appTim.service.AuthService;
-import com.tim.appTim.dto.LoginResponse;
-import com.tim.appTim.dto.UserResponse;
+import com.tim.appTim.dto.response.LoginResponse;
+import com.tim.appTim.dto.response.UserResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -182,3 +182,4 @@ public class AuthController {
 
     
 }
+

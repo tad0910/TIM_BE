@@ -1,7 +1,7 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.JobActivityDTO;
-import com.tim.appTim.dto.JobActivityRequest;
+import com.tim.appTim.dto.common.JobActivityDTO;
+import com.tim.appTim.dto.request.JobActivityRequest;
 import com.tim.appTim.service.JobActivityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

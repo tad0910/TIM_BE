@@ -1,6 +1,8 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.*;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
 import com.tim.appTim.entity.*;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;

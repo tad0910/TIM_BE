@@ -1,8 +1,8 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.JobActivityDTO;
-import com.tim.appTim.dto.JobActivityRequest;
-import com.tim.appTim.dto.NotificationDTO;
+import com.tim.appTim.dto.common.JobActivityDTO;
+import com.tim.appTim.dto.request.JobActivityRequest;
+import com.tim.appTim.dto.response.NotificationDTO;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.ClassModule;
 import com.tim.appTim.entity.ClassModuleTeacher;

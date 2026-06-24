@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.CommentDTO;
-import com.tim.appTim.dto.ReplyCommentDTO;
+import com.tim.appTim.dto.common.CommentDTO;
+import com.tim.appTim.dto.common.ReplyCommentDTO;
 import com.tim.appTim.entity.Comment;
 import com.tim.appTim.entity.Post;
 import com.tim.appTim.entity.ReplyComment;
@@ -18,7 +18,7 @@ import com.tim.appTim.repository.ReactionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import com.tim.appTim.repository.FileRepository;
-import com.tim.appTim.dto.FileDTO;
+import com.tim.appTim.dto.common.FileDTO;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;

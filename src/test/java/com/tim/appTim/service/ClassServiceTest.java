@@ -1,9 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.AddMemberDTO;
-import com.tim.appTim.dto.AddMemberRequest;
-import com.tim.appTim.dto.ClassDTO;
-import com.tim.appTim.dto.ProgramsDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.User;
@@ -563,3 +563,4 @@ class ClassServiceTest {
         assertThat(result.getMembers().get(0).getUsername()).isEqualTo("testuser");
     }
 }
+

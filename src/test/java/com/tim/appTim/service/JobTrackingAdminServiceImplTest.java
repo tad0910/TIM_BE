@@ -1,12 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.AdminJobLeadDTO;
-import com.tim.appTim.dto.JobActivityDTO;
-import com.tim.appTim.dto.JobTrackingOverviewClassDTO;
-import com.tim.appTim.dto.JobTrackingOverviewFilter;
-import com.tim.appTim.dto.JobTrackingOverviewSummaryDTO;
-import com.tim.appTim.dto.JobTrackingRowDTO;
-import com.tim.appTim.dto.JobTrackingUpdateRequest;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.Company;
@@ -844,4 +841,5 @@ class JobTrackingAdminServiceImplTest {
         assertThat(result.getClasses().get(0).getProgramName()).isNull();
     }
 }
+
 

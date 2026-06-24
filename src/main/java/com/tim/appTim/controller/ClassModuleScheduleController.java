@@ -1,7 +1,7 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.ClassModuleScheduleDTO;
-import com.tim.appTim.dto.ClassModuleScheduleTeacherDTO;
+import com.tim.appTim.dto.common.ClassModuleScheduleDTO;
+import com.tim.appTim.dto.common.ClassModuleScheduleTeacherDTO;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.ClassModuleScheduleService;
 import com.tim.appTim.service.ClassModuleScheduleTeacherService;

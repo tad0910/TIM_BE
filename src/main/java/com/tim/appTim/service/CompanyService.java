@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.CompanyRequestDTO;
+import com.tim.appTim.dto.request.CompanyRequestDTO;
 import com.tim.appTim.entity.Company;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

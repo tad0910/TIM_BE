@@ -1,9 +1,9 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.AttendanceDetailDto;
-import com.tim.appTim.dto.AttendanceHistoryDto;
-import com.tim.appTim.dto.AttendanceStatsDto;
-import com.tim.appTim.dto.MarkAttendanceRequest;
+import com.tim.appTim.dto.response.AttendanceDetailDto;
+import com.tim.appTim.dto.response.AttendanceHistoryDto;
+import com.tim.appTim.dto.response.AttendanceStatsDto;
+import com.tim.appTim.dto.request.MarkAttendanceRequest;
 import com.tim.appTim.entity.AttendanceRecord;
 import com.tim.appTim.entity.AttendanceSession;
 import com.tim.appTim.service.AttendanceService;

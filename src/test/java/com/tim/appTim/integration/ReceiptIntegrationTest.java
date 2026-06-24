@@ -1,5 +1,9 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.TuitionReceipt;
 import com.tim.appTim.entity.TuitionTransaction;
 import com.tim.appTim.repository.TuitionReceiptRepository;
@@ -94,3 +98,4 @@ public class ReceiptIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 }
+

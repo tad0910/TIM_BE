@@ -1,8 +1,10 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.AttendanceMarkDto;
-import com.tim.appTim.dto.MarkAttendanceRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

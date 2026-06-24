@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.tim.appTim.dto.ReactionDTO;
+import com.tim.appTim.dto.common.ReactionDTO;
 import com.tim.appTim.repository.CommentRepository;
 import com.tim.appTim.repository.ReplyCommentRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;

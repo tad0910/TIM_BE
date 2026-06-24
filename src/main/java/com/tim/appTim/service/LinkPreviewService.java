@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.LinkPreviewDTO;
+import com.tim.appTim.dto.common.LinkPreviewDTO;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;

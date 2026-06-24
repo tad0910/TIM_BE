@@ -1,6 +1,6 @@
 package com.tim.appTim.controller; 
 
-import com.tim.appTim.dto.BlogDTO;
+import com.tim.appTim.dto.common.BlogDTO;
 import com.tim.appTim.repository.UserRepository;
 import com.tim.appTim.service.NewsService;
 import com.tim.appTim.service.GamificationService;

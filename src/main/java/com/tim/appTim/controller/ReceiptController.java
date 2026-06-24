@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.ReceiptDTO;
+import com.tim.appTim.dto.response.ReceiptDTO;
 import com.tim.appTim.service.PdfService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;

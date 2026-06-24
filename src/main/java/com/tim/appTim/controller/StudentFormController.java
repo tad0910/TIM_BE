@@ -1,8 +1,8 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.ApprovalRequestDTO;
-import com.tim.appTim.dto.StudentFormCreateDTO;
-import com.tim.appTim.dto.StudentFormResponseDTO;
+import com.tim.appTim.dto.request.ApprovalRequestDTO;
+import com.tim.appTim.dto.request.StudentFormCreateDTO;
+import com.tim.appTim.dto.response.StudentFormResponseDTO;
 import com.tim.appTim.entity.FormTemplate;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.StudentFormService;

@@ -1,6 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.BlogDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.UserRepository;
@@ -185,4 +188,5 @@ class BlogUpdateCheckerServiceTest {
         verify(notificationService).createNotification(eq(2L), any(), any(), any(), anyLong(), anyString(), anyString(), any());
     }
 }
+
 

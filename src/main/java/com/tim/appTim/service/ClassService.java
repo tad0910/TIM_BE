@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tim.appTim.dto.ClassDTO;
-import com.tim.appTim.dto.ProgramsDTO;
+import com.tim.appTim.dto.common.ClassDTO;
+import com.tim.appTim.dto.common.ProgramsDTO;
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.User;
@@ -26,8 +26,8 @@ import com.tim.appTim.exception.InternalServerErrorException;
 
 import java.util.Map;
 import org.springframework.security.core.Authentication;
-import com.tim.appTim.dto.AddMemberDTO;
-import com.tim.appTim.dto.AddMemberRequest;
+import com.tim.appTim.dto.request.AddMemberDTO;
+import com.tim.appTim.dto.request.AddMemberRequest;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

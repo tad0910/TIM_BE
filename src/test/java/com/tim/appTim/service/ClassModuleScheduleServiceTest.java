@@ -1,6 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ClassModuleScheduleDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.ClassModuleSchedule;
 import com.tim.appTim.entity.Module;
 import com.tim.appTim.entity.ModuleSession;
@@ -971,3 +974,4 @@ class ClassModuleScheduleServiceTest {
                 assertThat(result).isEmpty();
         }
 }
+

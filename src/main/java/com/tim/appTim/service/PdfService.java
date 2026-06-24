@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
 import com.lowagie.text.pdf.BaseFont;
-import com.tim.appTim.dto.ReceiptDTO;
+import com.tim.appTim.dto.response.ReceiptDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;

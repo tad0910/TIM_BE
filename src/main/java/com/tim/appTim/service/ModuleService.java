@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ModuleDTO;
+import com.tim.appTim.dto.common.ModuleDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,3 +12,4 @@ public interface ModuleService {
     ModuleDTO updateModule(Integer id, ModuleDTO dto);
     void deleteModule(Integer id);
 }
+

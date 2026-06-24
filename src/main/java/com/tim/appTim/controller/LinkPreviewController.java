@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.LinkPreviewDTO;
+import com.tim.appTim.dto.common.LinkPreviewDTO;
 import com.tim.appTim.service.LinkPreviewService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.CompanyRequestDTO;
+import com.tim.appTim.dto.request.CompanyRequestDTO;
 import com.tim.appTim.entity.Company;
 import com.tim.appTim.service.CompanyService;
 import jakarta.validation.Valid;

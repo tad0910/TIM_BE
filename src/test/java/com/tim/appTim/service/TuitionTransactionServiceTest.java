@@ -1,6 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.PaymentRequestDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.StudentPaymentSchedule;
 import com.tim.appTim.entity.StudentTuition;
 import com.tim.appTim.entity.TuitionReceipt;
@@ -271,7 +274,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -286,7 +289,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -303,7 +306,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -319,7 +322,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -338,7 +341,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.singletonList(sumRow));
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -356,7 +359,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.singletonList(sumRow));
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -373,7 +376,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -388,7 +391,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(null);
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -403,7 +406,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.emptyList());
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -418,7 +421,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.singletonList(null));
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -434,7 +437,7 @@ class TuitionTransactionServiceTest {
         when(studentTuitionRepository.sumListedAndAdmissionByStudent(1L)).thenReturn(Collections.singletonList(sumRow));
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
+        TuitionOverviewDTO result = transactionService.getStudentOverview(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -449,7 +452,7 @@ class TuitionTransactionServiceTest {
         when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(schedules);
 
         // Act
-        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+        java.util.List<StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -464,7 +467,7 @@ class TuitionTransactionServiceTest {
         when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.emptyList());
 
         // Act
-        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+        java.util.List<StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -477,7 +480,7 @@ class TuitionTransactionServiceTest {
         when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(null);
 
         // Act
-        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+        java.util.List<StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
 
         // Assert
         assertThat(result).isNotNull();
@@ -497,7 +500,7 @@ class TuitionTransactionServiceTest {
         when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(schedules);
 
         // Act
-        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+        java.util.List<StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
 
         // Assert
         assertThat(result).hasSize(3);
@@ -513,7 +516,7 @@ class TuitionTransactionServiceTest {
         when(scheduleRepository.findByStudentTuition_Student_Id(1L)).thenReturn(Collections.singletonList(schedule1));
 
         // Act
-        java.util.List<com.tim.appTim.dto.StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
+        java.util.List<StudentPaymentScheduleDTO> result = transactionService.getStudentSchedules(1L);
 
         // Assert
         assertThat(result).hasSize(1);
@@ -524,7 +527,7 @@ class TuitionTransactionServiceTest {
     @Test
     void getAdminOverview_Success() {
         // Arrange
-        com.tim.appTim.dto.TuitionOverviewDTO overview = com.tim.appTim.dto.TuitionOverviewDTO.builder()
+        TuitionOverviewDTO overview = TuitionOverviewDTO.builder()
                 .totalPaid(new BigDecimal("10000000"))
                 .totalRefunded(new BigDecimal("500000"))
                 .totalException(new BigDecimal("200000"))
@@ -535,7 +538,7 @@ class TuitionTransactionServiceTest {
         when(transactionRepository.getSystemOverview()).thenReturn(overview);
 
         // Act
-        com.tim.appTim.dto.TuitionOverviewDTO result = transactionService.getAdminOverview();
+        TuitionOverviewDTO result = transactionService.getAdminOverview();
 
         // Assert
         assertThat(result).isNotNull();
@@ -567,7 +570,7 @@ class TuitionTransactionServiceTest {
         when(receiptRepository.findByTransaction_Id(1L)).thenReturn(Optional.of(receipt));
 
         // Act
-        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+        org.springframework.data.domain.Page<TuitionTransactionDTO> result = 
                 transactionService.getTransactionHistory(1L, pageable);
 
         // Assert
@@ -595,7 +598,7 @@ class TuitionTransactionServiceTest {
         when(receiptRepository.findByTransaction_Id(1L)).thenReturn(Optional.empty());
 
         // Act
-        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+        org.springframework.data.domain.Page<TuitionTransactionDTO> result = 
                 transactionService.getTransactionHistory(1L, pageable);
 
         // Assert
@@ -621,7 +624,7 @@ class TuitionTransactionServiceTest {
                 .thenReturn(page);
 
         // Act
-        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+        org.springframework.data.domain.Page<TuitionTransactionDTO> result = 
                 transactionService.getTransactionHistory(1L, pageable);
 
         // Assert
@@ -646,7 +649,7 @@ class TuitionTransactionServiceTest {
                 .thenReturn(page);
 
         // Act
-        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+        org.springframework.data.domain.Page<TuitionTransactionDTO> result = 
                 transactionService.getTransactionHistory(1L, pageable);
 
         // Assert
@@ -677,7 +680,7 @@ class TuitionTransactionServiceTest {
         when(receiptRepository.findByTransaction_Id(1L)).thenReturn(Optional.of(receipt));
 
         // Act
-        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+        org.springframework.data.domain.Page<TuitionTransactionDTO> result = 
                 transactionService.getAllTransactions(pageable);
 
         // Assert
@@ -701,7 +704,7 @@ class TuitionTransactionServiceTest {
         when(receiptRepository.findByTransaction_Id(1L)).thenReturn(Optional.empty());
 
         // Act
-        org.springframework.data.domain.Page<com.tim.appTim.dto.TuitionTransactionDTO> result = 
+        org.springframework.data.domain.Page<TuitionTransactionDTO> result = 
                 transactionService.getAllTransactions(pageable);
 
         // Assert
@@ -886,3 +889,4 @@ class TuitionTransactionServiceTest {
         assertThat(receipt.getReceiptCode()).startsWith("REC-");
     }
 }
+

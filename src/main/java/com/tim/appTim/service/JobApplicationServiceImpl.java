@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.StudentJobTrackingDTO;
+import com.tim.appTim.dto.common.StudentJobTrackingDTO;
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.Company;
 import com.tim.appTim.entity.JobApplication;

@@ -1,7 +1,7 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.ClassModuleDTO;
-import com.tim.appTim.dto.ClassModuleTeacherDTO;
+import com.tim.appTim.dto.common.ClassModuleDTO;
+import com.tim.appTim.dto.common.ClassModuleTeacherDTO;
 import com.tim.appTim.entity.ClassModuleTeacher;
 import com.tim.appTim.service.ClassModuleService;
 import org.springframework.http.HttpStatus;
@@ -115,4 +115,5 @@ public class ClassModuleController {
         return ResponseEntity.ok(updated);
     }
 }
+
 

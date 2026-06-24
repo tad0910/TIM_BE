@@ -1,5 +1,9 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.UserImage;
 import com.tim.appTim.service.FileUploadService;
 import com.tim.appTim.service.KeycloakSyncService;
@@ -269,3 +273,4 @@ public class ImageControllerIntegrationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Tải ảnh thành công")));
     }
 }
+

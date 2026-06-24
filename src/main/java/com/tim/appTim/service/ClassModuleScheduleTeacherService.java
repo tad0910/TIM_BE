@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ClassModuleScheduleTeacherDTO;
+import com.tim.appTim.dto.common.ClassModuleScheduleTeacherDTO;
 import com.tim.appTim.entity.ClassModuleScheduleTeacher;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.BadRequestException;
@@ -123,4 +123,5 @@ public class ClassModuleScheduleTeacherService {
         return dto;
     }
 }
+
 

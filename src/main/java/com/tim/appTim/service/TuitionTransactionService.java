@@ -1,9 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.PaymentRequestDTO;
-import com.tim.appTim.dto.TuitionOverviewDTO;
-import com.tim.appTim.dto.TuitionTransactionDTO;
-import com.tim.appTim.dto.StudentPaymentScheduleDTO;
+import com.tim.appTim.dto.request.PaymentRequestDTO;
+import com.tim.appTim.dto.response.TuitionOverviewDTO;
+import com.tim.appTim.dto.common.TuitionTransactionDTO;
+import com.tim.appTim.dto.common.StudentPaymentScheduleDTO;
 import com.tim.appTim.entity.StudentPaymentSchedule;
 import com.tim.appTim.entity.StudentTuition;
 import com.tim.appTim.entity.TuitionReceipt;
@@ -292,3 +292,4 @@ public class TuitionTransactionService {
         return (principalString != null && !principalString.trim().isEmpty()) ? principalString : null;
     }
 }
+

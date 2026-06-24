@@ -1,8 +1,10 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.FileDTO;
-import com.tim.appTim.dto.PostDTO;
 import com.tim.appTim.entity.Post;
 import com.tim.appTim.exception.ForbiddenException;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -391,3 +393,4 @@ public class PostSecurityIntegrationTest {
                 .andExpect(jsonPath("$.content[0].id").value(10));
     }
 }
+

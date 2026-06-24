@@ -14,13 +14,13 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tim.appTim.dto.AdminJobLeadDTO;
-import com.tim.appTim.dto.JobActivityDTO;
-import com.tim.appTim.dto.JobTrackingOverviewClassDTO;
-import com.tim.appTim.dto.JobTrackingOverviewFilter;
-import com.tim.appTim.dto.JobTrackingOverviewSummaryDTO;
-import com.tim.appTim.dto.JobTrackingRowDTO;
-import com.tim.appTim.dto.JobTrackingUpdateRequest;
+import com.tim.appTim.dto.request.AdminJobLeadDTO;
+import com.tim.appTim.dto.common.JobActivityDTO;
+import com.tim.appTim.dto.response.JobTrackingOverviewClassDTO;
+import com.tim.appTim.dto.response.JobTrackingOverviewFilter;
+import com.tim.appTim.dto.response.JobTrackingOverviewSummaryDTO;
+import com.tim.appTim.dto.common.JobTrackingRowDTO;
+import com.tim.appTim.dto.request.JobTrackingUpdateRequest;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.JobActivity;
@@ -431,3 +431,4 @@ public class JobTrackingAdminServiceImpl implements JobTrackingAdminService {
                 .build();
     }
 }
+

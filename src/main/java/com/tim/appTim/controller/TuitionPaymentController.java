@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.PaymentRequestDTO;
+import com.tim.appTim.dto.request.PaymentRequestDTO;
 import com.tim.appTim.entity.TuitionReceipt;
 import com.tim.appTim.service.TuitionTransactionService;
 import com.tim.appTim.service.UserDetailsImpl;

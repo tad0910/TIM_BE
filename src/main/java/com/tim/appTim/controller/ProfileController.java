@@ -3,15 +3,15 @@ package com.tim.appTim.controller;
 import java.util.List;
 import java.util.Map;
 
-import com.tim.appTim.dto.UserUpdateDTO;
+import com.tim.appTim.dto.request.UserUpdateDTO;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.tim.appTim.dto.ProfileResponse;
-import com.tim.appTim.dto.UserImageDTO;
+import com.tim.appTim.dto.response.ProfileResponse;
+import com.tim.appTim.dto.common.UserImageDTO;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.exception.BadRequestException;
@@ -77,3 +77,4 @@ public class ProfileController {
         return ResponseEntity.noContent().build();
     }
 }
+

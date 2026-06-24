@@ -1,7 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.LinkPreviewDTO;
-import com.tim.appTim.dto.PostDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Post;
 import com.tim.appTim.entity.User;
@@ -512,3 +514,4 @@ class PostServiceTest {
         assertThat(postService.isPostOwner(authentication, 100L)).isTrue();
     }
 }
+

@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.GamificationPointTypeDTO;
+import com.tim.appTim.dto.common.GamificationPointTypeDTO;
 import com.tim.appTim.entity.GamificationPointType;
 import com.tim.appTim.repository.GamificationPointTypeRepository;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -99,4 +99,5 @@ public class GamificationPointTypeService {
         return dto;
     }
 }
+
 

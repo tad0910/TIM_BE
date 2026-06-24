@@ -1,7 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.AttendanceMarkDto;
-import com.tim.appTim.dto.MarkAttendanceRequest;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.*;
 import com.tim.appTim.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -156,3 +158,4 @@ class AttendanceServiceTest {
         verify(gamificationService, never()).awardPoints(eq(2L), eq(1));
     }
 }
+

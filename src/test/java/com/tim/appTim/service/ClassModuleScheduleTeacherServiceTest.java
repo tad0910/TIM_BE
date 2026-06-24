@@ -1,6 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ClassModuleScheduleTeacherDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.ClassModuleScheduleTeacher;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.BadRequestException;
@@ -394,4 +397,5 @@ class ClassModuleScheduleTeacherServiceTest {
         assertThat(dto.getAssignedAt()).isNotNull();
     }
 }
+
 

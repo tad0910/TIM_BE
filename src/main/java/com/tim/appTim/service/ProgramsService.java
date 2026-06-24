@@ -1,8 +1,8 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ModuleDTO;
-import com.tim.appTim.dto.ModuleSessionDTO;
-import com.tim.appTim.dto.ProgramsDTO;
+import com.tim.appTim.dto.common.ModuleDTO;
+import com.tim.appTim.dto.common.ModuleSessionDTO;
+import com.tim.appTim.dto.common.ProgramsDTO;
 import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.entity.ProgramModule;
 import com.tim.appTim.entity.Programs;

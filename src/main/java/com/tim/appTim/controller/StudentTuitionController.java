@@ -1,8 +1,8 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.FeeAdjustmentDTO;
-import com.tim.appTim.dto.ScheduleDueDateUpdateDTO;
-import com.tim.appTim.dto.StudentPaymentScheduleHistoryDTO;
+import com.tim.appTim.dto.request.FeeAdjustmentDTO;
+import com.tim.appTim.dto.request.ScheduleDueDateUpdateDTO;
+import com.tim.appTim.dto.response.StudentPaymentScheduleHistoryDTO;
 import com.tim.appTim.entity.StudentTuition;
 import com.tim.appTim.service.StudentTuitionService;
 import com.tim.appTim.service.UserDetailsImpl;

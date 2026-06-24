@@ -12,9 +12,9 @@ import com.tim.appTim.entity.User;
 import com.tim.appTim.service.FileUploadService;
 import com.tim.appTim.service.UserService;
 import com.tim.appTim.service.ClassService;
-import com.tim.appTim.dto.ProfileResponse;
-import com.tim.appTim.dto.UserClassDTO;
-import com.tim.appTim.dto.UserUpdateDTO;
+import com.tim.appTim.dto.response.ProfileResponse;
+import com.tim.appTim.dto.common.UserClassDTO;
+import com.tim.appTim.dto.request.UserUpdateDTO;
 import com.tim.appTim.entity.ClassMember;
 
 import jakarta.validation.Valid;
@@ -256,3 +256,4 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllDeleted(pageable));
     }
 }
+

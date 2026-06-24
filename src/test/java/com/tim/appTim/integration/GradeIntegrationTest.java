@@ -1,8 +1,10 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.BatchGradeUpdateDTO;
-import com.tim.appTim.dto.StudentScoreEntryDTO;
 import com.tim.appTim.service.GradeService;
 import com.tim.appTim.service.NotificationService;
 import com.tim.appTim.service.UserService;

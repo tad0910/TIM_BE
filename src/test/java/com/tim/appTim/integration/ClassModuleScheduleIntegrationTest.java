@@ -1,7 +1,10 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.ClassModuleScheduleDTO;
 import com.tim.appTim.service.KeycloakSyncService;
 import com.tim.appTim.service.PostService;
 import org.junit.jupiter.api.Test;

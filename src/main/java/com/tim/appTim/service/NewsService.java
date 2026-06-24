@@ -3,7 +3,7 @@ package com.tim.appTim.service;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
-import com.tim.appTim.dto.BlogDTO;
+import com.tim.appTim.dto.common.BlogDTO;
 import com.tim.appTim.dto.devto.DevToArticleDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

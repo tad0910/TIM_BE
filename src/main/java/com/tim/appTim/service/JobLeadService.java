@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.JobLeadDTO;
+import com.tim.appTim.dto.request.JobLeadDTO;
 import java.util.List;
 
 public interface JobLeadService {

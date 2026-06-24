@@ -1,11 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.AchievementWithStatusDTO;
-import com.tim.appTim.dto.AwardPointsResponse;
-import com.tim.appTim.dto.NotificationDTO;
-import com.tim.appTim.dto.UserAchievementDTO;
-import com.tim.appTim.dto.UserGamificationStatsDTO;
-import com.tim.appTim.dto.UserPointLogDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.*;
 import com.tim.appTim.exception.BadRequestException;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -1232,3 +1230,4 @@ class GamificationServiceTest {
         assertThat(response.getPointsDiligenceEarned()).isEqualTo(5);
     }
 }
+

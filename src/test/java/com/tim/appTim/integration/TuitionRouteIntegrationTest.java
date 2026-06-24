@@ -1,7 +1,10 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.TuitionRouteDTO;
 import com.tim.appTim.entity.TuitionRoute;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.service.StudentTuitionService;
@@ -246,3 +249,4 @@ public class TuitionRouteIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 }
+

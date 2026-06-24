@@ -2,11 +2,11 @@ package com.tim.appTim.service;
 
 import java.util.List;
 
-import com.tim.appTim.dto.AdminJobLeadDTO;
-import com.tim.appTim.dto.JobTrackingOverviewFilter;
-import com.tim.appTim.dto.JobTrackingOverviewSummaryDTO;
-import com.tim.appTim.dto.JobTrackingRowDTO;
-import com.tim.appTim.dto.JobTrackingUpdateRequest;
+import com.tim.appTim.dto.request.AdminJobLeadDTO;
+import com.tim.appTim.dto.response.JobTrackingOverviewFilter;
+import com.tim.appTim.dto.response.JobTrackingOverviewSummaryDTO;
+import com.tim.appTim.dto.common.JobTrackingRowDTO;
+import com.tim.appTim.dto.request.JobTrackingUpdateRequest;
 
 public interface JobTrackingAdminService {
 
@@ -20,3 +20,4 @@ public interface JobTrackingAdminService {
 
     AdminJobLeadDTO createJobLead(Long classId, Long studentId, String companyName, String shortName, String address, String website);
 }
+

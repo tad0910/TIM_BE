@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.JobLeadDTO;
-import com.tim.appTim.dto.NotificationDTO;
+import com.tim.appTim.dto.request.JobLeadDTO;
+import com.tim.appTim.dto.response.NotificationDTO;
 import com.tim.appTim.entity.Company;
 import com.tim.appTim.entity.JobApplication;
 import com.tim.appTim.entity.JobLead;

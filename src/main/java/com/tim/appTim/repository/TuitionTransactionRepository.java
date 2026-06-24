@@ -1,6 +1,6 @@
 package com.tim.appTim.repository;
 
-import com.tim.appTim.dto.TuitionOverviewDTO;
+import com.tim.appTim.dto.response.TuitionOverviewDTO;
 import com.tim.appTim.entity.TuitionTransaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TuitionTransactionRepository extends JpaRepository<TuitionTransaction, Long> {
 
-    @Query("SELECT new com.tim.appTim.dto.TuitionOverviewDTO(" +
+    @Query("SELECT new com.tim.appTim.dto.response.TuitionOverviewDTO(" +
             "SUM(CASE WHEN t.type = 'PAYMENT' THEN t.amount ELSE 0 END), " +
             "SUM(CASE WHEN t.type = 'REFUND' THEN t.amount ELSE 0 END), " +
             "SUM(CASE WHEN t.type = 'EXCEPTION' THEN t.amount ELSE 0 END), " +
@@ -24,7 +24,7 @@ public interface TuitionTransactionRepository extends JpaRepository<TuitionTrans
             "WHERE t.studentTuition.student.id = :studentId")
     TuitionOverviewDTO getOverviewByStudentId(@Param("studentId") Long studentId);
 
-    @Query("SELECT new com.tim.appTim.dto.TuitionOverviewDTO(" +
+    @Query("SELECT new com.tim.appTim.dto.response.TuitionOverviewDTO(" +
             "SUM(CASE WHEN t.type = 'PAYMENT' THEN t.amount ELSE 0 END), " +
             "SUM(CASE WHEN t.type = 'REFUND' THEN t.amount ELSE 0 END), " +
             "SUM(CASE WHEN t.type = 'EXCEPTION' THEN t.amount ELSE 0 END), " +
@@ -40,3 +40,4 @@ public interface TuitionTransactionRepository extends JpaRepository<TuitionTrans
     @EntityGraph(attributePaths = {"performedBy"})
     Page<TuitionTransaction> findAllByOrderByTransactionDateDesc(Pageable pageable);
 }
+

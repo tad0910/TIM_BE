@@ -1,9 +1,12 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.cloudinary.Cloudinary;
 import com.cloudinary.Uploader;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.CompanyRequestDTO;
 import com.tim.appTim.entity.Company;
 import com.tim.appTim.repository.CompanyRepository;
 import org.junit.jupiter.api.Test;
@@ -92,3 +95,4 @@ public class CompanyIntegrationTest {
         assertThat(updatedCompany.getProducts()).containsExactlyInAnyOrder("New Product 1", "New Product 2");
     }
 }
+

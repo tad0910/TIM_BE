@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ModuleDTO;
-import com.tim.appTim.dto.ModuleSessionDTO;
+import com.tim.appTim.dto.common.ModuleDTO;
+import com.tim.appTim.dto.common.ModuleSessionDTO;
 import com.tim.appTim.entity.Module;
 import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.repository.ModuleRepository;
@@ -133,3 +133,4 @@ public class ModuleServiceImpl implements ModuleService {
         return dto;
     }
 }
+

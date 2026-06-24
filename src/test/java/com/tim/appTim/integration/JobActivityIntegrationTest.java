@@ -1,6 +1,9 @@
 package com.tim.appTim.integration;
 
-import com.tim.appTim.dto.JobActivityRequest;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.JobActivity;
 import com.tim.appTim.entity.JobActivityType;
 import com.tim.appTim.entity.JobLead;
@@ -162,3 +165,4 @@ public class JobActivityIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 }
+

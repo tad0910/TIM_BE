@@ -1,7 +1,7 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.CommentDTO;
-import com.tim.appTim.dto.ReplyCommentDTO;
+import com.tim.appTim.dto.common.CommentDTO;
+import com.tim.appTim.dto.common.ReplyCommentDTO;
 import com.tim.appTim.entity.Comment;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.File.FileType;

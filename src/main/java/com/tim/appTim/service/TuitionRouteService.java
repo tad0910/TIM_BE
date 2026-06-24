@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.InstallmentConfigDTO;
-import com.tim.appTim.dto.TuitionRouteDTO;
+import com.tim.appTim.dto.common.InstallmentConfigDTO;
+import com.tim.appTim.dto.common.TuitionRouteDTO;
 import com.tim.appTim.entity.Programs;
 import com.tim.appTim.entity.TuitionRoute;
 import com.tim.appTim.entity.TuitionInstallmentConfig;
@@ -160,3 +160,4 @@ public class TuitionRouteService {
         }
     }
 }
+

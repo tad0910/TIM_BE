@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.AchievementLevelDTO;
+import com.tim.appTim.dto.common.AchievementLevelDTO;
 import com.tim.appTim.entity.GamificationAchievement;
 import com.tim.appTim.entity.GamificationAchievementLevel;
 import com.tim.appTim.entity.NotificationTemplate;
@@ -244,4 +244,5 @@ public class GamificationAchievementService {
         return dto;
     }
 }
+
 

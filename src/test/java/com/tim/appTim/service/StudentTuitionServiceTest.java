@@ -1,6 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.FeeAdjustmentDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.*;
 import com.tim.appTim.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -831,3 +834,4 @@ class StudentTuitionServiceTest {
     }
 
 }
+

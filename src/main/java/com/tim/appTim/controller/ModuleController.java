@@ -1,7 +1,7 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.ModuleDTO;
-import com.tim.appTim.dto.CreateModuleSessionRequest;
+import com.tim.appTim.dto.common.ModuleDTO;
+import com.tim.appTim.dto.request.CreateModuleSessionRequest;
 import com.tim.appTim.service.ModuleService;
 import com.tim.appTim.service.ModuleSessionService;
 import org.springframework.http.ResponseEntity;
@@ -87,3 +87,4 @@ public class ModuleController {
         return ResponseEntity.ok(updatedModule);
     }
 }
+

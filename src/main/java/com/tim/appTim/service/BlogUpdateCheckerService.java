@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.BlogDTO;
+import com.tim.appTim.dto.common.BlogDTO;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.UserRepository;

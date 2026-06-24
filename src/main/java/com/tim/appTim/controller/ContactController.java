@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.ContactPersonRequestDTO;
+import com.tim.appTim.dto.request.ContactPersonRequestDTO;
 import com.tim.appTim.entity.ContactPerson;
 import com.tim.appTim.service.ContactService;
 import lombok.RequiredArgsConstructor;

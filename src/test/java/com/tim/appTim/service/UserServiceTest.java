@@ -1,8 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ProfileResponse;
-import com.tim.appTim.dto.UserImageDTO;
-import com.tim.appTim.dto.UserUpdateDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Role;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.entity.UserImage;
@@ -1292,3 +1293,4 @@ class UserServiceTest {
         assertThat(response.getPrograms()).hasSize(1);
     }
 }
+

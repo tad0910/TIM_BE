@@ -1,7 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.GamificationBehaviorDTO;
-import com.tim.appTim.dto.GamificationBehaviorGroupDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.GamificationBehavior;
 import com.tim.appTim.entity.GamificationBehaviorGroup;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -292,4 +294,5 @@ class GamificationBehaviorGroupServiceTest {
         assertEquals(behavior.getPointExperience(), behaviorDTO.getPointExperience());
     }
 }
+
 

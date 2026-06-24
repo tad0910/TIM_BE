@@ -1,7 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ClassModuleDTO;
-import com.tim.appTim.dto.ClassModuleTeacherDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassModule;
 import com.tim.appTim.entity.ClassModuleTeacher;
@@ -859,4 +861,5 @@ class ClassModuleServiceTest {
         verify(userRepository, never()).findById(anyLong());
     }
 }
+
 

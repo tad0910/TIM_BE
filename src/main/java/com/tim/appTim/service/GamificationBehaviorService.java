@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.BehaviorPointTypeDTO;
-import com.tim.appTim.dto.GamificationBehaviorDTO;
+import com.tim.appTim.dto.common.BehaviorPointTypeDTO;
+import com.tim.appTim.dto.common.GamificationBehaviorDTO;
 import com.tim.appTim.entity.BehaviorPointType;
 import com.tim.appTim.entity.GamificationBehavior;
 import com.tim.appTim.entity.GamificationBehaviorGroup;
@@ -306,4 +306,5 @@ public class GamificationBehaviorService {
         }
     }
 }
+
 

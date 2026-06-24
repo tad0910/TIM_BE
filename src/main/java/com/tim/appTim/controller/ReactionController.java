@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.ReactionDTO;
+import com.tim.appTim.dto.common.ReactionDTO;
 import com.tim.appTim.entity.Reaction;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.BadRequestException;
@@ -181,3 +181,4 @@ public class ReactionController {
         return ResponseEntity.ok(reactionService.countReplyCommentReactionsByType(replyCommentId, emotionTypeEnum));
     }
 }
+

@@ -1,6 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.StudentJobTrackingDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.Company;
@@ -197,3 +200,4 @@ class JobApplicationServiceImplTest {
         assertThat(result.get(0).getJobStatus()).isEqualTo("Phỏng vấn");
     }
 }
+

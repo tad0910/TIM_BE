@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ContactPersonRequestDTO;
+import com.tim.appTim.dto.request.ContactPersonRequestDTO;
 import com.tim.appTim.entity.Company;
 import com.tim.appTim.entity.ContactPerson;
 import com.tim.appTim.repository.CompanyRepository;

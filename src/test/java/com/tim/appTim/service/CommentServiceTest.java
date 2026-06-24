@@ -1,7 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.CommentDTO;
-import com.tim.appTim.dto.ReplyCommentDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Comment;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Post;
@@ -515,3 +517,4 @@ class CommentServiceTest {
         assertThat(commentService.hasReplyPermission(authentication, 20L)).isTrue();
     }
 }
+

@@ -1,8 +1,11 @@
 package com.tim.appTim.service;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.cloudinary.Cloudinary;
 import com.cloudinary.Uploader;
-import com.tim.appTim.dto.CompanyRequestDTO;
 import com.tim.appTim.entity.Company;
 import com.tim.appTim.repository.CompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -381,4 +384,5 @@ class CompanyServiceImplTest {
         verify(companyRepository).save(any(Company.class));
     }
 }
+
 

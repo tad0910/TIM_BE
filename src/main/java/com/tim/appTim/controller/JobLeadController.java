@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.JobLeadDTO;
+import com.tim.appTim.dto.request.JobLeadDTO;
 import com.tim.appTim.service.JobLeadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

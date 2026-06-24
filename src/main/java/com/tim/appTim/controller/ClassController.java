@@ -9,11 +9,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.tim.appTim.dto.AddMemberDTO;
-import com.tim.appTim.dto.AddMembersBatchRequest;
-import com.tim.appTim.dto.ClassDTO;
-import com.tim.appTim.dto.UpdateClassJobsSettingsRequest;
-import com.tim.appTim.dto.UpdateMemberRequest;
+import com.tim.appTim.dto.request.AddMemberDTO;
+import com.tim.appTim.dto.request.AddMembersBatchRequest;
+import com.tim.appTim.dto.common.ClassDTO;
+import com.tim.appTim.dto.request.UpdateClassJobsSettingsRequest;
+import com.tim.appTim.dto.request.UpdateMemberRequest;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.service.ClassService;
 import com.tim.appTim.service.UserService;
@@ -154,3 +154,4 @@ public class ClassController {
         return ResponseEntity.ok(Map.of("message", "Xóa thành viên khỏi lớp học thành công"));
     }
 }
+

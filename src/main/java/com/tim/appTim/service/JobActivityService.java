@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.JobActivityDTO;
-import com.tim.appTim.dto.JobActivityRequest;
+import com.tim.appTim.dto.common.JobActivityDTO;
+import com.tim.appTim.dto.request.JobActivityRequest;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 

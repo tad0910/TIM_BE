@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.TuitionRouteDTO;
+import com.tim.appTim.dto.common.TuitionRouteDTO;
 import com.tim.appTim.service.StudentTuitionService;
 import com.tim.appTim.service.TuitionRouteService;
 import org.springframework.data.domain.Page;

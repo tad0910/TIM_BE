@@ -1,7 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.InstallmentConfigDTO;
-import com.tim.appTim.dto.TuitionRouteDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Programs;
 import com.tim.appTim.entity.TuitionRoute;
 import com.tim.appTim.entity.TuitionInstallmentConfig;
@@ -721,4 +723,5 @@ class TuitionRouteServiceTest {
         assertThat(result.getContent().get(1).getId()).isEqualTo(2L);
     }
 }
+
 

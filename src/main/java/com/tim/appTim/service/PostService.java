@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.tim.appTim.exception.*;
-import com.tim.appTim.dto.PostDTO;
+import com.tim.appTim.dto.common.PostDTO;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.Post;
 import com.tim.appTim.entity.User;
@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import com.tim.appTim.dto.LinkPreviewDTO;
+import com.tim.appTim.dto.common.LinkPreviewDTO;
 import org.springframework.scheduling.annotation.Async;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -175,8 +175,8 @@ public class PostService {
             }
         }
 
-        List<com.tim.appTim.dto.FileDTO> fileDTOs = savedPost.getFiles().stream()
-                .map(file -> new com.tim.appTim.dto.FileDTO(
+        List<com.tim.appTim.dto.common.FileDTO> fileDTOs = savedPost.getFiles().stream()
+                .map(file -> new com.tim.appTim.dto.common.FileDTO(
                         file.getId(),
                         file.getFileUrl(),
                         file.getFileType().name(),
@@ -339,8 +339,8 @@ public class PostService {
         int totalReactions = post.getTotalReactions() != null ? post.getTotalReactions() : 0;
         int totalComments = post.getTotalComments() != null ? post.getTotalComments() : 0;
 
-        List<com.tim.appTim.dto.FileDTO> fileDTOs = post.getFiles().stream()
-                .map(file -> new com.tim.appTim.dto.FileDTO(
+        List<com.tim.appTim.dto.common.FileDTO> fileDTOs = post.getFiles().stream()
+                .map(file -> new com.tim.appTim.dto.common.FileDTO(
                         file.getId(),
                         file.getFileUrl(),
                         file.getFileType().name(),
@@ -492,3 +492,4 @@ public class PostService {
         }
     }
 }
+

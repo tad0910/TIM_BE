@@ -1,7 +1,10 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.PaymentRequestDTO;
 import com.tim.appTim.entity.TuitionReceipt;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.BadRequestException;
@@ -168,3 +171,4 @@ public class TuitionPaymentIntegrationTest {
                                 .andExpect(jsonPath("$.message").value("Số tiền đóng phải lớn hơn 0"));
         }
 }
+

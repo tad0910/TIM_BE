@@ -1,6 +1,8 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.*;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
 import com.tim.appTim.entity.File;
 import com.tim.appTim.entity.GamificationAchievement;
 import com.tim.appTim.entity.User;

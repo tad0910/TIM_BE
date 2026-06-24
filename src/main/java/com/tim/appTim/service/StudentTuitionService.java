@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.FeeAdjustmentDTO;
-import com.tim.appTim.dto.StudentPaymentScheduleHistoryDTO;
+import com.tim.appTim.dto.request.FeeAdjustmentDTO;
+import com.tim.appTim.dto.response.StudentPaymentScheduleHistoryDTO;
 import com.tim.appTim.entity.*;
 import com.tim.appTim.entity.TuitionInstallmentConfig;
 import com.tim.appTim.repository.*;
@@ -376,3 +376,4 @@ public class StudentTuitionService {
         }
     }
 }
+

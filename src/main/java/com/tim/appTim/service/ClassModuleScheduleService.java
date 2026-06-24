@@ -1,6 +1,6 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ClassModuleScheduleDTO;
+import com.tim.appTim.dto.common.ClassModuleScheduleDTO;
 import com.tim.appTim.entity.ClassModuleSchedule;
 import com.tim.appTim.entity.Module;
 import com.tim.appTim.entity.User;

@@ -1,9 +1,10 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.ModuleDTO;
-import com.tim.appTim.dto.CreateModuleSessionRequest;
-import com.tim.appTim.dto.ModuleSessionDTO;
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.service.*;
 import org.junit.jupiter.api.BeforeEach;

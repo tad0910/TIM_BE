@@ -1,5 +1,9 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tim.appTim.entity.Coupon;
 import com.tim.appTim.repository.CouponRepository;
@@ -135,3 +139,4 @@ public class CouponIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 }
+

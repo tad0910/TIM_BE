@@ -1,7 +1,7 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ClassModuleDTO;
-import com.tim.appTim.dto.ClassModuleTeacherDTO;
+import com.tim.appTim.dto.common.ClassModuleDTO;
+import com.tim.appTim.dto.common.ClassModuleTeacherDTO;
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassModule;
 import com.tim.appTim.entity.ClassModuleTeacher;
@@ -306,4 +306,5 @@ public class ClassModuleService {
         return dto;
     }
 }
+
 

@@ -2,7 +2,7 @@ package com.tim.appTim.service;
 
 import com.tim.appTim.exception.ResourceNotFoundException;
 import com.tim.appTim.exception.ForbiddenException;
-import com.tim.appTim.dto.NotificationDTO;
+import com.tim.appTim.dto.response.NotificationDTO;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.AttendanceSessionRepository;

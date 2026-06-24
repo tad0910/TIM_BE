@@ -1,5 +1,9 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.Company;
 import com.tim.appTim.entity.JobApplication;
@@ -155,3 +159,4 @@ public class JobApplicationIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 }
+

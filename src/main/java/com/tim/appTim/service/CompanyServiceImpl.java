@@ -2,7 +2,7 @@ package com.tim.appTim.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.tim.appTim.dto.CompanyRequestDTO;
+import com.tim.appTim.dto.request.CompanyRequestDTO;
 import com.tim.appTim.entity.Company;
 import com.tim.appTim.entity.Company.CompanyType;
 import com.tim.appTim.repository.CompanyRepository;

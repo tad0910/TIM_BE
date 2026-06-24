@@ -1,8 +1,8 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.CreateModuleSessionRequest;
-import com.tim.appTim.dto.ModuleSessionDTO;
-import com.tim.appTim.dto.UpdateModuleSessionRequest;
+import com.tim.appTim.dto.request.CreateModuleSessionRequest;
+import com.tim.appTim.dto.common.ModuleSessionDTO;
+import com.tim.appTim.dto.request.UpdateModuleSessionRequest;
 import com.tim.appTim.service.ModuleSessionService;
 import org.springframework.http.ResponseEntity;
 import java.util.HashMap;
@@ -13,7 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import com.tim.appTim.dto.ModuleDTO;
+import com.tim.appTim.dto.common.ModuleDTO;
 
 @RestController
 @RequestMapping("/modules")
@@ -72,3 +72,4 @@ public class ModuleSessionController {
         return ResponseEntity.ok().body(body);
     }
 }
+

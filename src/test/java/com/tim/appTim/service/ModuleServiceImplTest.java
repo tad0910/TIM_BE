@@ -1,7 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.ModuleDTO;
-import com.tim.appTim.dto.ModuleSessionDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.Module;
 import com.tim.appTim.entity.ModuleSession;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -570,4 +572,5 @@ class ModuleServiceImplTest {
         assertThat(result.getContent().get(1).getId()).isEqualTo(2);
     }
 }
+
 

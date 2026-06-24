@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.NotificationDTO;
+import com.tim.appTim.dto.response.NotificationDTO;
 import com.tim.appTim.entity.Notification;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.service.NotificationService;
@@ -143,3 +143,4 @@ public class NotificationController {
         }
     }
 }
+

@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tim.appTim.dto.AdminJobLeadDTO;
-import com.tim.appTim.dto.CreateJobLeadRequest;
-import com.tim.appTim.dto.JobTrackingOverviewFilter;
-import com.tim.appTim.dto.JobTrackingOverviewSummaryDTO;
-import com.tim.appTim.dto.JobTrackingRowDTO;
-import com.tim.appTim.dto.JobTrackingUpdateRequest;
+import com.tim.appTim.dto.request.AdminJobLeadDTO;
+import com.tim.appTim.dto.request.CreateJobLeadRequest;
+import com.tim.appTim.dto.response.JobTrackingOverviewFilter;
+import com.tim.appTim.dto.response.JobTrackingOverviewSummaryDTO;
+import com.tim.appTim.dto.common.JobTrackingRowDTO;
+import com.tim.appTim.dto.request.JobTrackingUpdateRequest;
 import com.tim.appTim.service.JobTrackingAdminService;
 
 import lombok.RequiredArgsConstructor;
@@ -79,3 +79,4 @@ public class JobTrackingAdminController {
                 request.getWebsite()));
     }
 }
+

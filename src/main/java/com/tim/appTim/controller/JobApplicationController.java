@@ -1,6 +1,6 @@
 package com.tim.appTim.controller;
 
-import com.tim.appTim.dto.StudentJobTrackingDTO;
+import com.tim.appTim.dto.common.StudentJobTrackingDTO;
 import com.tim.appTim.service.JobApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

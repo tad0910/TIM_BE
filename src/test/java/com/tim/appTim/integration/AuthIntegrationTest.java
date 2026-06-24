@@ -1,7 +1,10 @@
 package com.tim.appTim.integration;
 
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tim.appTim.dto.LoginRequest;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -134,3 +137,4 @@ public class AuthIntegrationTest {
                                 .andExpect(content().string("Logout successful"));
         }
 }
+

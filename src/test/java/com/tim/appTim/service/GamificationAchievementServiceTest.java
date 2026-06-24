@@ -1,6 +1,9 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.AchievementLevelDTO;
+import com.tim.appTim.dto.request.*;
+import com.tim.appTim.dto.response.*;
+import com.tim.appTim.dto.common.*;
+
 import com.tim.appTim.entity.GamificationAchievement;
 import com.tim.appTim.entity.GamificationAchievementLevel;
 import com.tim.appTim.exception.ResourceNotFoundException;
@@ -490,4 +493,5 @@ class GamificationAchievementServiceTest {
         assertNull(result.getRequiredPointTypeEnum());
     }
 }
+
 

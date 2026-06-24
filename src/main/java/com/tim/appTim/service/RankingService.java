@@ -1,8 +1,8 @@
 package com.tim.appTim.service;
 
-import com.tim.appTim.dto.RankingDTO;
-import com.tim.appTim.dto.RankingResponseDTO;
-import com.tim.appTim.dto.UserRankPositionDTO;
+import com.tim.appTim.dto.response.RankingDTO;
+import com.tim.appTim.dto.response.RankingResponseDTO;
+import com.tim.appTim.dto.common.UserRankPositionDTO;
 import com.tim.appTim.entity.Class;
 import com.tim.appTim.entity.ClassMember;
 import com.tim.appTim.entity.Ranking;
@@ -393,4 +393,5 @@ public class RankingService {
         }
     }
 }
+
 

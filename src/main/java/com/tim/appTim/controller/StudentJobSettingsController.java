@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tim.appTim.dto.UpdateUserJobSettingsRequest;
-import com.tim.appTim.dto.UserJobSettingsDTO;
+import com.tim.appTim.dto.request.UpdateUserJobSettingsRequest;
+import com.tim.appTim.dto.common.UserJobSettingsDTO;
 import com.tim.appTim.entity.User;
 import com.tim.appTim.exception.UnauthorizedException;
 import com.tim.appTim.repository.UserRepository;
@@ -54,3 +54,4 @@ public class StudentJobSettingsController {
                 .body(new UserJobSettingsDTO(currentUser.isJobInterestEnabled()));
     }
 }
+
