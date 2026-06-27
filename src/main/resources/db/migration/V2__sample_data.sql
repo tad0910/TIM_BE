@@ -1,4 +1,4 @@
-USE dbtest;
+
 INSERT IGNORE INTO roles (id, name) VALUES
   (1, 'ROLE_ADMIN'),
   (2, 'ROLE_GIAO_VIEN'),
@@ -57,16 +57,16 @@ INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (3,1),(3,3),(3,5),(3,6),(3,8),(3,9),(3,19),(3,13),(3,19),(3,22),(3,32),(3,33);
   
 
-INSERT IGNORE INTO users (id, username, firstname, lastname, password, email, vai_tro)
+INSERT IGNORE INTO users (deleted, job_interest_enabled, id, username, firstname, lastname, password, email)
 VALUES
-  (1, 'admin', 'Alice', 'Nguyen', '123456', 'admin@example.com', 'admin'),
-  (2, 'teacher_hoa', 'Hoa', 'Tran', '123456', 'hoa.teacher@example.com', 'giao_vien'),
-  (3, 'teacher_long', 'Long', 'Le', '123456', 'long.teacher@example.com', 'giao_vien'),
-  (4, 'student_lan', 'Lan', 'Pham', '123456', 'lan.student@example.com', 'sinh_vien'),
-  (5, 'student_bao', 'Bao', 'Nguyen', '123456', 'bao.student@example.com', 'sinh_vien'),
-  (6, 'student_khanh', 'Khanh', 'Vu', '123456', 'khanh.student@example.com', 'sinh_vien'),
-  (7, 'student_hieu', 'Hieu', 'Dang', '123456', 'hieu.student@example.com', 'sinh_vien'),
-  (8, 'student_trang', 'Trang', 'Hoang', '123456', 'trang.student@example.com', 'sinh_vien');
+  (0, 0, 1, 'admin', 'Alice', 'Nguyen', '123456', 'admin@example.com'),
+  (0, 0, 2, 'teacher_hoa', 'Hoa', 'Tran', '123456', 'hoa.teacher@example.com'),
+  (0, 0, 3, 'teacher_long', 'Long', 'Le', '123456', 'long.teacher@example.com'),
+  (0, 0, 4, 'student_lan', 'Lan', 'Pham', '123456', 'lan.student@example.com'),
+  (0, 0, 5, 'student_bao', 'Bao', 'Nguyen', '123456', 'bao.student@example.com'),
+  (0, 0, 6, 'student_khanh', 'Khanh', 'Vu', '123456', 'khanh.student@example.com'),
+  (0, 0, 7, 'student_hieu', 'Hieu', 'Dang', '123456', 'hieu.student@example.com'),
+  (0, 0, 8, 'student_trang', 'Trang', 'Hoang', '123456', 'trang.student@example.com');
 
 INSERT IGNORE INTO user_roles (user_id, role_id) VALUES
   (1,1),(2,2),(3,2),(4,3),(5,3),(6,3),(7,3),(8,3);
@@ -93,9 +93,9 @@ INSERT IGNORE INTO program_modules (program_id, module_id, position) VALUES
   (2,2,1),(2,4,2),
   (3,3,1),(3,4,2);
 
-INSERT IGNORE INTO classes (id, name, description, program_id) VALUES
-  (1, 'Fullstack K2025', 'Lớp học fullstack đầu tiên năm 2025', 1),
-  (2, 'AI Fundamental 2025', 'Lớp học AI cơ bản cho người mới bắt đầu', 2);
+INSERT IGNORE INTO classes (jobs_enabled, id, name, description, program_id) VALUES
+  (0, 1, 'Fullstack K2025', 'Lớp học fullstack đầu tiên năm 2025', 1),
+  (0, 2, 'AI Fundamental 2025', 'Lớp học AI cơ bản cho người mới bắt đầu', 2);
 
 INSERT IGNORE INTO class_members (lop_id, nguoi_dung_id, vai_tro) VALUES
   (1,2,'giao_vien'),(1,4,'sinh_vien'),(1,5,'sinh_vien'),(1,6,'sinh_vien'),
@@ -120,12 +120,12 @@ INSERT IGNORE INTO reactions (id, bai_viet_id, nguoi_dung_id, loai_cam_xuc) VALU
   (3,2,4,'wow'),
   (4,2,6,'like');
 
-INSERT IGNORE INTO notifications (receiver_id, sender_id, notification_type, target_type, target_id, title, content)
+INSERT IGNORE INTO notifications (is_read, created_at, receiver_id, sender_id, notification_type, target_type, target_id, title, content)
 VALUES
-  (2,4,'POST_COMMENT','POST',1,'Lan đã bình luận','Lan đã bình luận bài đăng của bạn'),
-  (4,2,'SYSTEM_ANNOUNCEMENT','SYSTEM',NULL,'Thông báo lớp học','Buổi học tiếp theo sẽ vào thứ 6.');
+  (0, NOW(), 2, 4, 'POST_COMMENT', 'POST', 1, 'Lan đã bình luận', 'Lan đã bình luận bài đăng của bạn'),
+  (0, NOW(), 4, 2, 'SYSTEM_ANNOUNCEMENT', 'SYSTEM', NULL, 'Thông báo lớp học', 'Buổi học tiếp theo sẽ vào thứ 6.');
 
-INSERT IGNORE INTO ranking (nguoi_dung_id, diem_tong_hop, classes_id, program_id)
+INSERT IGNORE INTO ranking (nguoi_dung_id, total_experience_score, classes_id, courses_id)
 VALUES
   (4,85,1,1),
   (5,75,1,1),
@@ -141,20 +141,20 @@ VALUES
 INSERT IGNORE INTO invalidated_tokens (jti, expiry_date)
 VALUES ('sample-token-123', DATE_ADD(NOW(), INTERVAL 2 DAY));
 
-USE dbtest;
 
 
-INSERT IGNORE INTO users (id, username, firstname, lastname, password, email, vai_tro) VALUES
-  (9,  'teacher_minh',    'Minh',     'Nguyen',   '123456', 'minh.teacher@example.com', 'giao_vien'),
-  (10, 'teacher_thao',    'Thảo',     'Phạm',     '123456', 'thao.teacher@example.com', 'giao_vien'),
-  (11, 'student_tuan',    'Tuấn',     'Lê',       '123456', 'tuan.student@example.com', 'sinh_vien'),
-  (12, 'student_ngoc',    'Ngọc',     'Trần',     '123456', 'ngoc.student@example.com', 'sinh_vien'),
-  (13, 'student_phong',   'Phong',    'Vũ',       '123456', 'phong.student@example.com','sinh_vien'),
-  (14, 'student_mai',     'Mai',      'Đỗ',       '123456', 'mai.student@example.com',  'sinh_vien'),
-  (15, 'student_anh',     'Anh',      'Hoàng',    '123456', 'anh.student@example.com',  'sinh_vien'),
-  (16, 'student_khoa',    'Khoa',     'Bùi',      '123456', 'khoa.student@example.com', 'sinh_vien'),
-  (17, 'student_vy',      'Vy',       'Lý',       '123456', 'vy.student@example.com',   'sinh_vien'),
-  (18, 'student_duy',     'Duy',      'Trịnh',    '123456', 'duy.student@example.com',  'sinh_vien');
+
+INSERT IGNORE INTO users (deleted, job_interest_enabled, id, username, firstname, lastname, password, email) VALUES
+  (0, 0, 9,  'teacher_minh',    'Minh',     'Nguyen',   '123456', 'minh.teacher@example.com'),
+  (0, 0, 10, 'teacher_thao',    'Thảo',     'Phạm',     '123456', 'thao.teacher@example.com'),
+  (0, 0, 11, 'student_tuan',    'Tuấn',     'Lê',       '123456', 'tuan.student@example.com'),
+  (0, 0, 12, 'student_ngoc',    'Ngọc',     'Trần',     '123456', 'ngoc.student@example.com'),
+  (0, 0, 13, 'student_phong',   'Phong',    'Vũ',       '123456', 'phong.student@example.com'),
+  (0, 0, 14, 'student_mai',     'Mai',      'Đỗ',       '123456', 'mai.student@example.com'),
+  (0, 0, 15, 'student_anh',     'Anh',      'Hoàng',    '123456', 'anh.student@example.com'),
+  (0, 0, 16, 'student_khoa',    'Khoa',     'Bùi',      '123456', 'khoa.student@example.com'),
+  (0, 0, 17, 'student_vy',      'Vy',       'Lý',       '123456', 'vy.student@example.com'),
+  (0, 0, 18, 'student_duy',     'Duy',      'Trịnh',    '123456', 'duy.student@example.com');
 
 
 INSERT IGNORE INTO user_roles (user_id, role_id) VALUES
@@ -191,10 +191,10 @@ INSERT IGNORE INTO program_modules (program_id, module_id, position) VALUES
   (6,9,1),(6,10,2);
 
 
-INSERT IGNORE INTO classes (id, name, description, program_id) VALUES
-  (3, 'Mobile Dev K2025', 'Lớp học phát triển ứng dụng di động', 4),
-  (4, 'Data Science 2025', 'Lớp học phân tích dữ liệu chuyên sâu', 5),
-  (5, 'DevOps Pro 2025', 'Lớp học vận hành hệ thống hiện đại', 6);
+INSERT IGNORE INTO classes (jobs_enabled, id, name, description, program_id) VALUES
+  (0, 3, 'Mobile Dev K2025', 'Lớp học phát triển ứng dụng di động', 4),
+  (0, 4, 'Data Science 2025', 'Lớp học phân tích dữ liệu chuyên sâu', 5),
+  (0, 5, 'DevOps Pro 2025', 'Lớp học vận hành hệ thống hiện đại', 6);
 
 
 INSERT IGNORE INTO class_members (lop_id, nguoi_dung_id, vai_tro) VALUES
@@ -237,15 +237,15 @@ INSERT IGNORE INTO reactions (id, bai_viet_id, nguoi_dung_id, loai_cam_xuc) VALU
   (14,8,2,'like'),(15,8,3,'like'),
   (16,9,13,'like'),(17,9,11,'like');
 
-INSERT IGNORE INTO notifications (receiver_id, sender_id, notification_type, target_type, target_id, title, content) VALUES
-  (9,11,'POST_COMMENT','POST',3,'Tuấn đã bình luận','Tuấn đã bình luận về bài đăng Flutter của bạn'),
-  (11,9,'SYSTEM_ANNOUNCEMENT','CLASS',3,'Lịch học mới','Buổi học Flutter tuần này chuyển sang thứ 4'),
-  (10,14,'POST_COMMENT','POST',5,'Mai đã bình luận','Mai cần hỗ trợ Pandas'),
-  (17,9,'REACTION','POST',7,'Minh đã thả tim','Giáo viên Minh đã thả tim bài đăng Docker của bạn'),
-  (12,11,'REPLY_COMMENT','COMMENT',9,'Tuấn trả lời','Tuấn đã trả lời bình luận của bạn'),
-  (18,17,'POST_MENTION','POST',10,'Bạn được nhắc đến','Khoa đã gửi tài liệu AWS cho bạn');
+INSERT IGNORE INTO notifications (is_read, created_at, receiver_id, sender_id, notification_type, target_type, target_id, title, content) VALUES
+  (0, NOW(), 9, 11, 'POST_COMMENT', 'POST', 3, 'Tuấn đã bình luận', 'Tuấn đã bình luận về bài đăng Flutter của bạn'),
+  (0, NOW(), 11, 9, 'SYSTEM_ANNOUNCEMENT', 'CLASS', 3, 'Lịch học mới', 'Buổi học Flutter tuần này chuyển sang thứ 4'),
+  (0, NOW(), 10, 14, 'POST_COMMENT', 'POST', 5, 'Mai đã bình luận', 'Mai cần hỗ trợ Pandas'),
+  (0, NOW(), 17, 9, 'REACTION', 'POST', 7, 'Minh đã thả tim', 'Giáo viên Minh đã thả tim bài đăng Docker của bạn'),
+  (0, NOW(), 12, 11, 'REPLY_COMMENT', 'COMMENT', 9, 'Tuấn trả lời', 'Tuấn đã trả lời bình luận của bạn'),
+  (0, NOW(), 18, 17, 'POST_MENTION', 'POST', 10, 'Bạn được nhắc đến', 'Khoa đã gửi tài liệu AWS cho bạn');
 
-INSERT IGNORE INTO ranking (nguoi_dung_id, diem_tong_hop, classes_id, program_id) VALUES
+INSERT IGNORE INTO ranking (nguoi_dung_id, total_experience_score, classes_id, courses_id) VALUES
   (11,88,3,4),
   (12,92,3,4),
   (13,76,3,4),
@@ -265,21 +265,21 @@ INSERT IGNORE INTO invalidated_tokens (jti, expiry_date) VALUES
   ('old-session-789', DATE_ADD(NOW(), INTERVAL 3 DAY)),
   ('logout-all-101112', DATE_ADD(NOW(), INTERVAL 7 DAY));
 
-USE dbtest;
 
-INSERT IGNORE INTO users (id, username, firstname, lastname, password, email, vai_tro) VALUES
-  (19, 'student_linh',   'Linh',    'Nguyễn', '123456', 'linh.student@example.com', 'sinh_vien'),
-  (20, 'student_hao',    'Hào',     'Trần',   '123456', 'hao.student@example.com',  'sinh_vien'),
-  (21, 'teacher_kien',   'Kiên',    'Lê',     '123456', 'kien.teacher@example.com', 'giao_vien'),
-  (22, 'student_thuy',   'Thủy',    'Phạm',   '123456', 'thuy.student@example.com', 'sinh_vien'),
-  (23, 'student_nam',    'Nam',     'Vũ',     '123456', 'nam.student@example.com',  'sinh_vien'),
-  (24, 'teacher_uyen',   'Uyên',    'Hoàng',  '123456', 'uyen.teacher@example.com', 'giao_vien'),
-  (25, 'student_phuc',   'Phúc',    'Đặng',   '123456', 'phuc.student@example.com', 'sinh_vien'),
-  (26, 'student_my',     'Mỹ',      'Bùi',    '123456', 'my.student@example.com',   'sinh_vien'),
-  (27, 'student_quang',  'Quang',   'Lý',     '123456', 'quang.student@example.com','sinh_vien'),
-  (28, 'teacher_binh',   'Bình',    'Trương', '123456', 'binh.teacher@example.com', 'giao_vien'),
-  (29, 'student_chau',   'Châu',    'Đỗ',     '123456', 'chau.student@example.com', 'sinh_vien'),
-  (30, 'student_hoang',  'Hoàng',   'Phan',   '123456', 'hoang.student@example.com','sinh_vien');
+
+INSERT IGNORE INTO users (deleted, job_interest_enabled, id, username, firstname, lastname, password, email) VALUES
+  (0, 0, 19, 'student_linh',   'Linh',    'Nguyễn', '123456', 'linh.student@example.com'),
+  (0, 0, 20, 'student_hao',    'Hào',     'Trần',   '123456', 'hao.student@example.com'),
+  (0, 0, 21, 'teacher_kien',   'Kiên',    'Lê',     '123456', 'kien.teacher@example.com'),
+  (0, 0, 22, 'student_thuy',   'Thủy',    'Phạm',   '123456', 'thuy.student@example.com'),
+  (0, 0, 23, 'student_nam',    'Nam',     'Vũ',     '123456', 'nam.student@example.com'),
+  (0, 0, 24, 'teacher_uyen',   'Uyên',    'Hoàng',  '123456', 'uyen.teacher@example.com'),
+  (0, 0, 25, 'student_phuc',   'Phúc',    'Đặng',   '123456', 'phuc.student@example.com'),
+  (0, 0, 26, 'student_my',     'Mỹ',      'Bùi',    '123456', 'my.student@example.com'),
+  (0, 0, 27, 'student_quang',  'Quang',   'Lý',     '123456', 'quang.student@example.com'),
+  (0, 0, 28, 'teacher_binh',   'Bình',    'Trương', '123456', 'binh.teacher@example.com'),
+  (0, 0, 29, 'student_chau',   'Châu',    'Đỗ',     '123456', 'chau.student@example.com'),
+  (0, 0, 30, 'student_hoang',  'Hoàng',   'Phan',   '123456', 'hoang.student@example.com');
 
 INSERT IGNORE INTO user_roles (user_id, role_id) VALUES
   (19,3),(20,3),(21,2),(22,3),(23,3),(24,2),(25,3),(26,3),(27,3),(28,2),(29,3),(30,3);
@@ -317,12 +317,12 @@ INSERT IGNORE INTO program_modules (program_id, module_id, position) VALUES
   (9,15,1),(9,20,2),
   (10,19,1),(10,16,2);
 
-INSERT IGNORE INTO classes (id, name, description, program_id) VALUES
-  (6,'React Master 2025','Lớp React nâng cao',7),
-  (7,'Node.js Pro 2025','Lớp backend Node chuyên sâu',8),
-  (8,'UI/UX Design K2025','Lớp thiết kế giao diện',9),
-  (9,'CyberSec 2025','Lớp bảo mật cơ bản',10),
-  (10,'Fullstack Elite 2025','Lớp fullstack kết hợp React + NestJS',1);
+INSERT IGNORE INTO classes (jobs_enabled, id, name, description, program_id) VALUES
+  (0, 6,'React Master 2025','Lớp React nâng cao',7),
+  (0, 7,'Node.js Pro 2025','Lớp backend Node chuyên sâu',8),
+  (0, 8,'UI/UX Design K2025','Lớp thiết kế giao diện',9),
+  (0, 9,'CyberSec 2025','Lớp bảo mật cơ bản',10),
+  (0, 10,'Fullstack Elite 2025','Lớp fullstack kết hợp React + NestJS',1);
 
 INSERT IGNORE INTO class_members (lop_id, nguoi_dung_id, vai_tro) VALUES
   (6,21,'giao_vien'),(6,19,'sinh_vien'),(6,20,'sinh_vien'),(6,22,'sinh_vien'),(6,23,'sinh_vien'),

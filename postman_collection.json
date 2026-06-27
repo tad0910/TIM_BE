@@ -21,12 +21,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\": \"testuser\", \"email\": \"testuser@example.com\", \"password\": \"password123\", \"fullName\": \"Test User\"}"
+              "raw": "{\n  \"username\": \"newuser\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"123456\",\n  \"firstName\": \"New\",\n  \"lastName\": \"User\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             },
             "description": "Register a new user"
           },
@@ -44,16 +49,37 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"usernameOrEmail\": \"testuser@example.com\", \"password\": \"password123\"}"
+              "raw": "{\n  \"usernameOrEmail\": \"admin@example.com\",\n  \"password\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "description": "Login and get JWT token"
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.accessToken) {",
+                  "        pm.collectionVariables.set('jwtToken', jsonData.accessToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Logout",
@@ -71,8 +97,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             },
             "description": "Logout (client should remove token)"
           },
@@ -98,8 +129,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/forgot-password",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "forgot-password"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
             },
             "description": "Request password reset"
           },
@@ -121,8 +157,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/verify-otp",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "verify-otp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-otp"
+              ]
             },
             "description": "Verify OTP for password reset"
           },
@@ -144,8 +185,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/reset-password",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "reset-password"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
             },
             "description": "Reset user password"
           },
@@ -172,8 +218,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/classes/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["classes", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "classes",
+                "1"
+              ]
             },
             "description": "Get class information by ID"
           },
@@ -206,8 +257,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/1/avatar",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "1", "avatar"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "1",
+                "avatar"
+              ]
             },
             "description": "Upload user avatar (requires USER or ADMIN role)"
           },
@@ -229,8 +287,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/users/1/avatar",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "1", "avatar"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "1",
+                "avatar"
+              ]
             },
             "description": "Get user avatar"
           },
@@ -252,8 +317,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/users/1/images",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "1", "images"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "1",
+                "images"
+              ]
             },
             "description": "Get all images for a user"
           },
@@ -275,8 +347,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/users/1/avatar",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "1", "avatar"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "1",
+                "avatar"
+              ]
             },
             "description": "Delete user avatar (requires USER or ADMIN role)"
           },
@@ -298,8 +377,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/users/1/images",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "1", "images"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "1",
+                "images"
+              ]
             },
             "description": "Delete all images for a user (requires USER or ADMIN role)"
           },
@@ -326,8 +412,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/profile/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "1"
+              ]
             },
             "description": "Get user profile"
           },
@@ -353,8 +444,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/profile/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "1"
+              ]
             },
             "description": "Update user profile"
           },
@@ -376,8 +472,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/profile/1/images",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "1", "images"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "1",
+                "images"
+              ]
             },
             "description": "Get all images for a user"
           },
@@ -403,8 +505,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/profile/1/images",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "1", "images"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "1",
+                "images"
+              ]
             },
             "description": "Create a new user image"
           },
@@ -430,8 +538,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/profile/1/images/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "1", "images", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "1",
+                "images",
+                "1"
+              ]
             },
             "description": "Update a user image"
           },
@@ -453,8 +568,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/profile/1/images/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "1", "images", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "1",
+                "images",
+                "1"
+              ]
             },
             "description": "Delete a user image"
           },
@@ -481,8 +603,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
             },
             "description": "Get list of all users"
           },
@@ -504,8 +630,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
             },
             "description": "Get user by ID"
           },
@@ -531,8 +662,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
             },
             "description": "Create a new user"
           },
@@ -554,12 +689,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\": \"updateduser\", \"email\": \"updateduser@example.com\", \"fullName\": \"Updated User\"}"
+              "raw": "{\n  \"firstName\": \"Admin\",\n  \"lastName\": \"Updated\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
             },
             "description": "Update a user"
           },
@@ -581,8 +721,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
             },
             "description": "Delete a user"
           },

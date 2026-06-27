@@ -12,10 +12,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.tim.appTim.dto.request.LoginRequest;
 import com.tim.appTim.entity.User;
@@ -37,15 +41,18 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final PasswordResetService passwordResetService;
     private final AuthService authService;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController( UserService userService, JwtUtil jwtUtil,
-                           @Qualifier("loginManager") AuthenticationManager authenticationManager,
-                          PasswordResetService passwordResetService, AuthService authService) {
+    public AuthController(UserService userService, JwtUtil jwtUtil,
+            @Qualifier("loginManager") AuthenticationManager authenticationManager,
+            PasswordResetService passwordResetService, AuthService authService,
+            PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
         this.passwordResetService = passwordResetService;
         this.authService = authService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/register")
@@ -53,15 +60,14 @@ public class AuthController {
         userService.register(user);
         return ResponseEntity.ok("User registered successfully");
     }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsernameOrEmail(),
-                            loginRequest.getPassword()
-                    )
-            );
+                            loginRequest.getPassword()));
 
             SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -130,11 +136,12 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi đăng xuất: " + e.getMessage());
-            }
         }
+    }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> requestBody, HttpServletRequest request) {
+    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> requestBody,
+            HttpServletRequest request) {
         String email = requestBody.get("email");
 
         if (email == null || email.trim().isEmpty()) {
@@ -153,7 +160,6 @@ public class AuthController {
         passwordResetService.requestReset(email, ip, userAgent);
         return ResponseEntity.ok("Nếu có tài khoản, chúng tôi đã gửi hướng dẫn đến email.");
     }
-
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> requestBody) {
@@ -180,6 +186,24 @@ public class AuthController {
         }
     }
 
-    
+    @PutMapping("/users/{userId}/password")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> changeUserPassword(@PathVariable Long userId, @RequestBody Map<String, String> request) {
+        try {
+            String newPassword = request.get("password");
+            if (newPassword == null || newPassword.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Mật khẩu không được để trống"));
+            }
+            User user = userService.findById(userId);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Không tìm thấy người dùng"));
+            }
+            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setPasswordChangedAt(Instant.now());
+            userService.internalSave(user);
+            return ResponseEntity.ok(Map.of("message", "Mật khẩu người dùng đã được cập nhật thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }
-
