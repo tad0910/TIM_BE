@@ -62,4 +62,75 @@ public class RoleController {
 
         return ResponseEntity.ok(java.util.Map.of("message", "Permissions updated successfully"));
     }
+
+    @org.springframework.web.bind.annotation.PostMapping
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> createRole(@org.springframework.web.bind.annotation.RequestBody Role role) {
+        if (role.getCode() == null || role.getCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Code is required"));
+        }
+        role.setCode(role.getCode().toUpperCase());
+        return ResponseEntity.ok(roleRepository.save(role));
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/{roleId}")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> updateRole(@org.springframework.web.bind.annotation.PathVariable Long roleId,
+                                        @org.springframework.web.bind.annotation.RequestBody Role body) {
+        Role role = roleRepository.findById(roleId).orElse(null);
+        if (role == null) return ResponseEntity.status(404).body(java.util.Map.of("message", "Role not found"));
+        
+        role.setName(body.getName());
+        if (body.getCode() != null && !body.getCode().trim().isEmpty()) {
+            role.setCode(body.getCode().toUpperCase());
+        }
+        return ResponseEntity.ok(roleRepository.save(role));
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/permissions")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> createPermission(@org.springframework.web.bind.annotation.RequestBody Permission permission) {
+        if (permission.getCode() == null || !permission.getCode().matches("^[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+$")) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Mã quyền phải theo định dạng module.tính_năng.hành_động"));
+        }
+        return ResponseEntity.ok(permissionRepository.save(permission));
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/permissions/{permissionId}")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> updatePermission(@org.springframework.web.bind.annotation.PathVariable Long permissionId,
+                                              @org.springframework.web.bind.annotation.RequestBody Permission body) {
+        Permission permission = permissionRepository.findById(permissionId).orElse(null);
+        if (permission == null) return ResponseEntity.status(404).body(java.util.Map.of("message", "Permission not found"));
+
+        permission.setName(body.getName());
+        permission.setDescription(body.getDescription());
+        if (body.getCode() != null) {
+             if (!body.getCode().matches("^[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+$")) {
+                 return ResponseEntity.badRequest().body(java.util.Map.of("message", "Mã quyền phải theo định dạng module.tính_năng.hành_động"));
+             }
+             permission.setCode(body.getCode());
+        }
+        return ResponseEntity.ok(permissionRepository.save(permission));
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{roleId}")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> deleteRole(@org.springframework.web.bind.annotation.PathVariable Long roleId) {
+        if (!roleRepository.existsById(roleId)) {
+            return ResponseEntity.status(404).body(java.util.Map.of("message", "Role not found"));
+        }
+        roleRepository.deleteById(roleId);
+        return ResponseEntity.ok(java.util.Map.of("message", "Role deleted successfully"));
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/permissions/{permissionId}")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> deletePermission(@org.springframework.web.bind.annotation.PathVariable Long permissionId) {
+        if (!permissionRepository.existsById(permissionId)) {
+            return ResponseEntity.status(404).body(java.util.Map.of("message", "Permission not found"));
+        }
+        permissionRepository.deleteById(permissionId);
+        return ResponseEntity.ok(java.util.Map.of("message", "Permission deleted successfully"));
+    }
 }

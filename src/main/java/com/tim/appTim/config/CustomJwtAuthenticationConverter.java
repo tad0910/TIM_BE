@@ -32,11 +32,11 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, JwtAuthe
             User user = userOptional.get();
             authorities = user.getRoles().stream()
                     .flatMap(role -> role.getPermissions().stream())
-                    .map(permission -> new SimpleGrantedAuthority(permission.getName()))
+                    .map(permission -> new SimpleGrantedAuthority(permission.getCode()))
                     .collect(Collectors.toSet());
 
             user.getRoles().forEach(role ->
-                    authorities.add(new SimpleGrantedAuthority(role.getName()))
+                    authorities.add(new SimpleGrantedAuthority(role.getCode()))
             );
 
         } else {

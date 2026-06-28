@@ -20,11 +20,11 @@ public class UserDetailsImpl implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Set<GrantedAuthority> authorities = user.getRoles().stream() 
                 .flatMap(role -> role.getPermissions().stream()) 
-                .map(permission -> new SimpleGrantedAuthority(permission.getName())) 
+                .map(permission -> new SimpleGrantedAuthority(permission.getCode())) 
                 .collect(Collectors.toSet());
 
         user.getRoles().forEach(role ->
-                authorities.add(new SimpleGrantedAuthority(role.getName()))
+                authorities.add(new SimpleGrantedAuthority(role.getCode()))
         );
 
         return authorities;
