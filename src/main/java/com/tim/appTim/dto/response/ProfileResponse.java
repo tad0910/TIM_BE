@@ -4,7 +4,6 @@ import com.tim.appTim.dto.request.*;
 import com.tim.appTim.dto.response.*;
 import com.tim.appTim.dto.common.*;
 
-
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -17,6 +16,8 @@ public class ProfileResponse {
     private String phoneNumber;
     private String profileImage;
     private String role;
+    private String firstName;
+    private String lastName;
     private LocalDateTime createdAt;
     private Page<PostDTO> posts;
     private List<UserImageDTO> images;
@@ -28,6 +29,8 @@ public class ProfileResponse {
         this.email = user.getEmail();
         this.phoneNumber = user.getPhoneNumber();
         this.profileImage = user.getProfileImage();
+        this.firstName = user.getFirstName();
+        this.lastName = user.getLastName();
         this.role = user.getRoles().stream()
                 .findFirst()
                 .map(com.tim.appTim.entity.Role::getName)
@@ -51,6 +54,10 @@ public class ProfileResponse {
     public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public Page<PostDTO> getPosts() { return posts; }
@@ -68,9 +75,4 @@ public class ProfileResponse {
     public void setCourses(List<CourseDTO> courses) { 
 
     }
-
 }
-
-
-
-
