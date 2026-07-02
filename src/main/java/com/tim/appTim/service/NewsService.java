@@ -91,7 +91,12 @@ public class NewsService {
 
     private BlogDTO convertEntryToDTO(SyndEntry entry) {
         BlogDTO dto = new BlogDTO();
-        dto.setTitle(entry.getTitle());
+        
+        String title = entry.getTitle();
+        if (title != null) {
+            dto.setTitle(org.jsoup.parser.Parser.unescapeEntities(title, true));
+        }
+
         dto.setLink(entry.getLink());
 
         if (entry.getPublishedDate() != null) {
@@ -100,7 +105,7 @@ public class NewsService {
 
         if (entry.getDescription() != null && entry.getDescription().getValue() != null) {
             String description = entry.getDescription().getValue().replaceAll("<[^>]*>", "");
-            dto.setDescription(description);
+            dto.setDescription(org.jsoup.parser.Parser.unescapeEntities(description, true));
         } else {
             dto.setDescription("");
         }
