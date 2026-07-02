@@ -22,11 +22,11 @@ public class NewsService {
 
     private static final Logger logger = LoggerFactory.getLogger(NewsService.class);
 
-    private static final String LATEST_BLOGS_URL = "https://blog.codegym.vn/category/java/feed/";
+    private static final String LATEST_BLOGS_URL = "https://vnexpress.net/rss/so-hoa.rss";
 
-    private static final String FEATURED_BLOGS_URL = "https://blog.codegym.vn/category/javascript/feed/";
+    private static final String FEATURED_BLOGS_URL = "https://thanhnien.vn/rss/cong-nghe.rss";
 
-    private static final String DEV_TO_API_URL = "https://dev.to/api/articles?tag=java";
+    private static final String DEV_TO_API_URL = "https://dev.to/api/articles?tag=programming";
 
     private final RestTemplate restTemplate;
 
@@ -36,19 +36,19 @@ public class NewsService {
 
     @Cacheable("latestBlogs")
     public List<BlogDTO> getLatestBlogs() {
-        logger.info("Đang gọi RSS feed từ Codegym (Blog Mới)...");
+        logger.info("Đang gọi RSS feed từ VNExpress (Số hóa)...");
         return fetchFeedUsingRestTemplate(LATEST_BLOGS_URL);
     }
 
     @Cacheable("featuredBlogs")
     public List<BlogDTO> getFeaturedBlogs() {
-        logger.info("Đang gọi RSS feed từ Codegym (Blog Hay)...");
+        logger.info("Đang gọi RSS feed từ Thanh Niên (Công nghệ)...");
         return fetchFeedUsingRestTemplate(FEATURED_BLOGS_URL);
     }
 
     @Cacheable("techNews")
     public List<BlogDTO> getTechNews() {
-        logger.info("Đang gọi JSON API từ Dev.to (Tech News)...");
+        logger.info("Đang gọi JSON API từ Dev.to (Programming)...");
         try {
             ResponseEntity<DevToArticleDTO[]> response =
                     restTemplate.getForEntity(DEV_TO_API_URL, DevToArticleDTO[].class);
