@@ -13,6 +13,7 @@ public class ReplyCommentDTO {
     private Long userId;
     private Long commentId;
     private String username;
+    private String fullName;
     private String content;
     private String emotion;
     private Long fileId;
@@ -20,11 +21,12 @@ public class ReplyCommentDTO {
     private String userAvatar;
     private List<FileDTO> files;
 
-    public ReplyCommentDTO(Long id, Long commentId, Long userId, String username, String content, String emotion, LocalDateTime createdAt, String userAvatar, List<FileDTO> files) {
+    public ReplyCommentDTO(Long id, Long commentId, Long userId, String username, String fullName, String content, String emotion, LocalDateTime createdAt, String userAvatar, List<FileDTO> files) {
         this.id = id;
         this.commentId = commentId;
         this.userId = userId;
         this.username = username;
+        this.fullName = fullName;
         this.content = content;
         this.emotion = emotion ;
         this.createdAt = createdAt;
@@ -38,6 +40,8 @@ public class ReplyCommentDTO {
     public void setUserId(Long userId) { this.userId = userId; }
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
     public String getEmotion() { return emotion; }
@@ -53,8 +57,3 @@ public class ReplyCommentDTO {
     public List<FileDTO> getFiles() { return files; }
     public void setFiles(List<FileDTO> files) { this.files = files; }
 }
-
-
-
-
-

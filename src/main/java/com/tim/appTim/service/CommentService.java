@@ -184,7 +184,9 @@ public class CommentService {
         Post post = comment.getPost();
         if (post != null) {
             Integer currentTotal = post.getTotalComments();
-            post.setTotalComments(currentTotal == null || currentTotal <= 0 ? 0 : currentTotal - 1);
+            int repliesCount = comment.getReplies() != null ? comment.getReplies().size() : 0;
+            int decreaseBy = 1 + repliesCount;
+            post.setTotalComments(currentTotal == null || currentTotal <= decreaseBy ? 0 : currentTotal - decreaseBy);
             postRepository.save(post);
         }
 
@@ -219,6 +221,13 @@ public class CommentService {
         }
 
         ReplyComment savedReplyComment = replyCommentRepository.save(reply);
+
+        Post post = comment.getPost();
+        if (post != null) {
+            Integer currentTotal = post.getTotalComments();
+            post.setTotalComments(currentTotal == null ? 1 : currentTotal + 1);
+            postRepository.save(post);
+        }
 
         try {
             if (!comment.getUser().getId().equals(userId)) {
@@ -284,6 +293,13 @@ public class CommentService {
             throw new ForbiddenException("Bạn không có quyền xóa trả lời này");
         }
 
+        Post post = replyComment.getComment().getPost();
+        if (post != null) {
+            Integer currentTotal = post.getTotalComments();
+            post.setTotalComments(currentTotal == null || currentTotal <= 0 ? 0 : currentTotal - 1);
+            postRepository.save(post);
+        }
+
         replyCommentRepository.delete(replyComment);
     }
 
@@ -294,6 +310,13 @@ public class CommentService {
     private CommentDTO convertToDTO(Comment comment) {
         User user = comment.getUser();
         String username = (user != null) ? user.getUsername() : "Unknown";
+        String fullName = "Người dùng";
+        if (user != null) {
+            String first = user.getFirstName() != null ? user.getFirstName() : "";
+            String last = user.getLastName() != null ? user.getLastName() : "";
+            fullName = (first + " " + last).trim();
+            if (fullName.isEmpty()) fullName = username;
+        }
         String userAvatar = (user != null) ? user.getProfileImage() : " ";
         String emotionName = (comment.getEmotion() != null) ? comment.getEmotion().name() : null;
 
@@ -319,6 +342,7 @@ fileDTOs = comment.getFiles().stream()
                 comment.getId(),
                 comment.getUser().getId(),
                 username,
+                fullName,
                 comment.getContent(),
                 userAvatar,
                 emotionName,
@@ -330,12 +354,20 @@ fileDTOs = comment.getFiles().stream()
 
     private ReplyCommentDTO convertReplyToDTO(ReplyComment reply) {
         String username = reply.getUser() != null ? reply.getUser().getUsername() : "Unknown";
+        String fullName = "Người dùng";
+        if (reply.getUser() != null) {
+            String first = reply.getUser().getFirstName() != null ? reply.getUser().getFirstName() : "";
+            String last = reply.getUser().getLastName() != null ? reply.getUser().getLastName() : "";
+            fullName = (first + " " + last).trim();
+            if (fullName.isEmpty()) fullName = username;
+        }
         String emotionName = reply.getEmotion() != null ? reply.getEmotion().name() : null;
         return new ReplyCommentDTO(
                 reply.getId(),
                 reply.getComment().getId(),
                 reply.getUser().getId(),
                 username,
+                fullName,
                 reply.getContent(),
                 emotionName,
 //                reply.getFileId(),
