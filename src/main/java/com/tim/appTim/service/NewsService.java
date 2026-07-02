@@ -95,7 +95,7 @@ public class NewsService {
         dto.setLink(entry.getLink());
 
         if (entry.getPublishedDate() != null) {
-            dto.setPublishedDate(entry.getPublishedDate().toInstant());
+            dto.setPublishedDate(entry.getPublishedDate().toInstant().toString());
         }
 
         if (entry.getDescription() != null && entry.getDescription().getValue() != null) {

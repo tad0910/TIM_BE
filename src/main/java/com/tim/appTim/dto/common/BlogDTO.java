@@ -5,14 +5,14 @@ import com.tim.appTim.dto.response.*;
 import com.tim.appTim.dto.common.*;
 
 
-import java.time.Instant;
+
 
 public class BlogDTO {
 
     private String title;
     private String link;
     private String description;
-    private Instant publishedDate;
+    private String publishedDate;
 
 
     public String getTitle() { return title; }
@@ -21,10 +21,6 @@ public class BlogDTO {
     public void setLink(String link) { this.link = link; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public Instant getPublishedDate() { return publishedDate; }
-    public void setPublishedDate(Instant publishedDate) { this.publishedDate = publishedDate; }
+    public String getPublishedDate() { return publishedDate; }
+    public void setPublishedDate(String publishedDate) { this.publishedDate = publishedDate; }
 }
-
-
-
-
